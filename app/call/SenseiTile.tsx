@@ -8,6 +8,7 @@ export function SenseiTile() {
           src="/tanaka-sensei.png"
           alt="Tanaka-sensei"
           fill
+          sizes="(min-width: 768px) 28rem, 100vw"
           className="object-cover"
           priority
         />

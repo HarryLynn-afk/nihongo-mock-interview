@@ -189,11 +189,11 @@ same playback contract. On Join, fire a one-off ping/health request to the
 n8n webhook URL to warm the workflow (fire-and-forget, no blocking).
 
 ### Acceptance Criteria
-- [ ] Joining the call auto-plays Q1; each submitted answer advances to the next question in order, never repeating or skipping
-- [ ] `ELEVENLABS_TTS_API_KEY` is only ever read server-side; the client never receives it (this issue never reads `ELEVENLABS_SCRIBE_API_KEY` — that's Issue 9's key)
-- [ ] Simulating TTS latency over 1.5s falls back to the local `.mp3` for that question and the flow still advances normally
-- [ ] Join triggers a fire-and-forget request to the n8n webhook URL; its failure never blocks Join
-- [ ] Exactly 3 questions total; no additional or repeated spoken prompts are ever triggered
+- [x] Joining the call auto-plays Q1; each submitted answer advances to the next question in order, never repeating or skipping
+- [x] `ELEVENLABS_TTS_API_KEY` is only ever read server-side; the client never receives it (this issue never reads `ELEVENLABS_SCRIBE_API_KEY` — that's Issue 9's key)
+- [x] Simulating TTS latency over 1.5s falls back to the local `.mp3` for that question and the flow still advances normally
+- [x] Join triggers a fire-and-forget request to the n8n webhook URL; its failure never blocks Join
+- [x] Exactly 3 questions total; no additional or repeated spoken prompts are ever triggered
 
 ### Technical Notes
 Question text/order comes from Issue 2's content module. This issue owns
