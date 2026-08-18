@@ -25,11 +25,11 @@ Next.js runtime. Add `.env.example` listing key names only (no values):
 Add a README with setup and run instructions.
 
 ### Acceptance Criteria
-- [ ] `next dev` runs locally and serves an empty home page
-- [ ] Tailwind config exposes `ink`, `paper`, `indigo`, and the three stamp colors as named tokens
-- [ ] `.env.example` lists all four key names with no real values
-- [ ] `netlify.toml` is configured for the Next.js runtime
-- [ ] README documents install + run steps
+- [x] `next dev` runs locally and serves an empty home page
+- [x] Tailwind config exposes `ink`, `paper`, `indigo`, and the three stamp colors as named tokens
+- [x] `.env.example` lists all four key names with no real values
+- [x] `netlify.toml` is configured for the Next.js runtime
+- [x] README documents install + run steps
 
 ### Technical Notes
 Start with Next.js per PRD "Technical Constraints." Only switch to Vite +
