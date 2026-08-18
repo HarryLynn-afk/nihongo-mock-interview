@@ -6,6 +6,7 @@ import { SenseiTile } from "./SenseiTile";
 import { StudentTile } from "./StudentTile";
 import { playQuestionAudio } from "./playQuestionAudio";
 import { useAnswerCapture } from "./useAnswerCapture";
+import { useBackgroundScribe } from "./useBackgroundScribe";
 import { useCameraStream } from "./useCameraStream";
 import { useMicToggle } from "./useMicToggle";
 import { useQuestionFlow } from "./useQuestionFlow";
@@ -17,8 +18,9 @@ export default function CallPage() {
     startOn: prefs.cameraOn,
   });
   const { micOn, toggleMic } = useMicToggle({ initialOn: prefs.micOn });
-  const { phase, currentQuestion, endSenseiTurn, submitAnswer } =
+  const { phase, currentQuestion, answers, endSenseiTurn, submitAnswer } =
     useQuestionFlow();
+  useBackgroundScribe({ answers, phase });
 
   const isPitchMode =
     typeof window !== "undefined" &&

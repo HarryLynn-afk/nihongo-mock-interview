@@ -12,7 +12,9 @@ describe("Call screen", () => {
   let endedHandlers: Array<() => void> = [];
 
   beforeEach(() => {
-    getUserMedia.mockResolvedValue({} as MediaStream);
+    getUserMedia.mockResolvedValue({
+      getTracks: () => [{ stop: vi.fn() }],
+    } as unknown as MediaStream);
     fetchMock.mockResolvedValue(new Response(null, { status: 202 }));
     audioPlay.mockResolvedValue(undefined);
     capturedAudioSrcs = [];
@@ -355,5 +357,87 @@ describe("Call screen", () => {
     expect(
       fetchMock.mock.calls.some((call) => String(call[0]).includes("/api/translate")),
     ).toBe(false);
+  });
+
+  it("POSTs /api/scribe after spoken submit with no waiting state, then shows Q2", async () => {
+    const recorded = new Blob([new Uint8Array([7, 7, 7])], { type: "audio/webm" });
+    class FakeMediaRecorder {
+      ondataavailable: ((event: { data: Blob }) => void) | null = null;
+      onstop: (() => void) | null = null;
+      start = vi.fn();
+      stop = () => {
+        this.ondataavailable?.({ data: recorded });
+        this.onstop?.();
+      };
+      constructor(_stream: unknown) {}
+    }
+    vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
+
+    const created: Array<{
+      onresult: ((event: { results: unknown[] }) => void) | null;
+      start: ReturnType<typeof vi.fn>;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
+
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/scribe")) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ transcript: "SCRIBE" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      if (url.includes("/api/translate")) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ english: "Hello." }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      return Promise.resolve(new Response(null, { status: 202 }));
+    });
+
+    const user = await startStudentTurn();
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+
+    await waitFor(() => {
+      expect(created[0]?.start).toHaveBeenCalled();
+    });
+
+    act(() => {
+      const spoken = Object.assign([{ transcript: "こんにちは" }], {
+        isFinal: true,
+      });
+      created[0]?.onresult?.({ results: [spoken] });
+    });
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/scribe",
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(screen.queryByText(/scoring|waiting|scribe/i)).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(questions[1].japanese)).toBeInTheDocument();
+    });
   });
 });

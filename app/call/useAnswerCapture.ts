@@ -19,7 +19,22 @@ type SpeechRecognitionLike = {
   stop: () => void;
 };
 
+type MediaRecorderLike = {
+  start: () => void;
+  stop: () => void;
+  ondataavailable: ((event: { data: Blob }) => void) | null;
+  onstop: (() => void) | null;
+};
+
+type MediaRecorderCtor = new (stream: MediaStream) => MediaRecorderLike;
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+
+function getMediaRecorderCtor(): MediaRecorderCtor | undefined {
+  const w = globalThis as typeof globalThis & {
+    MediaRecorder?: MediaRecorderCtor;
+  };
+  return w.MediaRecorder;
+}
 
 function getSpeechRecognitionCtor(): SpeechRecognitionCtor | undefined {
   const w = globalThis as typeof globalThis & {
@@ -39,6 +54,7 @@ export function useAnswerCapture({
   const [draft, setDraft] = useState("");
   const [spokenCaption, setSpokenCaption] = useState<string | null>(null);
   const audioClipRef = useRef<Blob | null>(null);
+  const recorderRef = useRef<MediaRecorderLike | null>(null);
 
   if (!active) {
     if (answerMode !== null) setAnswerMode(null);
@@ -56,22 +72,54 @@ export function useAnswerCapture({
 
   useEffect(() => {
     if (!listening) return;
+    audioClipRef.current = null;
 
     const Ctor = getSpeechRecognitionCtor();
-    if (!Ctor) return;
+    let recognition: SpeechRecognitionLike | undefined;
+    if (Ctor) {
+      recognition = new Ctor();
+      recognition.lang = "ja-JP";
+      recognition.interimResults = true;
+      recognition.continuous = true;
+      recognition.onresult = (event) => {
+        const last = event.results[event.results.length - 1];
+        setSpokenCaption(last[0].transcript);
+      };
+      recognition.start();
+    }
 
-    const recognition = new Ctor();
-    recognition.lang = "ja-JP";
-    recognition.interimResults = true;
-    recognition.continuous = true;
-    recognition.onresult = (event) => {
-      const last = event.results[event.results.length - 1];
-      setSpokenCaption(last[0].transcript);
-    };
-    recognition.start();
+    let cancelled = false;
+    let stream: MediaStream | null = null;
+    const Recorder = getMediaRecorderCtor();
+    if (Recorder && navigator.mediaDevices?.getUserMedia) {
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then((micStream) => {
+          if (cancelled) {
+            micStream.getTracks().forEach((track) => track.stop());
+            return;
+          }
+          stream = micStream;
+          const recorder = new Recorder(micStream);
+          recorder.ondataavailable = (event) => {
+            if (event.data.size > 0) audioClipRef.current = event.data;
+          };
+          recorder.start();
+          recorderRef.current = recorder;
+        })
+        .catch(() => {});
+    }
+
     return () => {
-      recognition.onresult = null;
-      recognition.stop();
+      cancelled = true;
+      if (recognition) {
+        recognition.onresult = null;
+        recognition.stop();
+      }
+      const recorder = recorderRef.current;
+      recorderRef.current = null;
+      recorder?.stop();
+      stream?.getTracks?.().forEach((track) => track.stop());
     };
   }, [listening]);
 
@@ -81,11 +129,21 @@ export function useAnswerCapture({
       return;
     }
     if (answerMode === "speak" && spokenCaption) {
-      onSubmit({
-        inputMode: "voice",
-        transcript: spokenCaption,
-        audioClip: audioClipRef.current ?? new Blob(),
-      });
+      const submitVoice = () => {
+        onSubmit({
+          inputMode: "voice",
+          transcript: spokenCaption,
+          audioClip: audioClipRef.current ?? new Blob(),
+        });
+      };
+      const recorder = recorderRef.current;
+      if (recorder) {
+        recorderRef.current = null;
+        recorder.onstop = submitVoice;
+        recorder.stop();
+        return;
+      }
+      submitVoice();
       return;
     }
     if (answerMode === "speak") {

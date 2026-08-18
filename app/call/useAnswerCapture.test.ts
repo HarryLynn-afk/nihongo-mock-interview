@@ -226,4 +226,155 @@ describe("useAnswerCapture", () => {
     expect(result.current.speakAnswerVisible).toBe(false);
     expect(result.current.typeAnswerVisible).toBe(true);
   });
+
+  it("submits the recorded audio clip from MediaRecorder on Speak submit", async () => {
+    const recorded = new Blob([new Uint8Array([7, 7, 7])], { type: "audio/webm" });
+    const stream = { getTracks: () => [{ stop: vi.fn() }] };
+
+    class FakeMediaRecorder {
+      ondataavailable: ((event: { data: Blob }) => void) | null = null;
+      onstop: (() => void) | null = null;
+      start = vi.fn();
+      stop = () => {
+        this.ondataavailable?.({ data: recorded });
+        this.onstop?.();
+      };
+      constructor(_stream: unknown) {}
+    }
+
+    const created: Array<{
+      onresult: ((event: { results: unknown[] }) => void) | null;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+
+    vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+    vi.stubGlobal("navigator", {
+      mediaDevices: {
+        getUserMedia: vi.fn().mockResolvedValue(stream),
+      },
+    });
+
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit,
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      const spoken = Object.assign([{ transcript: "こんにちは" }], {
+        isFinal: true,
+      });
+      created[0]?.onresult?.({ results: [spoken] });
+    });
+    act(() => result.current.onSubmitClick());
+
+    expect(onSubmit).toHaveBeenCalledOnce();
+    expect(onSubmit.mock.calls[0][0]).toEqual(
+      expect.objectContaining({
+        inputMode: "voice",
+        transcript: "こんにちは",
+      }),
+    );
+    expect(onSubmit.mock.calls[0][0].audioClip).toBe(recorded);
+  });
+
+  it("does not keep the previous turn's audio clip after the student turn resets", async () => {
+    const recorded = new Blob([new Uint8Array([7, 7, 7])], { type: "audio/webm" });
+    class FakeMediaRecorder {
+      ondataavailable: ((event: { data: Blob }) => void) | null = null;
+      onstop: (() => void) | null = null;
+      start = vi.fn();
+      stop = () => {
+        this.ondataavailable?.({ data: recorded });
+        this.onstop?.();
+      };
+      constructor(_stream: unknown) {}
+    }
+
+    const created: Array<{
+      onresult: ((event: { results: unknown[] }) => void) | null;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+
+    vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+    vi.stubGlobal("navigator", {
+      mediaDevices: {
+        getUserMedia: vi
+          .fn()
+          .mockResolvedValueOnce({
+            getTracks: () => [{ stop: vi.fn() }],
+          })
+          .mockReturnValueOnce(new Promise(() => {})),
+      },
+    });
+
+    const onSubmit = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ active }) =>
+        useAnswerCapture({
+          active,
+          micOn: true,
+          onSubmit,
+        }),
+      { initialProps: { active: true } },
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    act(() => {
+      created[0]?.onresult?.({
+        results: [Object.assign([{ transcript: "Q1" }], { isFinal: true })],
+      });
+    });
+    act(() => result.current.onSubmitClick());
+    expect(onSubmit.mock.calls[0][0].audioClip).toBe(recorded);
+
+    rerender({ active: false });
+    created.length = 0;
+    rerender({ active: true });
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => {
+      created[0]?.onresult?.({
+        results: [Object.assign([{ transcript: "Q2" }], { isFinal: true })],
+      });
+    });
+    act(() => result.current.onSubmitClick());
+
+    expect(onSubmit.mock.calls[1][0].transcript).toBe("Q2");
+    expect(onSubmit.mock.calls[1][0].audioClip).not.toBe(recorded);
+  });
 });
