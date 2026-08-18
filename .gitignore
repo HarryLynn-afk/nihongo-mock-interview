@@ -27,6 +27,11 @@
 # Cursor project config (CLI permissions, local agent settings)
 .cursor/
 
+# Local coding / agent session files (not product source)
+CLAUDE.md
+context.md
+docs/ubiquitous-language.md
+
 # debug
 npm-debug.log*
 yarn-debug.log*
