@@ -116,11 +116,11 @@ and a "Join interview" button. Detect a narrow/phone viewport and render a
 simple "Open on a computer" message instead of Join in that case.
 
 ### Acceptance Criteria
-- [ ] Home page shows "NihonGo" + subtitle; never prints N5, JLPT, A1, Pass, or Fail
-- [ ] Profile card renders name, age, hometown, education, plan, sponsor from the content module, read-only, no inputs
-- [ ] "Join interview" navigates to the call screen
-- [ ] On a narrow viewport, the interview UI and Join are replaced by an "Open on a computer" message
-- [ ] No sign-up, password, or email field anywhere on this screen
+- [x] Home page shows "NihonGo" + subtitle; never prints N5, JLPT, A1, Pass, or Fail
+- [x] Profile card renders name, age, hometown, education, plan, sponsor from the content module, read-only, no inputs
+- [x] "Join interview" navigates to the call screen
+- [x] On a narrow viewport, the interview UI and Join are replaced by an "Open on a computer" message
+- [x] No sign-up, password, or email field anywhere on this screen
 
 ### Technical Notes
 No live form-filling, no second sample student. This is a one-click path.
