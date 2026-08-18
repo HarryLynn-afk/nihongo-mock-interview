@@ -54,30 +54,43 @@ questions (with pitch-mode EN/MY by index), and the rubric — so nothing
 drifts between n8n and `/api/grade`.
 
 ### Task
-Create typed content modules (e.g. `lib/content/profile.ts`,
-`lib/content/questions.ts`) plus a rubric doc (`docs/rubric.md` or
-`lib/content/rubric.ts`) that both `/api/grade` and the n8n workflow spec
-will copy from. Profile: Aung Min Khant's locked fields (name, age,
-hometown, education, current job, study purpose, post-graduation plan,
-language goal, study duration, sponsor). Questions: 3 entries in order,
-each with the Japanese line, the pitch-mode English line, and the
-pitch-mode Burmese line, keyed by index (0/1/2). Rubric: six categories,
-weights (Speaking 20, Listening 15, Grammar & politeness 15, Motivation 20,
-Study plan 20, Consistency 10), formula `(score / 5) × weight`, the
-headline table (Ready/Almost Ready/Keep Practicing), and the two gates
-(Speaking ≤ 2; Motivation ≤ 2 or Study plan ≤ 2).
+Create typed content modules: `lib/content/profile.ts`, `lib/content/questions.ts`
+(Tanaka-sensei's questions), `lib/content/pitchAnswers.ts` (the student's
+pitch-mode phone-clip answers — a distinct concern from the sensei
+questions, keyed by question index), and `lib/content/rubric.ts`, all
+imported by both `/api/grade` and, for the rubric, generated into a
+paste-ready doc for the n8n workflow. Profile: Aung Min Khant's locked
+fields (name, age, hometown, education, current job, study purpose,
+post-graduation plan, language goal, study duration, sponsor), plus a
+`DISPLAY_CARD_FIELDS` list naming exactly the 6 fields the start-screen
+card shows. Questions: 3 entries in order, each with the sensei's Japanese
+line, English translation, and Burmese translation (always shown in the
+HUD). Pitch answers: 3 entries keyed by `questionIndex` (0/1/2) with the
+locked Japanese phone-clip line plus its English and Burmese translation
+(shown only on `?pitch=1`, after that question's answer). Rubric: six
+categories, weights (Speaking 20, Listening 15, Grammar & politeness 15,
+Motivation 20, Study plan 20, Consistency 10), formula `(score / 5) ×
+weight`, the headline table (Ready/Almost Ready/Keep Practicing), and the
+two gates (Speaking ≤ 2; Motivation ≤ 2 or Study plan ≤ 2) — exposed as
+`getRubricPrompt()`, `parseRawScores()`, `scoreReport()`, and
+`getRubricDoc()` (a generated, paste-into-n8n artifact combining the
+prompt and an equivalent JS scoring snippet, snapshot-tested against
+`docs/rubric-generated.md` so drift from the TS source fails a test).
 
 ### Acceptance Criteria
-- [ ] Profile object matches every locked field in `docs/prd-nihongo.md` / `context.md` exactly
-- [ ] Questions array has exactly 3 entries, in order, each with `japanese`, `pitchEnglish`, `pitchBurmese`
-- [ ] Rubric doc/module contains categories, weights, formula, headline table, and both gates as a single copy-from source
-- [ ] No occurrence of "N5", "JLPT", "A1", "Pass", or "Fail" anywhere in this content
+- [x] Profile object matches every locked field in `docs/prd-nihongo.md` / `context.md` exactly
+- [x] `questions` array has exactly 3 entries, in order, each with `japanese`, `englishTranslation`, `burmeseTranslation`
+- [x] `pitchAnswers` array has exactly 3 entries keyed by `questionIndex` (0/1/2), each with `japanese`, `english`, `burmese`, matching the locked phone-clip lines
+- [x] Rubric module contains categories, weights, formula, headline table, and both gates as a single copy-from source (`getRubricDoc()`, snapshot-tested against `docs/rubric-generated.md`)
+- [x] No occurrence of "N5", "JLPT", "A1", "Pass", or "Fail" anywhere in display-facing content
 
 ### Technical Notes
 This module is imported by Issues 3 (profile card), 5 (question playback),
-11 (grading), and 14 (pitch EN/MY). Keep it framework-agnostic (plain
-TS objects/JSON) so the same rubric text can be pasted into the n8n
-workflow node.
+11 (grading), and 14 (pitch answers). Keep it framework-agnostic (plain
+TS objects/JSON) so the rubric doc can be regenerated and pasted into the
+n8n workflow node whenever it changes. `english`/`burmese` translation text
+was authored for this build (the PRD locks only the Japanese) — have a
+native Burmese speaker review it before event day.
 
 ### Out of Scope
 Any UI. `mocks/sample-report-ready.json` (already exists, unchanged here).
