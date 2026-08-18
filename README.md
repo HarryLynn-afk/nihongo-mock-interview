@@ -1,8 +1,6 @@
 # NihonGo — Japanese language school interview practice
 
 Practice build for a 3-question mock admission interview with Tanaka-sensei.
-See [`docs/prd-nihongo.md`](docs/prd-nihongo.md) for product scope and
-[`docs/issues-nihongo.md`](docs/issues-nihongo.md) for the build plan.
 
 ## Stack
 
@@ -39,6 +37,6 @@ see `scripts/check-env.mjs` and `lib/server/env.ts`.
 app/              Next.js App Router routes (pages + API route handlers)
 lib/server/       Server-only modules (env access, etc.) — never imported client-side
 scripts/          Build-time checks (env validation)
-docs/             PRD, issues, and shared rubric source
+docs/             Generated n8n rubric snapshot (docs/rubric-generated.md)
 mocks/            Shared JSON fixtures (e.g. sample-report-ready.json)
 ```
