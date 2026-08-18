@@ -14,7 +14,7 @@ function runCheckEnv(env: Record<string, string | undefined>) {
 const ALL_REQUIRED_ENV = {
   ELEVENLABS_TTS_API_KEY: "test-key",
   ELEVENLABS_SCRIBE_API_KEY: "test-key",
-  GEMINI_TRANSLATE_API_KEY: "test-key",
+  GROQ_TRANSLATE_API_KEY: "test-key",
   GEMINI_GRADE_API_KEY: "test-key",
   N8N_WEBHOOK_URL: "https://example.com/webhook",
 };

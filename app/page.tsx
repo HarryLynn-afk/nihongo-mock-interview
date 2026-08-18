@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { JoinInterview } from "./components/JoinInterview";
 import { ProfileCard } from "./components/ProfileCard";
 
 export default function Home() {
@@ -15,12 +15,7 @@ export default function Home() {
         <ProfileCard />
 
         <div className="hidden w-full flex-col gap-3 md:flex">
-          <Link
-            href="/call"
-            className="w-full rounded-full bg-indigo px-5 py-3 text-center font-medium text-paper transition-colors hover:bg-indigo/90"
-          >
-            Join interview
-          </Link>
+          <JoinInterview />
         </div>
 
         <p className="w-full rounded-lg border border-ink/10 bg-ink/5 px-4 py-3 text-sm text-ink/70 md:hidden">

@@ -40,4 +40,30 @@ describe("LanguageHud", () => {
       screen.getByText("はじめに、簡単に自己紹介をお願いします。"),
     ).toHaveClass("text-4xl");
   });
+
+  it("keeps the Question caption and shows a live student line underneath", () => {
+    render(
+      <LanguageHud
+        speaker="student"
+        caption="はじめに、簡単に自己紹介をお願いします。"
+        liveCaption="はじめまして。"
+        english="Nice to meet you."
+      />,
+    );
+
+    expect(
+      screen.getByText("はじめに、簡単に自己紹介をお願いします。"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("はじめまして。")).toBeInTheDocument();
+    expect(screen.getByText("Nice to meet you.")).toBeInTheDocument();
+  });
+
+  it("does not render an English line when english is null", () => {
+    render(
+      <LanguageHud speaker="student" caption="はじめまして。" english={null} />,
+    );
+
+    expect(screen.getByText("はじめまして。")).toBeInTheDocument();
+    expect(screen.queryByText("Nice to meet you.")).not.toBeInTheDocument();
+  });
 });

@@ -9,8 +9,10 @@ export type CameraState = "on" | "off" | "blocked";
  * rejection to the caller — "denied" is a valid resolved state, not an
  * error to handle.
  */
-export function useCameraStream() {
-  const [cameraState, setCameraState] = useState<CameraState>("on");
+export function useCameraStream({ startOn = true }: { startOn?: boolean } = {}) {
+  const [cameraState, setCameraState] = useState<CameraState>(
+    startOn ? "on" : "off",
+  );
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -23,7 +25,7 @@ export function useCameraStream() {
         if (cancelled) return;
         streamRef.current = stream;
         if (videoRef.current) videoRef.current.srcObject = stream;
-        setCameraState("on");
+        if (startOn) setCameraState("on");
       })
       .catch(() => {
         if (!cancelled) setCameraState("blocked");
@@ -32,7 +34,7 @@ export function useCameraStream() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [startOn]);
 
   function toggleCamera() {
     setCameraState((current) => (current === "off" ? "on" : "off"));

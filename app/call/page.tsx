@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LanguageHud } from "./LanguageHud";
 import { SenseiTile } from "./SenseiTile";
 import { StudentTile } from "./StudentTile";
@@ -9,33 +9,77 @@ import { useAnswerCapture } from "./useAnswerCapture";
 import { useCameraStream } from "./useCameraStream";
 import { useMicToggle } from "./useMicToggle";
 import { useQuestionFlow } from "./useQuestionFlow";
+import { loadDevicePrefs } from "../components/devicePrefs";
 
 export default function CallPage() {
-  const { cameraState, toggleCamera, videoRef } = useCameraStream();
-  const { micOn, toggleMic } = useMicToggle();
+  const prefs = loadDevicePrefs();
+  const { cameraState, toggleCamera, videoRef } = useCameraStream({
+    startOn: prefs.cameraOn,
+  });
+  const { micOn, toggleMic } = useMicToggle({ initialOn: prefs.micOn });
   const { phase, currentQuestion, endSenseiTurn, submitAnswer } =
     useQuestionFlow();
+
+  const isPitchMode =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("pitch") === "1";
+
+  const [englishOverlay, setEnglishOverlay] = useState<{
+    forCaption: string;
+    text: string;
+  } | null>(null);
+
+  const requestEnglish = useCallback(
+    (japanese: string) => {
+      if (isPitchMode || japanese.trim().length === 0) return;
+      fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          japanese,
+          context: "school interview answer",
+        }),
+      })
+        .then((res) => res.json())
+        .then((data: { english?: string | null }) => {
+          if (typeof data.english === "string" && data.english.length > 0) {
+            setEnglishOverlay({ forCaption: japanese, text: data.english });
+          }
+        })
+        .catch(() => {});
+    },
+    [isPitchMode],
+  );
+
   const {
     liveCaption,
     showAnswerBox,
-    typeInsteadVisible,
+    speakAnswerVisible,
+    typeAnswerVisible,
+    submitVisible,
     draft,
     onDraftChange,
-    onTypeInstead,
+    onSpeakAnswer,
+    onTypeAnswer,
     onSubmitClick,
   } = useAnswerCapture({
     active: phase === "studentAnswering",
     micOn,
-    onSubmit: submitAnswer,
+    autoSpeak: isPitchMode,
+    onSubmit: (submission) => {
+      requestEnglish(submission.transcript);
+      submitAnswer(submission);
+    },
   });
 
-  // Warm the n8n grading workflow the moment Join lands us here.
-  // Fire-and-forget — failure must never block or slow the interview.
+  useEffect(() => {
+    if (liveCaption) requestEnglish(liveCaption);
+  }, [liveCaption, requestEnglish]);
+
   useEffect(() => {
     fetch("/api/warm-n8n", { method: "POST" }).catch(() => {});
   }, []);
 
-  // Play each new question's audio as it becomes current.
   useEffect(() => {
     if (!currentQuestion) return;
 
@@ -48,10 +92,10 @@ export default function CallPage() {
     };
   }, [currentQuestion, endSenseiTurn]);
 
-  const hudCaption =
-    phase === "senseiSpeaking"
-      ? (currentQuestion?.japanese ?? null)
-      : (liveCaption ?? null);
+  function handleSpeakAnswer() {
+    if (!micOn) toggleMic();
+    onSpeakAnswer();
+  }
 
   return (
     <div
@@ -75,7 +119,13 @@ export default function CallPage() {
         <div className="fixed inset-x-0 bottom-24 flex justify-center px-6">
           <LanguageHud
             speaker={phase === "studentAnswering" ? "student" : "sensei"}
-            caption={hudCaption}
+            caption={currentQuestion.japanese}
+            liveCaption={liveCaption}
+            english={
+              englishOverlay && englishOverlay.forCaption === liveCaption
+                ? englishOverlay.text
+                : null
+            }
           />
         </div>
       ) : null}
@@ -90,16 +140,25 @@ export default function CallPage() {
           />
         ) : null}
         <div className="flex items-center gap-3">
-          {phase === "studentAnswering" && typeInsteadVisible ? (
+          {speakAnswerVisible ? (
             <button
               type="button"
-              onClick={onTypeInstead}
-              className="rounded-full bg-paper/10 px-5 py-3 font-medium text-paper"
+              onClick={handleSpeakAnswer}
+              className="rounded-full bg-indigo px-5 py-3 font-medium text-paper"
             >
-              Type instead
+              Speak answer
             </button>
           ) : null}
-          {phase === "studentAnswering" ? (
+          {typeAnswerVisible ? (
+            <button
+              type="button"
+              onClick={onTypeAnswer}
+              className="rounded-full bg-paper/10 px-5 py-3 font-medium text-paper"
+            >
+              Type answer
+            </button>
+          ) : null}
+          {submitVisible ? (
             <button
               type="button"
               onClick={onSubmitClick}

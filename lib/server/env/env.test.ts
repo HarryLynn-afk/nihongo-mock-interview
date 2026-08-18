@@ -5,8 +5,8 @@ const ORIGINAL_ENV = { ...process.env };
 const ALL_KEYS = {
   ELEVENLABS_TTS_API_KEY: "test-elevenlabs-tts-key",
   ELEVENLABS_SCRIBE_API_KEY: "test-elevenlabs-scribe-key",
-  GEMINI_TRANSLATE_API_KEY: "test-gemini-translate-key",
   GEMINI_GRADE_API_KEY: "test-gemini-grade-key",
+  GROQ_TRANSLATE_API_KEY: "test-groq-translate-key",
   N8N_WEBHOOK_URL: "https://example.com/webhook",
 } as const;
 
@@ -29,13 +29,13 @@ describe("lib/server/env/* per-purpose modules", () => {
 
     const { getElevenLabsTtsKey } = await import("./elevenlabsTts");
     const { getElevenLabsScribeKey } = await import("./elevenlabsScribe");
-    const { getGeminiTranslateKey } = await import("./geminiTranslate");
+    const { getGroqTranslateKey } = await import("./groqTranslate");
     const { getGeminiGradeKey } = await import("./geminiGrade");
     const { getN8nWebhookUrl } = await import("./n8n");
 
     expect(getElevenLabsTtsKey()).toBe(ALL_KEYS.ELEVENLABS_TTS_API_KEY);
     expect(getElevenLabsScribeKey()).toBe(ALL_KEYS.ELEVENLABS_SCRIBE_API_KEY);
-    expect(getGeminiTranslateKey()).toBe(ALL_KEYS.GEMINI_TRANSLATE_API_KEY);
+    expect(getGroqTranslateKey()).toBe(ALL_KEYS.GROQ_TRANSLATE_API_KEY);
     expect(getGeminiGradeKey()).toBe(ALL_KEYS.GEMINI_GRADE_API_KEY);
     expect(getN8nWebhookUrl()).toBe(ALL_KEYS.N8N_WEBHOOK_URL);
   });
@@ -55,14 +55,14 @@ describe("lib/server/env/* per-purpose modules", () => {
       unrelatedImport: "./n8n",
     },
     {
-      missing: "GEMINI_TRANSLATE_API_KEY",
-      failingImport: "./geminiTranslate",
+      missing: "GROQ_TRANSLATE_API_KEY",
+      failingImport: "./groqTranslate",
       unrelatedImport: "./geminiGrade",
     },
     {
       missing: "GEMINI_GRADE_API_KEY",
       failingImport: "./geminiGrade",
-      unrelatedImport: "./geminiTranslate",
+      unrelatedImport: "./groqTranslate",
     },
     {
       missing: "N8N_WEBHOOK_URL",

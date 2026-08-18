@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AnswerSubmission } from "./useQuestionFlow";
 
+type AnswerMode = "speak" | "type" | null;
+
 type UseAnswerCaptureArgs = {
   active: boolean;
   micOn: boolean;
+  autoSpeak?: boolean;
   onSubmit: (submission: AnswerSubmission) => void;
 };
 
@@ -29,22 +32,27 @@ function getSpeechRecognitionCtor(): SpeechRecognitionCtor | undefined {
 export function useAnswerCapture({
   active,
   micOn,
+  autoSpeak = false,
   onSubmit,
 }: UseAnswerCaptureArgs) {
-  const [typedInstead, setTypedInstead] = useState(false);
+  const [answerMode, setAnswerMode] = useState<AnswerMode>(null);
   const [draft, setDraft] = useState("");
   const [spokenCaption, setSpokenCaption] = useState<string | null>(null);
   const audioClipRef = useRef<Blob | null>(null);
 
   if (!active) {
-    if (typedInstead) setTypedInstead(false);
+    if (answerMode !== null) setAnswerMode(null);
     if (draft !== "") setDraft("");
     if (spokenCaption !== null) setSpokenCaption(null);
+  } else if (autoSpeak && answerMode === null) {
+    setAnswerMode("speak");
   }
 
-  const showAnswerBox = !micOn || typedInstead;
-  const typeInsteadVisible = micOn && !showAnswerBox;
-  const listening = active && micOn && !showAnswerBox;
+  const showAnswerBox = active && answerMode === "type";
+  const speakAnswerVisible = active && answerMode === null;
+  const typeAnswerVisible = active && answerMode !== "type";
+  const submitVisible = active && answerMode !== null;
+  const listening = active && answerMode === "speak" && micOn;
 
   useEffect(() => {
     if (!listening) return;
@@ -68,11 +76,11 @@ export function useAnswerCapture({
   }, [listening]);
 
   const onSubmitClick = useCallback(() => {
-    if (showAnswerBox) {
+    if (answerMode === "type") {
       onSubmit({ inputMode: "typed", transcript: draft });
       return;
     }
-    if (spokenCaption) {
+    if (answerMode === "speak" && spokenCaption) {
       onSubmit({
         inputMode: "voice",
         transcript: spokenCaption,
@@ -80,16 +88,21 @@ export function useAnswerCapture({
       });
       return;
     }
-    setTypedInstead(true);
-  }, [showAnswerBox, onSubmit, draft, spokenCaption]);
+    if (answerMode === "speak") {
+      setAnswerMode("type");
+    }
+  }, [answerMode, onSubmit, draft, spokenCaption]);
 
   return {
     liveCaption: listening ? spokenCaption : null,
     showAnswerBox,
-    typeInsteadVisible,
+    speakAnswerVisible,
+    typeAnswerVisible,
+    submitVisible,
     draft,
     onDraftChange: setDraft,
-    onTypeInstead: () => setTypedInstead(true),
+    onSpeakAnswer: () => setAnswerMode("speak"),
+    onTypeAnswer: () => setAnswerMode("type"),
     onSubmitClick,
   };
 }

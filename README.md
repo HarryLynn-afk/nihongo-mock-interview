@@ -14,7 +14,7 @@ npm install
 cp .env.example .env.local
 # Each key is scoped to one purpose only — see .env.example for details:
 #   ELEVENLABS_TTS_API_KEY, ELEVENLABS_SCRIBE_API_KEY,
-#   GEMINI_TRANSLATE_API_KEY, GEMINI_GRADE_API_KEY, N8N_WEBHOOK_URL
+#   GROQ_TRANSLATE_API_KEY, GEMINI_GRADE_API_KEY, N8N_WEBHOOK_URL
 # (WISPR_API_KEY optional)
 ```
 
