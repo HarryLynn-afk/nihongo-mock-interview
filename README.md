@@ -14,7 +14,10 @@ No database, no auth. Vitest for unit tests.
 ```bash
 npm install
 cp .env.example .env.local
-# fill in ELEVENLABS_API_KEY, GEMINI_API_KEY, N8N_WEBHOOK_URL (WISPR_API_KEY optional)
+# Each key is scoped to one purpose only — see .env.example for details:
+#   ELEVENLABS_TTS_API_KEY, ELEVENLABS_SCRIBE_API_KEY,
+#   GEMINI_TRANSLATE_API_KEY, GEMINI_GRADE_API_KEY, N8N_WEBHOOK_URL
+# (WISPR_API_KEY optional)
 ```
 
 ## Run

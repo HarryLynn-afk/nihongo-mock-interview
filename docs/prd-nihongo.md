@@ -88,7 +88,7 @@ The only user is the student practicing a language-school admission interview.
 
 ## Technical Constraints
 - Stack: Next.js + TypeScript + Tailwind only, hosted on Netlify. No shadcn. Start with Next.js. If Netlify’s Next adapter blocks deploy, switch UI to Vite + React + TS + Tailwind on Netlify and keep Netlify Functions for ElevenLabs. Same product.
-- No database, no Auth. Keys stay off the client: ElevenLabs TTS/Scribe, Gemini (`GEMINI_API_KEY`), n8n webhook, Wispr.
+- No database, no Auth. Keys stay off the client: ElevenLabs TTS (`ELEVENLABS_TTS_API_KEY`) and Scribe (`ELEVENLABS_SCRIBE_API_KEY`) are separate scoped keys; Gemini translate (`GEMINI_TRANSLATE_API_KEY`) and grade (`GEMINI_GRADE_API_KEY`) are separate scoped keys; n8n webhook; Wispr. One key per purpose — never shared across features.
 - n8n: grading only (Gemini 2.5 Flash node in the workflow) plus optional empty/health ping on Join. Translate is `POST /api/translate` → `{ japanese, context: "school interview answer" }` → `{ english }`. Background; timeout **3 seconds**, fail-open (hide English line, no crash). Pitch does not call translate.
 - Rubric prompt is copied into n8n and `/api/grade` from one `docs/` or `mocks/` source so they stay identical.
 - ElevenLabs TTS stream `/v1/text-to-speech/stream`; local `.mp3` fallback if latency > 1.5s.

@@ -20,14 +20,16 @@ Initialize Next.js + TypeScript + Tailwind (no shadcn/ui, no other component
 library). Add the locked design tokens to `tailwind.config` / CSS variables:
 Ink `#0F172A`, Paper `#F8FAFC`, Indigo `#4F46E5`, stamp colors Ready `#22C55E`,
 Almost Ready `#F59E0B`, Keep Practicing `#EF4444`. Add `netlify.toml` for the
-Next.js runtime. Add `.env.example` listing key names only (no values):
-`ELEVENLABS_API_KEY`, `GEMINI_API_KEY`, `N8N_WEBHOOK_URL`, `WISPR_API_KEY`.
+Next.js runtime. Add `.env.example` listing key names only (no values), one
+key per purpose (never one key shared across features): `ELEVENLABS_TTS_API_KEY`,
+`ELEVENLABS_SCRIBE_API_KEY`, `GEMINI_TRANSLATE_API_KEY`, `GEMINI_GRADE_API_KEY`,
+`N8N_WEBHOOK_URL`, `WISPR_API_KEY`.
 Add a README with setup and run instructions.
 
 ### Acceptance Criteria
 - [x] `next dev` runs locally and serves an empty home page
 - [x] Tailwind config exposes `ink`, `paper`, `indigo`, and the three stamp colors as named tokens
-- [x] `.env.example` lists all four key names with no real values
+- [x] `.env.example` lists all six key names (one per purpose) with no real values
 - [x] `netlify.toml` is configured for the Next.js runtime
 - [x] README documents install + run steps
 
@@ -188,7 +190,7 @@ n8n webhook URL to warm the workflow (fire-and-forget, no blocking).
 
 ### Acceptance Criteria
 - [ ] Joining the call auto-plays Q1; each submitted answer advances to the next question in order, never repeating or skipping
-- [ ] The ElevenLabs API key is only ever read server-side; the client never receives it
+- [ ] `ELEVENLABS_TTS_API_KEY` is only ever read server-side; the client never receives it (this issue never reads `ELEVENLABS_SCRIBE_API_KEY` — that's Issue 9's key)
 - [ ] Simulating TTS latency over 1.5s falls back to the local `.mp3` for that question and the flow still advances normally
 - [ ] Join triggers a fire-and-forget request to the n8n webhook URL; its failure never blocks Join
 - [ ] Exactly 3 questions total; no additional or repeated spoken prompts are ever triggered
@@ -292,7 +294,7 @@ with a 3-second timeout. On timeout or error, fail open — hide the English
 line, no crash, no retry.
 
 ### Acceptance Criteria
-- [ ] `/api/translate` accepts the documented request shape and returns `{ english }` via Gemini 2.5 Flash, with the key read only server-side
+- [ ] `/api/translate` accepts the documented request shape and returns `{ english }` via Gemini 2.5 Flash, with `GEMINI_TRANSLATE_API_KEY` read only server-side (never `GEMINI_GRADE_API_KEY` — that's Issue 11's key)
 - [ ] The call fires automatically after each non-pitch student answer's transcript is ready
 - [ ] A response later than 3 seconds, or any error, results in no English line and no crash or progression block
 - [ ] With `?pitch=1` present, `/api/translate` is never called
@@ -318,8 +320,9 @@ during the live call.
 
 ### Task
 After each spoken answer (using the Issue 7 audio clip reference), send
-the clip to ElevenLabs Scribe in the background via a server route (key
-server-side only). Never block, show a spinner, or reveal a score before
+the clip to ElevenLabs Scribe in the background via a server route
+(`ELEVENLABS_SCRIBE_API_KEY`, server-side only — never the TTS key from
+Issue 5). Never block, show a spinner, or reveal a score before
 Q2/Q3. After Q3, wait for outstanding Scribe jobs up to a bounded time,
 then finish-or-drop and proceed to grading (Issue 11) regardless. If a
 clip's Scribe call fails, flag that answer to be scored from its
@@ -385,9 +388,10 @@ After Q3 (and Scribe finish-or-drop from Issue 9), POST the full transcript
 mode, and profile data) to the pre-warmed n8n webhook, which runs Gemini
 2.5 Flash inside the workflow using the Issue 2 rubric and returns JSON in
 the same shape as `mocks/sample-report-ready.json`. Wait 5 seconds, no
-retry. On timeout/failure, call `POST /api/grade` once, using the same
-Gemini model, same rubric, same JSON shape. n8n must never call
-`/api/grade`.
+retry. On timeout/failure, call `POST /api/grade` once, using
+`GEMINI_GRADE_API_KEY` (server-side only, never the translate key from
+Issue 8), same Gemini model, same rubric, same JSON shape. n8n must
+never call `/api/grade`.
 
 ### Acceptance Criteria
 - [ ] After Q3, the transcript payload is POSTed to the n8n webhook URL from env
@@ -517,16 +521,17 @@ The practice app needs a real, shareable URL with keys kept off the
 client, and a documented contingency if the Next.js adapter misbehaves.
 
 ### Task
-Configure Netlify deployment using the Next.js runtime, wire the four
-required environment variables (`ELEVENLABS_API_KEY`, `GEMINI_API_KEY`,
-`N8N_WEBHOOK_URL`, `WISPR_API_KEY`) into Netlify site settings, and verify
-no key name/value appears in the client bundle. Document the Vite + React
-+ TS + Tailwind + Netlify Functions fallback in the README as a
-contingency only.
+Configure Netlify deployment using the Next.js runtime, wire the six
+required environment variables (`ELEVENLABS_TTS_API_KEY`,
+`ELEVENLABS_SCRIBE_API_KEY`, `GEMINI_TRANSLATE_API_KEY`,
+`GEMINI_GRADE_API_KEY`, `N8N_WEBHOOK_URL`, `WISPR_API_KEY`) into Netlify
+site settings, and verify no key name/value appears in the client
+bundle. Document the Vite + React + TS + Tailwind + Netlify Functions
+fallback in the README as a contingency only.
 
 ### Acceptance Criteria
 - [ ] Netlify deploy succeeds from `main` using the Next.js runtime
-- [ ] All four env vars are set in Netlify and read only from server-side code
+- [ ] All six env vars are set in Netlify and read only from server-side code
 - [ ] A build/bundle check confirms no API key name or value ships to the client
 - [ ] README documents the Vite fallback plan without implementing it
 - [ ] The live Netlify URL serves the start screen correctly

@@ -11,23 +11,29 @@ function runCheckEnv(env: Record<string, string | undefined>) {
   });
 }
 
+const ALL_REQUIRED_ENV = {
+  ELEVENLABS_TTS_API_KEY: "test-key",
+  ELEVENLABS_SCRIBE_API_KEY: "test-key",
+  GEMINI_TRANSLATE_API_KEY: "test-key",
+  GEMINI_GRADE_API_KEY: "test-key",
+  N8N_WEBHOOK_URL: "https://example.com/webhook",
+};
+
 describe("scripts/check-env.mjs", () => {
   it("exits non-zero and names the missing var when a required key is absent", () => {
-    const result = runCheckEnv({
-      ELEVENLABS_API_KEY: "test-key",
-      N8N_WEBHOOK_URL: "https://example.com/webhook",
-    });
+    const envWithoutGradeKey: Record<string, string | undefined> = {
+      ...ALL_REQUIRED_ENV,
+    };
+    delete envWithoutGradeKey.GEMINI_GRADE_API_KEY;
+
+    const result = runCheckEnv(envWithoutGradeKey);
 
     expect(result.status).not.toBe(0);
-    expect(result.stderr).toMatch(/GEMINI_API_KEY/);
+    expect(result.stderr).toMatch(/GEMINI_GRADE_API_KEY/);
   });
 
   it("exits zero when all required keys are present", () => {
-    const result = runCheckEnv({
-      ELEVENLABS_API_KEY: "test-key",
-      GEMINI_API_KEY: "test-key",
-      N8N_WEBHOOK_URL: "https://example.com/webhook",
-    });
+    const result = runCheckEnv(ALL_REQUIRED_ENV);
 
     expect(result.status).toBe(0);
   });
