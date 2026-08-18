@@ -16,8 +16,8 @@ Update this file only after every 5 grill-me answers, except when a product-dire
 - Option B (student + agency, COE, Job Interview track) is void
 - Next skill after grill-me completes: ubiquitous-language, then write-prd, then Blueprint Launch Pack (zero operational app code)
 - Do not write a PRD, blueprint, or application code until grill-me confirms shared understanding
-- Last context.md batch: `/api/translate` + Gemini; n8n grades in-workflow; `/api/grade` fallback; locked color palette
-- Grill-me status: major product branches resolved. Ready for ubiquitous-language, then write-prd.
+- Last context.md batch: synced to PRD — headline table, pitch EN/MY by question index, dual-grade sample report, translate 3s
+- Grill-me status: complete. PRD at docs/prd-nihongo.md. Ready for /write-issues after user confirms the three PRD fixes.
 - Practice vs event: build the full working product now for the team. On 29 Aug 11:00–17:00, rebuild from a Launch Pack. Do not submit a finished app built before 11:00.
 - “6-hour demo” means the hackathon build window 11:00–17:00. The 18:00 pitch is about 90 seconds (50 teams share 18:00–19:30). The interview itself is the 3-question live path.
 
@@ -120,7 +120,8 @@ Locked visual signature:
 
 - Language HUD on the call: huge Japanese captions for sensei and student
 - Sensei subtitles: always pre-written Japanese, English, and Burmese for the 3 questions
-- Student subtitles: Wispr/typed Japanese always. Pitch clips: pre-written English + Burmese. Everyone else: live English only. Live Burmese is production, after the loop works
+- Student subtitles: Wispr/typed Japanese always. Testers: live English only via `/api/translate` (3s fail-open). Live Burmese is production, after the loop works.
+- On `?pitch=1`, after Q1/Q2/Q3, always show pre-written English + Burmese for that **question index**. Do not fuzzy-match Wispr text.
 - Waveform that clearly switches: Tanaka-sensei speaking vs the student speaking
 - After Q3: six scores animate as a radar, then a large stamp — 準備OK / もう少し / 要練習 — matching Ready / Almost Ready / Keep Practicing
 - Live transcript in the sidebar
@@ -169,7 +170,8 @@ If Netlify’s Next adapter blocks deploy, switch UI to Vite + React + TS + Tail
 - If it is ~15:00 and the call is still shaky, **cut Scribe** and let the LLM score Speaking from the transcript only. Do not sink the demo for pronunciation.
 - n8n grading webhook after Q3. Wait **5 seconds**. Then `/api/grade` (same Gemini + same rubric JSON). Do not retry n8n. Never block more than 5 seconds for the webhook.
 - Ping n8n when they hit **Join** (empty/health request) so the workflow is warm before Q3.
-- Tester live English: after Wispr Japanese, `POST /api/translate` `{ japanese, context: "school interview answer" }` → `{ english }`. Background. Fail or timeout → no English line, no crash. Pitch path uses pre-written English and does not call translate.
+- Tester live English: after Wispr Japanese, `POST /api/translate` `{ japanese, context: "school interview answer" }` → `{ english }`. Background. Timeout **3 seconds**. Fail or timeout → no English line, no crash. Pitch path uses pre-written English and does not call translate.
+- After Q3: n8n webhook (5s, no retry) then `/api/grade`. If both fail, show `mocks/sample-report-ready.json` with banner “Scoring unavailable — sample report.” Never a blank screen or infinite spinner. The same JSON is the `?pitch=1` canned last screen when the live headline is not Ready.
 - If the microphone or transcript fails, that is a demo failure, not a student failure. Load the canned good Aung Min Khant transcript and show the matching good practice report. Do not score silence or garbage audio.
 - Interview sound effects are not required. Leftover time only.
 
@@ -220,16 +222,18 @@ Under the headline, a school-style score sheet. Each category is 1–5. Total /1
 
 Formula: `(score / 5) × weight`, then sum. Do not use equal weight. Language is 50. Motivation + plan + consistency is 50.
 
-**Ready / 準備OK:** Japanese is understandable, motivation and plan are specific, matches profile.
+**Ready / 準備OK:** no gate; total ≥ 75; Speaking, Motivation, and Study plan all ≥ 4.
 
-**Almost Ready / もう少し:** they got through the 3 answers but were weak (about Speaking 3, or one thin content area). Still a student story.
+**Almost Ready / もう少し:** no gate; everything else.
 
-**Keep Practicing / 要練習:** cannot communicate, or work/money is the real story, or answers fight the profile.
+**Keep Practicing / 要練習:** any gate fires.
 
 Gates (override the number):
 
 - Speaking ≤ 2 → **Keep Practicing**. Headline cannot be Ready or Almost Ready. If the story was fine, the report says the gap is Japanese (speaking, listening, です/ます), not the life plan.
 - Motivation ≤ 2 **or** study plan ≤ 2 (vague / work / money) → **Keep Practicing**, even if Japanese is strong.
+
+Listening = whether each answer addressed the question that was asked (comprehension). It is not a separate audio exercise.
 
 Coaching notes: です/ます and beginner grammar are allowed. Exam labels stay off. Notes can look like: use です/ます not casual だ/る; particle は vs を; add one more sentence to the self-intro; beginner pattern たいです / てください. Do not write N5, JLPT, A1, “N5 pass,” or “CEFR A1.” Notes teach Japanese. They do not certify a level.
 
@@ -332,11 +336,11 @@ What `?pitch=1` does:
 
 ## Last unresolved question
 
-None. Major product branches are resolved. Ready for `/write-prd`.
+None. PRD at `docs/prd-nihongo.md` includes Ready/Almost Ready rules, pitch subtitles by question index, and dual-grade failure. Ready for `/write-issues` after the user confirms this lock.
 
 ## Open branches still to grill
 
-None that block a PRD. Leftover-time only: interview sound effects, Play answer, shadcn after the hackathon, live Burmese for testers.
+None that block issues. Leftover-time only: interview sound effects, Play answer, shadcn after the hackathon, live Burmese for testers, 15:00 Scribe cut if the call is shaky.
 
 ## Explicitly not this version unless reopened
 

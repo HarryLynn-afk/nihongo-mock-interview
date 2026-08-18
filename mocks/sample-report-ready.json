@@ -1,0 +1,25 @@
+{
+  "source": "mocks/sample-report-ready.json",
+  "headline": "Ready",
+  "stamp": "準備OK",
+  "stampColor": "#22C55E",
+  "total": 92,
+  "banner": null,
+  "scores": {
+    "speaking": { "raw": 5, "weight": 20, "points": 20 },
+    "listening": { "raw": 4, "weight": 15, "points": 12 },
+    "grammarPoliteness": { "raw": 4, "weight": 15, "points": 12 },
+    "motivation": { "raw": 5, "weight": 20, "points": 20 },
+    "studyPlan": { "raw": 5, "weight": 20, "points": 20 },
+    "consistency": { "raw": 4, "weight": 10, "points": 8 }
+  },
+  "gatesFired": [],
+  "coaching": [
+    "Use です/ます all the way through, not casual だ/る.",
+    "Self-intro covered name, age, hometown, and the IT goal.",
+    "You named this school, Akihabara, and IT career guidance.",
+    "Post-graduation plan is vocational school, then engineer."
+  ],
+  "profileName": "Aung Min Khant",
+  "notes": "Used when both n8n and /api/grade fail, and as the ?pitch=1 canned last screen when the live headline is not Ready."
+}
