@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { InterviewSidebar } from "./InterviewSidebar";
 import { LanguageHud } from "./LanguageHud";
 import { SenseiTile } from "./SenseiTile";
 import { StudentTile } from "./StudentTile";
@@ -104,6 +105,7 @@ export default function CallPage() {
       data-testid="call-screen"
       className="flex min-h-screen flex-col items-center justify-center gap-6 bg-ink p-6 md:flex-row"
     >
+      <InterviewSidebar phase={phase} answers={answers} />
       <div className="w-full max-w-md">
         <StudentTile
           cameraState={cameraState}

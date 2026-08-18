@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { questions } from "@/lib/content/questions";
 import CallPage from "./page";
@@ -56,6 +56,10 @@ describe("Call screen", () => {
     return user;
   }
 
+  function hud() {
+    return within(screen.getByTestId("language-hud"));
+  }
+
   it("renders both the student tile and the sensei tile on an Ink background with Indigo accents", () => {
     render(<CallPage />);
 
@@ -66,6 +70,17 @@ describe("Call screen", () => {
 
     const root = screen.getByTestId("call-screen");
     expect(root).toHaveClass("bg-ink");
+  });
+
+  it("sidebar shows Question 1 of 3 and Sensei speaking with no scores", () => {
+    render(<CallPage />);
+
+    expect(screen.getByTestId("interview-sidebar")).toBeInTheDocument();
+    expect(screen.getByText("Question 1 of 3")).toBeInTheDocument();
+    expect(screen.getByText("Sensei speaking")).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Ready|Almost Ready|Keep Practicing|score|rubric/i),
+    ).not.toBeInTheDocument();
   });
 
   it("still starts the interview (both tiles render, no crash) when camera permission is denied", async () => {
@@ -108,7 +123,7 @@ describe("Call screen", () => {
     await waitFor(() => {
       expect(screen.getByTestId("language-hud")).toBeInTheDocument();
     });
-    expect(screen.getByText(questions[0].japanese)).toBeInTheDocument();
+    expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
     expect(
       screen.queryByText(questions[0].englishTranslation),
     ).not.toBeInTheDocument();
@@ -121,7 +136,7 @@ describe("Call screen", () => {
     await startStudentTurn();
 
     expect(screen.getByTestId("waveform")).toHaveClass("bg-indigo");
-    expect(screen.getByText(questions[0].japanese)).toBeInTheDocument();
+    expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
   });
 
   it("during the student turn, Speak and Type are shown and Submit is not until a choice is made", async () => {
@@ -177,8 +192,29 @@ describe("Call screen", () => {
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(questions[1].japanese)).toBeInTheDocument();
+      expect(hud().getByText(questions[1].japanese)).toBeInTheDocument();
     });
+  });
+
+  it("sidebar lists each submitted turn in order and shows Question 2 of 3", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: /type answer/i }));
+    await user.type(
+      screen.getByRole("textbox", { name: /answer/i }),
+      "はじめまして",
+    );
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+
+    const sidebar = within(screen.getByTestId("interview-sidebar"));
+    await waitFor(() => {
+      expect(sidebar.getByText("Question 2 of 3")).toBeInTheDocument();
+    });
+    const items = sidebar.getAllByRole("listitem");
+    expect(items[0]).toHaveTextContent(questions[0].japanese);
+    expect(items[1]).toHaveTextContent("はじめまして");
+    expect(items[2]).toHaveTextContent(questions[1].japanese);
+    expect(sidebar.getByText("Sensei speaking")).toBeInTheDocument();
   });
 
   it("empty Speak answer submit does not skip the Question", async () => {
@@ -188,7 +224,7 @@ describe("Call screen", () => {
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
 
     expect(screen.getByRole("textbox", { name: /answer/i })).toBeInTheDocument();
-    expect(screen.getByText(questions[0].japanese)).toBeInTheDocument();
+    expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
   });
 
   it("shows a live Japanese HUD caption from browser speech after Speak answer", async () => {
@@ -224,7 +260,7 @@ describe("Call screen", () => {
       created[0]?.onresult?.({ results: [spoken] });
     });
 
-    expect(screen.getByText(questions[0].japanese)).toBeInTheDocument();
+    expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
     expect(screen.getByText("こんにちは")).toBeInTheDocument();
   });
 
@@ -437,7 +473,7 @@ describe("Call screen", () => {
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     expect(screen.queryByText(/scoring|waiting|scribe/i)).not.toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.getByText(questions[1].japanese)).toBeInTheDocument();
+      expect(hud().getByText(questions[1].japanese)).toBeInTheDocument();
     });
   });
 });
