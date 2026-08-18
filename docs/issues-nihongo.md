@@ -223,10 +223,10 @@ indicator that switches between Indigo (student speaking) and Paper at
 ~60% opacity (sensei speaking) based on the current turn.
 
 ### Acceptance Criteria
-- [ ] HUD shows large Japanese text matching the active question while sensei speaks
-- [ ] Waveform is visually distinct between the sensei-speaking and student-speaking states
-- [ ] No English or Burmese caption appears yet for sensei outside pitch mode
-- [ ] No score or diagnostic text is shown anywhere on the call screen
+- [x] HUD shows large Japanese text matching the active question while sensei speaks
+- [x] Waveform is visually distinct between the sensei-speaking and student-speaking states
+- [x] No English or Burmese caption appears yet for sensei outside pitch mode
+- [x] No score or diagnostic text is shown anywhere on the call screen
 
 ### Technical Notes
 Sensei subtitles are always pre-written, never generated live.

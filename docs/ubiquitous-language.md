@@ -13,7 +13,7 @@
 
 | Term | Definition | What it is NOT | Used in code as |
 |------|------------|----------------|-----------------|
-| Interview | The full 3-question session: Q1 → answer → Q2 → answer → Q3 → answer → report. | Not a test/exam; never scored or gated on N5/JLPT/A1 terms. | Not yet typed as one object — will be the state machine built in Issue 5. |
+| Interview | The full 3-question session: Q1 → answer → Q2 → answer → Q3 → answer → report. | Not a test/exam; never scored or gated on N5/JLPT/A1 terms. | `useQuestionFlow` phases: `senseiSpeaking` → `studentAnswering` → next Question or `done` |
 | Question | One of Tanaka-sensei's 3 locked Japanese prompts, always shown with its English + Burmese translation in the HUD. | Not the student's answer; not the pitch-mode caption shown after an answer (see `PitchAnswer`). | `InterviewQuestion`, `questions` in `lib/content/questions.ts` |
 | PitchAnswer | Aung Min Khant's locked phone-clip answer for the 18:00 pitch, keyed by question index, with its own English + Burmese translation. | Not a live/typed answer from a real tester; not the sensei's question. | `PitchAnswer`, `pitchAnswers` in `lib/content/pitchAnswers.ts` |
 | Profile | Aung Min Khant's locked biographical + plan data (read-only, no live form). | Not a user account; not editable; not persisted anywhere. | `StudentProfile`, `profile` in `lib/content/profile.ts` |
@@ -27,13 +27,15 @@
 | RubricDoc | The generated, paste-into-n8n artifact: the Gemini prompt plus an equivalent dependency-free JS scoring snippet, both derived from the same source as `scoreReport()`. | Not the rubric module itself — it's a derived text artifact, snapshot-tested to catch drift. | `getRubricDoc()`, checked-in as `docs/rubric-generated.md` |
 | Pitch mode | The `?pitch=1` URL flag that switches on 18:00-demo behavior: canned `PitchAnswer` captions instead of live translation, and a canned last-screen swap when the live headline isn't `Ready`. | Not the phone-clip audio itself (that's `PitchAnswer`); not a separate build or deployment. | `?pitch=1` query param, read starting in Issue 14 |
 | InputMode | Whether a given answer was spoken (`"voice"`) or typed (`"typed"`) — determines whether Scribe runs and whether the "not checked for pronunciation" coaching line appears. | Not the camera on/off toggle — a separate, score-irrelevant control. | To be introduced in Issue 7 as `inputMode: "voice" \| "typed"` |
+| Turn | Who is currently speaking inside a Question: Tanaka-sensei delivering the prompt, or the student answering. Drives HUD caption + waveform. | Not mic on/off; not `InputMode` (voice vs typed); not the Question itself. | `QuestionPhase` `"senseiSpeaking"` \| `"studentAnswering"` in `useQuestionFlow`; HUD `speaker` `"sensei"` \| `"student"` |
 | Server-only module | Code under `lib/server/` that reads secrets and must never be imported by a `"use client"` file. | Not `lib/content/` — that data is non-secret and safe to import anywhere, including client components. | `lib/server/env.ts` convention (`getElevenLabsKey()`, etc.) |
 
 ## Relationships Between Terms
 
 An **Interview** consists of exactly 3 **Questions**, each answered once
 (voice or typed, tracked as **InputMode**) — never re-asked, never scored
-mid-call. In **Pitch mode**, a Question's real-time answer is ignored for
+mid-call. Each Question has two **Turns**: sensei speaking, then student
+answering. In **Pitch mode**, a Question's real-time answer is ignored for
 HUD captions; the matching **PitchAnswer** (by index) is shown instead,
 regardless of what was actually said or heard.
 
@@ -69,3 +71,4 @@ never rendered on screen.
 | Date | Term added/changed | Reason |
 |------|--------------------|--------|
 | 2026-08-18 | All 15 core terms | Initial dictionary, generated in Mode B from Issues 1-2 code plus `docs/prd-nihongo.md` / `context.md`, after the fact rather than during grill-me. |
+| 2026-08-18 | Turn | Added when Issue 6 split the coarse `"asking"` phase into sensei/student turns for the Language HUD. |

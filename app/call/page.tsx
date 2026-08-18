@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { LanguageHud } from "./LanguageHud";
 import { SenseiTile } from "./SenseiTile";
 import { StudentTile } from "./StudentTile";
 import { playQuestionAudio } from "./playQuestionAudio";
@@ -11,7 +12,8 @@ import { useQuestionFlow } from "./useQuestionFlow";
 export default function CallPage() {
   const { cameraState, toggleCamera, videoRef } = useCameraStream();
   const { micOn, toggleMic } = useMicToggle();
-  const { phase, currentQuestion, submitAnswer } = useQuestionFlow();
+  const { phase, currentQuestion, endSenseiTurn, submitAnswer } =
+    useQuestionFlow();
 
   // Warm the n8n grading workflow the moment Join lands us here.
   // Fire-and-forget — failure must never block or slow the interview.
@@ -21,10 +23,16 @@ export default function CallPage() {
 
   // Play each new question's audio as it becomes current.
   useEffect(() => {
-    if (currentQuestion) {
-      playQuestionAudio(currentQuestion.id);
-    }
-  }, [currentQuestion]);
+    if (!currentQuestion) return;
+
+    let cancelled = false;
+    playQuestionAudio(currentQuestion.id).then(() => {
+      if (!cancelled) endSenseiTurn();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentQuestion, endSenseiTurn]);
 
   return (
     <div
@@ -44,12 +52,23 @@ export default function CallPage() {
         <SenseiTile />
       </div>
 
+      {phase !== "done" && currentQuestion ? (
+        <div className="fixed inset-x-0 bottom-24 flex justify-center px-6">
+          <LanguageHud
+            speaker={phase === "studentAnswering" ? "student" : "sensei"}
+            caption={
+              phase === "senseiSpeaking" ? currentQuestion.japanese : null
+            }
+          />
+        </div>
+      ) : null}
+
       {/*
         Temporary answer-submit control — Issue 7 will replace this with
         the real Wispr/browser-speech input + "Type instead" flow.
       */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2">
-        {phase === "asking" ? (
+        {phase === "studentAnswering" ? (
           <button
             type="button"
             onClick={submitAnswer}
@@ -57,11 +76,11 @@ export default function CallPage() {
           >
             Submit answer
           </button>
-        ) : (
+        ) : phase === "done" ? (
           <p className="rounded-full bg-paper/10 px-6 py-3 font-medium text-paper">
             Interview complete
           </p>
-        )}
+        ) : null}
       </div>
     </div>
   );

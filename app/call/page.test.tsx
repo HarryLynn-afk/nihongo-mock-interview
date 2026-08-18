@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import { questions } from "@/lib/content/questions";
 import CallPage from "./page";
 
 describe("Call screen", () => {
@@ -7,12 +8,14 @@ describe("Call screen", () => {
   const fetchMock = vi.fn();
   const audioPlay = vi.fn();
   let capturedAudioSrcs: string[] = [];
+  let endedHandlers: Array<() => void> = [];
 
   beforeEach(() => {
     getUserMedia.mockResolvedValue({} as MediaStream);
     fetchMock.mockResolvedValue(new Response(null, { status: 202 }));
     audioPlay.mockResolvedValue(undefined);
     capturedAudioSrcs = [];
+    endedHandlers = [];
 
     class FakeAudio {
       src: string;
@@ -21,7 +24,9 @@ describe("Call screen", () => {
         this.src = src;
       }
       play = audioPlay;
-      addEventListener = () => {};
+      addEventListener = (event: string, handler: () => void) => {
+        if (event === "ended") endedHandlers.push(handler);
+      };
     }
 
     vi.stubGlobal("navigator", { mediaDevices: { getUserMedia } });
@@ -75,5 +80,56 @@ describe("Call screen", () => {
     await waitFor(() => {
       expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
     });
+  });
+
+  it("HUD shows the active Question's Japanese while sensei speaks", () => {
+    render(<CallPage />);
+
+    expect(screen.getByTestId("language-hud")).toBeInTheDocument();
+    expect(screen.getByText(questions[0].japanese)).toBeInTheDocument();
+    expect(
+      screen.queryByText(questions[0].englishTranslation),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(questions[0].burmeseTranslation),
+    ).not.toBeInTheDocument();
+  });
+
+  it("after sensei audio ends, the waveform switches to the student and the sensei caption clears", async () => {
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+    });
+    expect(screen.getByTestId("waveform")).toHaveClass("bg-paper/60");
+
+    await act(async () => {
+      endedHandlers.splice(0).forEach((handler) => handler());
+    });
+
+    expect(screen.getByTestId("waveform")).toHaveClass("bg-indigo");
+    expect(screen.queryByText(questions[0].japanese)).not.toBeInTheDocument();
+  });
+
+  it("during the student turn, Submit stays available and no EN/MY captions or scores appear", async () => {
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+    });
+    await act(async () => {
+      endedHandlers.splice(0).forEach((handler) => handler());
+    });
+
+    expect(
+      screen.getByRole("button", { name: /submit answer/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Interview complete")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(questions[0].englishTranslation),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(questions[0].burmeseTranslation),
+    ).not.toBeInTheDocument();
   });
 });
