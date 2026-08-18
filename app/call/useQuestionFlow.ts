@@ -4,6 +4,12 @@ import type { InterviewQuestion } from "@/lib/content/questions";
 
 export type QuestionPhase = "senseiSpeaking" | "studentAnswering" | "done";
 
+export type AnswerSubmission =
+  | { inputMode: "typed"; transcript: string }
+  | { inputMode: "voice"; transcript: string; audioClip: Blob };
+
+export type StoredAnswer = AnswerSubmission & { questionIndex: number };
+
 /**
  * Sequential Q1 → Q2 → Q3 → done state machine, including the sensei/student
  * turn inside each Question. No I/O — audio playback and answer capture live
@@ -12,6 +18,7 @@ export type QuestionPhase = "senseiSpeaking" | "studentAnswering" | "done";
 export function useQuestionFlow() {
   const [index, setIndex] = useState(0);
   const [turn, setTurn] = useState<"sensei" | "student">("sensei");
+  const [answers, setAnswers] = useState<StoredAnswer[]>([]);
 
   const isDone = index >= questions.length;
   const phase: QuestionPhase = isDone
@@ -27,11 +34,18 @@ export function useQuestionFlow() {
     setTurn((current) => (current === "sensei" ? "student" : current));
   }, []);
 
-  const submitAnswer = useCallback(() => {
-    if (phase !== "studentAnswering") return;
-    setIndex((current) => Math.min(current + 1, questions.length));
-    setTurn("sensei");
-  }, [phase]);
+  const submitAnswer = useCallback(
+    (submission: AnswerSubmission) => {
+      if (phase !== "studentAnswering") return;
+      setAnswers((current) => [
+        ...current,
+        { ...submission, questionIndex: index },
+      ]);
+      setIndex((current) => Math.min(current + 1, questions.length));
+      setTurn("sensei");
+    },
+    [phase, index],
+  );
 
-  return { phase, currentQuestion, endSenseiTurn, submitAnswer };
+  return { phase, currentQuestion, answers, endSenseiTurn, submitAnswer };
 }

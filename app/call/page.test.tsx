@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { questions } from "@/lib/content/questions";
 import CallPage from "./page";
 
@@ -131,5 +132,137 @@ describe("Call screen", () => {
     expect(
       screen.queryByText(questions[0].burmeseTranslation),
     ).not.toBeInTheDocument();
+  });
+
+  it("Type instead is visible during the student turn while the mic is on", async () => {
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+    });
+    await act(async () => {
+      endedHandlers.splice(0).forEach((handler) => handler());
+    });
+
+    expect(
+      screen.getByRole("button", { name: /type instead/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("Type instead reveals the answer box on the same call screen", async () => {
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+    });
+    await act(async () => {
+      endedHandlers.splice(0).forEach((handler) => handler());
+    });
+
+    await user.click(screen.getByRole("button", { name: /type instead/i }));
+
+    expect(screen.getByRole("textbox", { name: /answer/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /type instead/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the answer box by default when the mic is off during the student turn", async () => {
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+    });
+    await act(async () => {
+      endedHandlers.splice(0).forEach((handler) => handler());
+    });
+
+    await user.click(screen.getByRole("button", { name: /mic on/i }));
+
+    expect(screen.getByRole("textbox", { name: /answer/i })).toBeInTheDocument();
+  });
+
+  it("typed submit advances to the next Question's Japanese HUD caption", async () => {
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+    });
+    await act(async () => {
+      endedHandlers.splice(0).forEach((handler) => handler());
+    });
+
+    await user.click(screen.getByRole("button", { name: /type instead/i }));
+    await user.type(
+      screen.getByRole("textbox", { name: /answer/i }),
+      "はじめまして",
+    );
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(questions[1].japanese)).toBeInTheDocument();
+    });
+  });
+
+  it("empty voice submit does not skip the Question", async () => {
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+    });
+    await act(async () => {
+      endedHandlers.splice(0).forEach((handler) => handler());
+    });
+
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+
+    expect(screen.getByRole("textbox", { name: /answer/i })).toBeInTheDocument();
+    expect(screen.queryByText(questions[1].japanese)).not.toBeInTheDocument();
+  });
+
+  it("shows a live Japanese HUD caption from browser speech during the student turn", async () => {
+    const created: Array<{
+      onresult: ((event: { results: unknown[] }) => void) | null;
+      start: ReturnType<typeof vi.fn>;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
+
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+    });
+    await act(async () => {
+      endedHandlers.splice(0).forEach((handler) => handler());
+    });
+
+    await waitFor(() => {
+      expect(created[0]?.start).toHaveBeenCalled();
+    });
+
+    act(() => {
+      const spoken = Object.assign([{ transcript: "こんにちは" }], {
+        isFinal: false,
+      });
+      created[0]?.onresult?.({ results: [spoken] });
+    });
+
+    expect(screen.getByText("こんにちは")).toBeInTheDocument();
   });
 });
