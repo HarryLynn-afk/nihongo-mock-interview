@@ -152,11 +152,11 @@ on the permission dialog. Sensei tile shows the label
 underneath.
 
 ### Acceptance Criteria
-- [ ] Call screen renders both tiles side by side on an Ink background with Indigo accents
-- [ ] Camera toggle defaults on; a denied/blocked permission shows a placeholder tile and the interview still starts
-- [ ] Mic toggle defaults on
-- [ ] Sensei tile shows the static image, the exact label, and the school name
-- [ ] Camera state (on/off/blocked) never affects any score
+- [x] Call screen renders both tiles side by side on an Ink background with Indigo accents
+- [x] Camera toggle defaults on; a denied/blocked permission shows a placeholder tile and the interview still starts
+- [x] Mic toggle defaults on
+- [x] Sensei tile shows the static image, the exact label, and the school name
+- [x] Camera state (on/off/blocked) never affects any score
 
 ### Technical Notes
 Camera is presence-only. Scoring always comes from speech/text, never video.
