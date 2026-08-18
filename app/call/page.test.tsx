@@ -476,4 +476,59 @@ describe("Call screen", () => {
       expect(hud().getByText(questions[1].japanese)).toBeInTheDocument();
     });
   });
+
+  it("POSTs /api/score once after Q3 when Scribe is ready, without showing scores", async () => {
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    for (const question of questions) {
+      await waitFor(() => {
+        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+      });
+      await act(async () => {
+        endedHandlers.splice(0).forEach((handler) => handler());
+      });
+      await user.click(screen.getByRole("button", { name: /type answer/i }));
+      await user.type(
+        screen.getByRole("textbox", { name: /answer/i }),
+        `答え${question.id}`,
+      );
+      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+    }
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/score",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            answers: [
+              {
+                questionIndex: 0,
+                inputMode: "typed",
+                transcript: "答え1",
+              },
+              {
+                questionIndex: 1,
+                inputMode: "typed",
+                transcript: "答え2",
+              },
+              {
+                questionIndex: 2,
+                inputMode: "typed",
+                transcript: "答え3",
+              },
+            ],
+          }),
+        }),
+      );
+    });
+    expect(
+      fetchMock.mock.calls.filter((call) => String(call[0]) === "/api/score"),
+    ).toHaveLength(1);
+    expect(screen.getAllByText("Interview complete").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByText(/Ready|Almost Ready|Keep Practicing|準備OK/i),
+    ).not.toBeInTheDocument();
+  });
 });

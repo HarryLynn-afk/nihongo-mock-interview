@@ -11,6 +11,7 @@ For each of these six categories, give an integer score from 1 to 5:
 - studyPlan: next step after graduation, language target, realistic timeline
 - consistency: spoken answers vs. the student's written profile
 Also give 2-4 short coaching notes in plain language (です/ます and beginner grammar terms are fine).
+If an answer's inputMode is typed, score speaking only on whether they answered the question and used understandable です/ます — do not score pronunciation for that answer.
 Never use exam or certification labels in your scores or notes.
 Return strict JSON: { "scores": { <category>: <1-5 integer>, ... }, "coaching": [<string>, ...] }
 

@@ -29,4 +29,12 @@ describe("getRubricPrompt", () => {
       expect(prompt).not.toMatch(term);
     }
   });
+
+  it("tells the grader not to score pronunciation on typed answers", () => {
+    const prompt = getRubricPrompt();
+
+    expect(prompt).toMatch(/typed/i);
+    expect(prompt).toMatch(/pronunciation/i);
+    expect(prompt).toMatch(/です\/ます/);
+  });
 });

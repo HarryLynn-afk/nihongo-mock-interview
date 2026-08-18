@@ -9,6 +9,7 @@ import { playQuestionAudio } from "./playQuestionAudio";
 import { useAnswerCapture } from "./useAnswerCapture";
 import { useBackgroundScribe } from "./useBackgroundScribe";
 import { useCameraStream } from "./useCameraStream";
+import { useInterviewScore } from "./useInterviewScore";
 import { useMicToggle } from "./useMicToggle";
 import { useQuestionFlow } from "./useQuestionFlow";
 import { loadDevicePrefs } from "../components/devicePrefs";
@@ -21,7 +22,8 @@ export default function CallPage() {
   const { micOn, toggleMic } = useMicToggle({ initialOn: prefs.micOn });
   const { phase, currentQuestion, answers, endSenseiTurn, submitAnswer } =
     useQuestionFlow();
-  useBackgroundScribe({ answers, phase });
+  const scribe = useBackgroundScribe({ answers, phase });
+  useInterviewScore(scribe);
 
   const isPitchMode =
     typeof window !== "undefined" &&
