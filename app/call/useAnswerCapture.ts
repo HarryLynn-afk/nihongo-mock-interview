@@ -162,5 +162,6 @@ export function useAnswerCapture({
     onSpeakAnswer: () => setAnswerMode("speak"),
     onTypeAnswer: () => setAnswerMode("type"),
     onSubmitClick,
+    listening,
   };
 }

@@ -107,6 +107,23 @@ describe("useAnswerCapture", () => {
     expect(created[0]?.start).toHaveBeenCalled();
   });
 
+  it("listening is true after Speak answer while the mic is on", () => {
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit: vi.fn(),
+      }),
+    );
+
+    expect(result.current.listening).toBe(false);
+
+    act(() => result.current.onSpeakAnswer());
+
+    expect(result.current.listening).toBe(true);
+    expect(result.current.speakAnswerVisible).toBe(false);
+  });
+
   it("updates the live Japanese caption from browser speech after Speak answer", () => {
     const created: FakeSpeechRecognition[] = [];
     class FakeSpeechRecognition {

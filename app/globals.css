@@ -32,3 +32,82 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Listening aura — Figma community "Listening AI Button" blob variants */
+.speak-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(16px);
+  opacity: 0.9;
+}
+
+.speak-blob-a {
+  background: #4ee2ec;
+  animation: speak-blob-a 3.2s ease-in-out infinite;
+}
+
+.speak-blob-b {
+  background: #4a56e2;
+  animation: speak-blob-b 3.2s ease-in-out infinite;
+}
+
+.speak-blob-c {
+  background: #bd6df8;
+  animation: speak-blob-c 3.2s ease-in-out infinite;
+}
+
+@keyframes speak-blob-a {
+  0%,
+  100% {
+    inset: 2% 17% 18% 3%;
+  }
+  25% {
+    inset: 14% 18% 5% 2%;
+  }
+  50% {
+    inset: 16% 9% 4% 12%;
+  }
+  75% {
+    inset: 10% 2% 9% 18%;
+  }
+}
+
+@keyframes speak-blob-b {
+  0%,
+  100% {
+    inset: 12% 9% 0 3%;
+  }
+  25% {
+    inset: 12% 0 5% 18%;
+  }
+  50% {
+    inset: 2% 0 18% 21%;
+  }
+  75% {
+    inset: 4% 15% 11% 2%;
+  }
+}
+
+@keyframes speak-blob-c {
+  0%,
+  100% {
+    inset: 12% 0 10% 23%;
+  }
+  25% {
+    inset: 4% 0 18% 23%;
+  }
+  50% {
+    inset: -2% 16% 24% 6%;
+  }
+  75% {
+    inset: 27% 25% 0 2%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .speak-blob-a,
+  .speak-blob-b,
+  .speak-blob-c {
+    animation: none;
+  }
+}

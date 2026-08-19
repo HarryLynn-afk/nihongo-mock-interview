@@ -159,6 +159,17 @@ describe("Call screen", () => {
     expect(screen.queryByText("Interview complete")).not.toBeInTheDocument();
   });
 
+  it("Speak answer stays as a pressed listening control after it is chosen", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+
+    expect(
+      screen.getByRole("button", { name: /speak answer/i }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("speak-answer-glow")).toBeInTheDocument();
+  });
+
   it("Type answer reveals the answer box and Submit on the same call screen", async () => {
     const user = await startStudentTurn();
 

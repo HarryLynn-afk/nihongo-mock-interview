@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { InterviewSidebar } from "./InterviewSidebar";
 import { InterviewReportScreen } from "./InterviewReportScreen";
 import { LanguageHud } from "./LanguageHud";
+import { SpeakAnswerButton } from "./SpeakAnswerButton";
 import { SenseiTile } from "./SenseiTile";
 import { StudentTile } from "./StudentTile";
 import { buildReportView } from "./buildReportView";
@@ -71,6 +72,7 @@ export default function CallPage() {
     onSpeakAnswer,
     onTypeAnswer,
     onSubmitClick,
+    listening,
   } = useAnswerCapture({
     active: phase === "studentAnswering",
     micOn,
@@ -172,14 +174,11 @@ export default function CallPage() {
           />
         ) : null}
         <div className="flex items-center gap-3">
-          {speakAnswerVisible ? (
-            <button
-              type="button"
+          {speakAnswerVisible || listening ? (
+            <SpeakAnswerButton
+              listening={listening}
               onClick={handleSpeakAnswer}
-              className="rounded-full bg-indigo px-5 py-3 font-medium text-paper"
-            >
-              Speak answer
-            </button>
+            />
           ) : null}
           {typeAnswerVisible ? (
             <button
