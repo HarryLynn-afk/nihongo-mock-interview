@@ -43,3 +43,11 @@ export const pitchAnswers: readonly PitchAnswer[] = [
       "အထူးပြု ကျောင်းမှာ ဝဘ်ဖွံ့ဖြိုးမှု သင်ပါမယ်။ ပြီးရင် အင်ဂျင်နီယာ ဖြစ်ချင်ပါတယ်။",
   },
 ];
+
+export function getPitchCaptions(
+  questionIndex: number,
+): { english: string; burmese: string } | null {
+  const answer = pitchAnswers.find((row) => row.questionIndex === questionIndex);
+  if (!answer) return null;
+  return { english: answer.english, burmese: answer.burmese };
+}

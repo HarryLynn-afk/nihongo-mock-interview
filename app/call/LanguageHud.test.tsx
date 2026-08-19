@@ -66,4 +66,18 @@ describe("LanguageHud", () => {
     expect(screen.getByText("はじめまして。")).toBeInTheDocument();
     expect(screen.queryByText("Nice to meet you.")).not.toBeInTheDocument();
   });
+
+  it("renders a Burmese line when burmese is provided", () => {
+    render(
+      <LanguageHud
+        speaker="student"
+        caption="はじめに、簡単に自己紹介をお願いします。"
+        english="I am Aung Min Khant."
+        burmese="ကျွန်တော် အောင်မင်းခန့်ပါ။"
+      />,
+    );
+
+    expect(screen.getByText("I am Aung Min Khant.")).toBeInTheDocument();
+    expect(screen.getByText("ကျွန်တော် အောင်မင်းခန့်ပါ။")).toBeInTheDocument();
+  });
 });

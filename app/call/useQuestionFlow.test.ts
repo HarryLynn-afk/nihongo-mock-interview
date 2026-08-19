@@ -96,4 +96,22 @@ describe("useQuestionFlow", () => {
     expect(result.current.phase).toBe("senseiSpeaking");
     expect(result.current.currentQuestion).toBe(questions[0]);
   });
+
+  it("exposes questionIndex 0/1/2 then null when done", () => {
+    const { result } = renderHook(() => useQuestionFlow());
+
+    expect(result.current.questionIndex).toBe(0);
+
+    act(() => result.current.endSenseiTurn());
+    act(() => result.current.submitAnswer(typed()));
+    expect(result.current.questionIndex).toBe(1);
+
+    act(() => result.current.endSenseiTurn());
+    act(() => result.current.submitAnswer(typed()));
+    expect(result.current.questionIndex).toBe(2);
+
+    act(() => result.current.endSenseiTurn());
+    act(() => result.current.submitAnswer(typed()));
+    expect(result.current.questionIndex).toBeNull();
+  });
 });

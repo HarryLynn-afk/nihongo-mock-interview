@@ -7,6 +7,7 @@ import { LanguageHud } from "./LanguageHud";
 import { SenseiTile } from "./SenseiTile";
 import { StudentTile } from "./StudentTile";
 import { buildReportView } from "./buildReportView";
+import { selectDisplayedReport } from "./selectDisplayedReport";
 import { playQuestionAudio } from "./playQuestionAudio";
 import { useAnswerCapture } from "./useAnswerCapture";
 import { useBackgroundScribe } from "./useBackgroundScribe";
@@ -14,6 +15,7 @@ import { useCameraStream } from "./useCameraStream";
 import { useInterviewScore } from "./useInterviewScore";
 import { useMicToggle } from "./useMicToggle";
 import { useQuestionFlow } from "./useQuestionFlow";
+import { getPitchCaptions } from "@/lib/content/pitchAnswers";
 import { loadDevicePrefs } from "../components/devicePrefs";
 
 export default function CallPage() {
@@ -22,7 +24,7 @@ export default function CallPage() {
     startOn: prefs.cameraOn,
   });
   const { micOn, toggleMic } = useMicToggle({ initialOn: prefs.micOn });
-  const { phase, currentQuestion, answers, endSenseiTurn, submitAnswer } =
+  const { phase, currentQuestion, questionIndex, answers, endSenseiTurn, submitAnswer } =
     useQuestionFlow();
   const scribe = useBackgroundScribe({ answers, phase });
   const { report } = useInterviewScore(scribe);
@@ -104,6 +106,15 @@ export default function CallPage() {
     onSpeakAnswer();
   }
 
+  const pitchCaptions =
+    isPitchMode && phase === "studentAnswering" && questionIndex !== null
+      ? getPitchCaptions(questionIndex)
+      : null;
+  const liveEnglish =
+    englishOverlay && englishOverlay.forCaption === liveCaption
+      ? englishOverlay.text
+      : null;
+
   return (
     <div
       data-testid="call-screen"
@@ -113,9 +124,9 @@ export default function CallPage() {
       {phase === "done" && report ? (
         <InterviewReportScreen
           view={buildReportView({
-            report,
-            answers: answers.map(({ questionIndex, inputMode }) => ({
-              questionIndex,
+            report: selectDisplayedReport({ isPitchMode, live: report }),
+            answers: answers.map(({ questionIndex: index, inputMode }) => ({
+              questionIndex: index,
               inputMode,
             })),
           })}
@@ -143,11 +154,8 @@ export default function CallPage() {
             speaker={phase === "studentAnswering" ? "student" : "sensei"}
             caption={currentQuestion.japanese}
             liveCaption={liveCaption}
-            english={
-              englishOverlay && englishOverlay.forCaption === liveCaption
-                ? englishOverlay.text
-                : null
-            }
+            english={pitchCaptions?.english ?? liveEnglish}
+            burmese={pitchCaptions?.burmese ?? null}
           />
         </div>
       ) : null}

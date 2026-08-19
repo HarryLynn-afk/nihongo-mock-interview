@@ -3,6 +3,7 @@ type LanguageHudProps = {
   caption: string | null;
   liveCaption?: string | null;
   english?: string | null;
+  burmese?: string | null;
 };
 
 export function LanguageHud({
@@ -10,6 +11,7 @@ export function LanguageHud({
   caption,
   liveCaption,
   english,
+  burmese,
 }: LanguageHudProps) {
   const waveformClass = speaker === "student" ? "bg-indigo" : "bg-paper/60";
 
@@ -36,6 +38,9 @@ export function LanguageHud({
       ) : null}
       {english ? (
         <p className="text-center text-lg text-paper/80">{english}</p>
+      ) : null}
+      {burmese ? (
+        <p className="text-center text-lg text-paper/80">{burmese}</p>
       ) : null}
     </div>
   );

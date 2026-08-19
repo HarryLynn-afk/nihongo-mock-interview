@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pitchAnswers } from "./pitchAnswers";
+import { pitchAnswers, getPitchCaptions } from "./pitchAnswers";
 
 const FORBIDDEN_TERMS = [/N5/, /JLPT/, /\bA1\b/, /\bPass\b/, /\bFail\b/];
 
@@ -36,5 +36,29 @@ describe("pitchAnswers", () => {
     for (const term of FORBIDDEN_TERMS) {
       expect(allText).not.toMatch(term);
     }
+  });
+});
+
+describe("getPitchCaptions", () => {
+  it("returns the locked English and Burmese for question index 0, not the Japanese clip line", () => {
+    const captions = getPitchCaptions(0);
+
+    expect(captions).toEqual({
+      english: pitchAnswers[0].english,
+      burmese: pitchAnswers[0].burmese,
+    });
+    expect(captions).not.toHaveProperty("japanese");
+  });
+
+  it("looks up by question index for Q2 and Q3 and returns null for an unknown index", () => {
+    expect(getPitchCaptions(1)).toEqual({
+      english: pitchAnswers[1].english,
+      burmese: pitchAnswers[1].burmese,
+    });
+    expect(getPitchCaptions(2)).toEqual({
+      english: pitchAnswers[2].english,
+      burmese: pitchAnswers[2].burmese,
+    });
+    expect(getPitchCaptions(3)).toBeNull();
   });
 });

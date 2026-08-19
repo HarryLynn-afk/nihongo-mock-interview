@@ -47,5 +47,12 @@ export function useQuestionFlow() {
     [phase, index],
   );
 
-  return { phase, currentQuestion, answers, endSenseiTurn, submitAnswer };
+  return {
+    phase,
+    currentQuestion,
+    questionIndex: isDone ? null : index,
+    answers,
+    endSenseiTurn,
+    submitAnswer,
+  };
 }
