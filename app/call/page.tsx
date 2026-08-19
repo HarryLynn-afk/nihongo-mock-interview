@@ -93,11 +93,13 @@ export default function CallPage() {
     if (!currentQuestion) return;
 
     let cancelled = false;
-    playQuestionAudio(currentQuestion.id).then(() => {
+    const playback = playQuestionAudio(currentQuestion.id);
+    playback.ended.then(() => {
       if (!cancelled) endSenseiTurn();
     });
     return () => {
       cancelled = true;
+      playback.stop();
     };
   }, [currentQuestion, endSenseiTurn]);
 

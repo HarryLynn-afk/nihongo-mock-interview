@@ -3,17 +3,37 @@
  * or cares whether the server served live ElevenLabs TTS or the local
  * fallback — playback contract is identical either way.
  *
- * Returns a promise that resolves when playback ends (or errors —
- * playback errors are non-fatal, the flow still advances).
+ * Returns ended (resolves when playback finishes or is stopped) plus stop()
+ * so effect cleanup can halt a player (React Strict Mode remount).
  */
 export function playQuestionAudio(
   questionId: number,
   AudioImpl: typeof Audio = Audio,
-): Promise<void> {
-  return new Promise((resolve) => {
+): { ended: Promise<void>; stop: () => void } {
+  let settled = false;
+  let stopImpl = () => {};
+
+  const ended = new Promise<void>((resolve) => {
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+
     const audio = new AudioImpl(`/api/tts?questionId=${questionId}`);
-    audio.addEventListener("ended", () => resolve());
-    audio.addEventListener("error", () => resolve());
-    audio.play().catch(() => resolve());
+    audio.addEventListener("ended", finish);
+    audio.addEventListener("error", finish);
+    audio.play().catch(finish);
+
+    stopImpl = () => {
+      if (typeof audio.pause === "function") audio.pause();
+      audio.src = "";
+      finish();
+    };
   });
+
+  return {
+    ended,
+    stop: () => stopImpl(),
+  };
 }

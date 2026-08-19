@@ -12,12 +12,15 @@ describe("playQuestionAudio", () => {
         this.src = src;
       }
       play = play;
+      pause = vi.fn();
       addEventListener = () => {};
     }
 
-    playQuestionAudio(2, FakeAudio as unknown as typeof Audio);
+    const playback = playQuestionAudio(2, FakeAudio as unknown as typeof Audio);
 
     expect(capturedSrc).toBe("/api/tts?questionId=2");
     expect(play).toHaveBeenCalledOnce();
+    playback.stop();
+    expect(playback.ended).toBeInstanceOf(Promise);
   });
 });
