@@ -1,5 +1,8 @@
 import { profile } from "@/lib/content/profile";
 import { getRubricPrompt, parseRawScores, scoreReport } from "@/lib/content/rubric";
+import type { InterviewReport } from "@/lib/content/sampleReport";
+
+export type { InterviewReport };
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_GRADE_MODEL = "qwen/qwen3.6-27b";
@@ -8,13 +11,6 @@ export type GradeAnswer = {
   questionIndex: number;
   inputMode: "voice" | "typed";
   transcript: string;
-};
-
-export type InterviewReport = ReturnType<typeof scoreReport> & {
-  coaching: string[];
-  profileName: string;
-  source: "n8n" | "grade";
-  banner: null;
 };
 
 export async function runGroqGrade({

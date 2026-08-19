@@ -147,4 +147,36 @@ describe("POST /api/score", () => {
       fetchMock.mock.calls.some((call) => String(call[0]).includes("/api/grade")),
     ).toBe(false);
   });
+
+  it("returns the sample report with the scoring-unavailable banner when n8n and Groq both fail", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new Error("down")),
+    );
+
+    const { POST } = await import("./route");
+    const res = await POST(
+      new Request("http://localhost/api/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          answers: [
+            {
+              questionIndex: 0,
+              inputMode: "typed",
+              transcript: "はじめまして。",
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      report: { source: string; banner: string | null; headline: string };
+    };
+    expect(body.report.source).toBe("sample");
+    expect(body.report.headline).toBe("Ready");
+    expect(body.report.banner).toBe("Scoring unavailable — sample report.");
+  });
 });

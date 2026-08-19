@@ -77,4 +77,103 @@ describe("useInterviewScore", () => {
       }),
     );
   });
+
+  it("keeps the { report } JSON from /api/score, including a dual-fail banner", async () => {
+    const sampleReport = {
+      headline: "Ready",
+      source: "sample",
+      banner: "Scoring unavailable — sample report.",
+    };
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ report: sampleReport }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const collection: ScribeCollection = {
+      status: "ready",
+      answers: [
+        {
+          questionIndex: 0,
+          inputMode: "typed",
+          transcript: "はい。",
+          useSubmittedTranscript: true,
+        },
+      ],
+    };
+
+    const { result } = renderHook(() => useInterviewScore(collection));
+
+    await waitFor(() => {
+      expect(result.current.report).toEqual(sampleReport);
+    });
+  });
+
+  it("uses the sample report with the scoring-unavailable banner when /api/score fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new Error("network down")),
+    );
+
+    const collection: ScribeCollection = {
+      status: "ready",
+      answers: [
+        {
+          questionIndex: 0,
+          inputMode: "typed",
+          transcript: "はい。",
+          useSubmittedTranscript: true,
+        },
+      ],
+    };
+
+    const { result } = renderHook(() => useInterviewScore(collection));
+
+    await waitFor(() => {
+      expect(result.current.report).toEqual(
+        expect.objectContaining({
+          headline: "Ready",
+          source: "sample",
+          banner: "Scoring unavailable — sample report.",
+        }),
+      );
+    });
+  });
+
+  it("uses the sample report when /api/score returns a null report", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ report: null }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+
+    const collection: ScribeCollection = {
+      status: "ready",
+      answers: [
+        {
+          questionIndex: 0,
+          inputMode: "typed",
+          transcript: "はい。",
+          useSubmittedTranscript: true,
+        },
+      ],
+    };
+
+    const { result } = renderHook(() => useInterviewScore(collection));
+
+    await waitFor(() => {
+      expect(result.current.report).toEqual(
+        expect.objectContaining({
+          source: "sample",
+          banner: "Scoring unavailable — sample report.",
+        }),
+      );
+    });
+  });
 });

@@ -23,7 +23,7 @@ export default function CallPage() {
   const { phase, currentQuestion, answers, endSenseiTurn, submitAnswer } =
     useQuestionFlow();
   const scribe = useBackgroundScribe({ answers, phase });
-  useInterviewScore(scribe);
+  const { report } = useInterviewScore(scribe);
 
   const isPitchMode =
     typeof window !== "undefined" &&
@@ -178,6 +178,9 @@ export default function CallPage() {
             </p>
           ) : null}
         </div>
+        {report?.banner ? (
+          <p className="text-sm text-paper/80">{report.banner}</p>
+        ) : null}
       </div>
     </div>
   );

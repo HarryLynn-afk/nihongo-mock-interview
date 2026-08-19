@@ -531,4 +531,102 @@ describe("Call screen", () => {
       screen.queryByText(/Ready|Almost Ready|Keep Practicing|準備OK/i),
     ).not.toBeInTheDocument();
   });
+
+  it("shows the scoring-unavailable banner when /api/score returns the sample report, with no spinner", async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      if (String(input).includes("/api/score")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              report: {
+                headline: "Ready",
+                stamp: "準備OK",
+                source: "sample",
+                banner: "Scoring unavailable — sample report.",
+              },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      return Promise.resolve(new Response(null, { status: 202 }));
+    });
+
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    for (const question of questions) {
+      await waitFor(() => {
+        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+      });
+      await act(async () => {
+        endedHandlers.splice(0).forEach((handler) => handler());
+      });
+      await user.click(screen.getByRole("button", { name: /type answer/i }));
+      await user.type(
+        screen.getByRole("textbox", { name: /answer/i }),
+        `答え${question.id}`,
+      );
+      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+    }
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Scoring unavailable — sample report."),
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Interview complete").length).toBeGreaterThan(0);
+    expect(screen.queryByText("準備OK")).not.toBeInTheDocument();
+  });
+
+  it("does not show the scoring-unavailable banner when /api/score returns a live report", async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      if (String(input).includes("/api/score")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              report: {
+                headline: "Ready",
+                stamp: "準備OK",
+                source: "n8n",
+                banner: null,
+              },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      return Promise.resolve(new Response(null, { status: 202 }));
+    });
+
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    for (const question of questions) {
+      await waitFor(() => {
+        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+      });
+      await act(async () => {
+        endedHandlers.splice(0).forEach((handler) => handler());
+      });
+      await user.click(screen.getByRole("button", { name: /type answer/i }));
+      await user.type(
+        screen.getByRole("textbox", { name: /answer/i }),
+        `答え${question.id}`,
+      );
+      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+    }
+
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some((call) => String(call[0]) === "/api/score"),
+      ).toBe(true);
+    });
+    expect(
+      screen.queryByText("Scoring unavailable — sample report."),
+    ).not.toBeInTheDocument();
+    expect(screen.getAllByText("Interview complete").length).toBeGreaterThan(0);
+    expect(screen.queryByText("準備OK")).not.toBeInTheDocument();
+  });
 });

@@ -1,4 +1,8 @@
 import { profile } from "@/lib/content/profile";
+import {
+  getSampleReport,
+  SCORING_UNAVAILABLE_BANNER,
+} from "@/lib/content/sampleReport";
 import type { GradeAnswer, InterviewReport } from "./runGroqGrade";
 
 export async function gradeInterview({
@@ -13,9 +17,15 @@ export async function gradeInterview({
   getWebhookUrl: () => string;
   fallback: () => Promise<InterviewReport | null>;
   timeoutMs?: number;
-}): Promise<InterviewReport | null> {
+}): Promise<InterviewReport> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  async function finishWithFallback(): Promise<InterviewReport> {
+    return (
+      (await fallback()) ?? getSampleReport(SCORING_UNAVAILABLE_BANNER)
+    );
+  }
 
   try {
     const res = await n8nFetch(getWebhookUrl(), {
@@ -24,14 +34,14 @@ export async function gradeInterview({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ profile, answers }),
     });
-    if (!res.ok) return fallback();
+    if (!res.ok) return finishWithFallback();
     const data = (await res.json()) as InterviewReport;
     if (typeof data?.headline === "string") {
       return { ...data, source: "n8n", banner: null };
     }
-    return fallback();
+    return finishWithFallback();
   } catch {
-    return fallback();
+    return finishWithFallback();
   } finally {
     clearTimeout(timeout);
   }

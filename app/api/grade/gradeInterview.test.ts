@@ -116,4 +116,22 @@ describe("gradeInterview", () => {
     expect(report).toEqual(fallbackReport);
     expect(fallback).toHaveBeenCalledOnce();
   });
+
+  it("uses the sample report with the scoring-unavailable banner when n8n and the Groq fallback both fail", async () => {
+    const n8nFetch = vi.fn().mockRejectedValue(new Error("n8n down"));
+    const fallback = vi.fn().mockResolvedValue(null);
+
+    const report = await gradeInterview({
+      answers,
+      n8nFetch,
+      getWebhookUrl: () => "https://example.com/webhook/nihongo-grade",
+      fallback,
+    });
+
+    expect(report?.source).toBe("sample");
+    expect(report?.banner).toBe("Scoring unavailable — sample report.");
+    expect(report?.headline).toBe("Ready");
+    expect(fallback).toHaveBeenCalledOnce();
+    expect(n8nFetch).toHaveBeenCalledOnce();
+  });
 });

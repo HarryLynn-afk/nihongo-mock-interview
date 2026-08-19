@@ -82,7 +82,7 @@ function generateScoringSnippet(): string {
   const weightsLiteral = JSON.stringify(CATEGORY_WEIGHTS, null, 2);
   return [
     "// Auto-generated from lib/content/rubric.ts — paste into an n8n Code node",
-    "// that runs after the Gemini node, on its { scores } JSON output.",
+    "// that runs after the LLM node, on its { scores } JSON output.",
     "function scoreReport(rawScores) {",
     `  const weights = ${weightsLiteral};`,
     "  const scores = {};",
@@ -115,7 +115,7 @@ function generateScoringSnippet(): string {
 
 /**
  * The single paste-ready artifact for building the n8n workflow: the
- * Gemini-node prompt plus a dependency-free JS Code-node snippet, both
+ * LLM-node prompt plus a dependency-free JS Code-node snippet, both
  * generated from the same source as getRubricPrompt()/scoreReport() in
  * this file. Regenerate and re-paste into n8n whenever this file changes —
  * lib/content/rubricDoc.test.ts fails if docs/rubric-generated.md is stale.
@@ -124,11 +124,11 @@ export function getRubricDoc(): string {
   return [
     "# NihonGo rubric — paste into n8n",
     "",
-    "## Gemini node system prompt",
+    "## LLM node system prompt",
     "",
     getRubricPrompt(),
     "",
-    "## Code node (runs after the Gemini node)",
+    "## Code node (runs after the LLM node)",
     "",
     generateScoringSnippet(),
     "",

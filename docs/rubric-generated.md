@@ -1,6 +1,6 @@
 # NihonGo rubric — paste into n8n
 
-## Gemini node system prompt
+## LLM node system prompt
 
 You are grading a beginner Japanese language-school admission interview practice session.
 For each of these six categories, give an integer score from 1 to 5:
@@ -15,10 +15,10 @@ If an answer's inputMode is typed, score speaking only on whether they answered 
 Never use exam or certification labels in your scores or notes.
 Return strict JSON: { "scores": { <category>: <1-5 integer>, ... }, "coaching": [<string>, ...] }
 
-## Code node (runs after the Gemini node)
+## Code node (runs after the LLM node)
 
 // Auto-generated from lib/content/rubric.ts — paste into an n8n Code node
-// that runs after the Gemini node, on its { scores } JSON output.
+// that runs after the LLM node, on its { scores } JSON output.
 function scoreReport(rawScores) {
   const weights = {
   "speaking": 20,
