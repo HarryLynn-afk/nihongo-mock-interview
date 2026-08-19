@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { InterviewSidebar } from "./InterviewSidebar";
+import { InterviewReportScreen } from "./InterviewReportScreen";
 import { LanguageHud } from "./LanguageHud";
 import { SenseiTile } from "./SenseiTile";
 import { StudentTile } from "./StudentTile";
+import { buildReportView } from "./buildReportView";
 import { playQuestionAudio } from "./playQuestionAudio";
 import { useAnswerCapture } from "./useAnswerCapture";
 import { useBackgroundScribe } from "./useBackgroundScribe";
@@ -108,18 +110,32 @@ export default function CallPage() {
       className="flex min-h-screen flex-col items-center justify-center gap-6 bg-ink p-6 md:flex-row"
     >
       <InterviewSidebar phase={phase} answers={answers} />
-      <div className="w-full max-w-md">
-        <StudentTile
-          cameraState={cameraState}
-          micOn={micOn}
-          videoRef={videoRef}
-          onToggleCamera={toggleCamera}
-          onToggleMic={toggleMic}
+      {phase === "done" && report ? (
+        <InterviewReportScreen
+          view={buildReportView({
+            report,
+            answers: answers.map(({ questionIndex, inputMode }) => ({
+              questionIndex,
+              inputMode,
+            })),
+          })}
         />
-      </div>
-      <div className="w-full max-w-md">
-        <SenseiTile />
-      </div>
+      ) : (
+        <>
+          <div className="w-full max-w-md">
+            <StudentTile
+              cameraState={cameraState}
+              micOn={micOn}
+              videoRef={videoRef}
+              onToggleCamera={toggleCamera}
+              onToggleMic={toggleMic}
+            />
+          </div>
+          <div className="w-full max-w-md">
+            <SenseiTile />
+          </div>
+        </>
+      )}
 
       {phase !== "done" && currentQuestion ? (
         <div className="fixed inset-x-0 bottom-24 flex justify-center px-6">
@@ -172,7 +188,7 @@ export default function CallPage() {
             >
               Submit answer
             </button>
-          ) : phase === "done" ? (
+          ) : phase === "done" && !report ? (
             <p className="rounded-full bg-paper/10 px-6 py-3 font-medium text-paper">
               Interview complete
             </p>
