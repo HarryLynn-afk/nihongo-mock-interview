@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getGeminiGradeKey } from "@/lib/server/env/geminiGrade";
-import { runGeminiGrade } from "./runGeminiGrade";
+import { getGroqGradeKey } from "@/lib/server/env/groqGrade";
+import { runGroqGrade } from "./runGroqGrade";
 import { parseAnswers } from "./parseAnswers";
 
 export async function POST(request: Request) {
@@ -20,10 +20,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing answers" }, { status: 400 });
   }
 
-  const report = await runGeminiGrade({
+  const report = await runGroqGrade({
     answers,
-    geminiFetch: fetch,
-    getGradeKey: getGeminiGradeKey,
+    groqFetch: fetch,
+    getGradeKey: getGroqGradeKey,
   });
 
   return NextResponse.json({ report });

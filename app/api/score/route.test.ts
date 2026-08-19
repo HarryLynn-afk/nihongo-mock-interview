@@ -8,7 +8,7 @@ describe("POST /api/score", () => {
     vi.resetModules();
     process.env = {
       ...ORIGINAL_ENV,
-      GEMINI_GRADE_API_KEY: "test-grade-key",
+      GROQ_GRADE_API_KEY: "test-grade-key",
       N8N_WEBHOOK_URL: "https://example.com/webhook/nihongo-grade",
     };
   });
@@ -31,7 +31,7 @@ describe("POST /api/score", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns { report } from n8n and does not call Gemini", async () => {
+  it("returns { report } from n8n and does not call Groq", async () => {
     const n8nReport = {
       headline: "Ready",
       stamp: "準備OK",
@@ -83,36 +83,32 @@ describe("POST /api/score", () => {
     );
     expect(
       fetchMock.mock.calls.some((call) =>
-        String(call[0]).includes("generativelanguage.googleapis.com"),
+        String(call[0]).includes("api.groq.com"),
       ),
     ).toBe(false);
   });
 
-  it("returns { report } from in-process Gemini once when n8n errors, without calling /api/grade", async () => {
+  it("returns { report } from in-process Groq once when n8n errors, without calling /api/grade", async () => {
     const fetchMock = vi.fn((input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("generativelanguage.googleapis.com")) {
+      if (url.includes("api.groq.com")) {
         return Promise.resolve(
           new Response(
             JSON.stringify({
-              candidates: [
+              choices: [
                 {
-                  content: {
-                    parts: [
-                      {
-                        text: JSON.stringify({
-                          scores: {
-                            speaking: 5,
-                            listening: 4,
-                            grammarPoliteness: 4,
-                            motivation: 5,
-                            studyPlan: 5,
-                            consistency: 4,
-                          },
-                          coaching: ["Use です/ます all the way through."],
-                        }),
+                  message: {
+                    content: JSON.stringify({
+                      scores: {
+                        speaking: 5,
+                        listening: 4,
+                        grammarPoliteness: 4,
+                        motivation: 5,
+                        studyPlan: 5,
+                        consistency: 4,
                       },
-                    ],
+                      coaching: ["Use です/ます all the way through."],
+                    }),
                   },
                 },
               ],

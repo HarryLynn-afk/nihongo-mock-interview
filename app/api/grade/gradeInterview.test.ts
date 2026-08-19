@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { gradeInterview } from "./gradeInterview";
-import type { InterviewReport } from "./runGeminiGrade";
+import type { InterviewReport } from "./runGroqGrade";
 
 const answers = [
   {
@@ -30,7 +30,10 @@ const n8nReport: InterviewReport = {
 };
 
 describe("gradeInterview", () => {
-  it("uses a valid n8n report and does not call the Gemini fallback", async () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+  it("uses a valid n8n report and does not call the Groq fallback", async () => {
     const n8nFetch = vi.fn().mockResolvedValue(
       new Response(JSON.stringify(n8nReport), {
         status: 200,
@@ -59,7 +62,7 @@ describe("gradeInterview", () => {
     expect(posted.answers).toEqual(answers);
   });
 
-  it("calls the Gemini fallback once when n8n exceeds timeoutMs, without retrying n8n", async () => {
+  it("calls the Groq fallback once when n8n exceeds timeoutMs, without retrying n8n", async () => {
     const n8nFetch = vi.fn(
       (_url: string, init?: RequestInit) =>
         new Promise<Response>((_resolve, reject) => {
@@ -82,5 +85,35 @@ describe("gradeInterview", () => {
     expect(report).toEqual(fallbackReport);
     expect(fallback).toHaveBeenCalledOnce();
     expect(n8nFetch).toHaveBeenCalledOnce();
+  });
+
+  it("waits 10s for n8n by default before calling the Groq fallback", async () => {
+    vi.useFakeTimers();
+    const n8nFetch = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("Aborted", "AbortError")),
+          );
+        }),
+    );
+    const fallbackReport: InterviewReport = { ...n8nReport, source: "grade" };
+    const fallback = vi.fn().mockResolvedValue(fallbackReport);
+
+    const pending = gradeInterview({
+      answers,
+      n8nFetch,
+      getWebhookUrl: () => "https://example.com/webhook/nihongo-grade",
+      fallback,
+    });
+
+    await vi.advanceTimersByTimeAsync(9_999);
+    expect(fallback).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
+    const report = await pending;
+
+    expect(report).toEqual(fallbackReport);
+    expect(fallback).toHaveBeenCalledOnce();
   });
 });

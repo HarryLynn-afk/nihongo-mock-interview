@@ -17,7 +17,7 @@ describe("POST /api/grade", () => {
     vi.resetModules();
     process.env = {
       ...ORIGINAL_ENV,
-      GEMINI_GRADE_API_KEY: "test-grade-key",
+      GROQ_GRADE_API_KEY: "test-grade-key",
     };
   });
 
@@ -39,21 +39,17 @@ describe("POST /api/grade", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns { report } from Gemini using GEMINI_GRADE_API_KEY and gemini-3.6-flash", async () => {
-    const geminiFetch = vi.fn().mockResolvedValue(
+  it("returns { report } from Groq using GROQ_GRADE_API_KEY and qwen/qwen3.6-27b", async () => {
+    const groqFetch = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
-          candidates: [
+          choices: [
             {
-              content: {
-                parts: [
-                  {
-                    text: JSON.stringify({
-                      scores: SAMPLE_SCORES,
-                      coaching: ["Use です/ます all the way through."],
-                    }),
-                  },
-                ],
+              message: {
+                content: JSON.stringify({
+                  scores: SAMPLE_SCORES,
+                  coaching: ["Use です/ます all the way through."],
+                }),
               },
             },
           ],
@@ -61,7 +57,7 @@ describe("POST /api/grade", () => {
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
     );
-    vi.stubGlobal("fetch", geminiFetch);
+    vi.stubGlobal("fetch", groqFetch);
 
     const { POST } = await import("./route");
     const res = await POST(
@@ -84,13 +80,17 @@ describe("POST /api/grade", () => {
     const body = (await res.json()) as { report: { headline: string; source: string } };
     expect(body.report.headline).toBe("Ready");
     expect(body.report.source).toBe("grade");
-    expect(geminiFetch).toHaveBeenCalledWith(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+    expect(groqFetch).toHaveBeenCalledWith(
+      "https://api.groq.com/openai/v1/chat/completions",
       expect.objectContaining({
         headers: expect.objectContaining({
-          "x-goog-api-key": "test-grade-key",
+          Authorization: "Bearer test-grade-key",
         }),
       }),
     );
+    const groqBody = JSON.parse(
+      String((groqFetch.mock.calls[0][1] as RequestInit).body),
+    ) as { model?: string };
+    expect(groqBody.model).toBe("qwen/qwen3.6-27b");
   });
 });

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getGeminiGradeKey } from "@/lib/server/env/geminiGrade";
+import { getGroqGradeKey } from "@/lib/server/env/groqGrade";
 import { getN8nWebhookUrl } from "@/lib/server/env/n8n";
 import { gradeInterview } from "../grade/gradeInterview";
 import { parseAnswers } from "../grade/parseAnswers";
-import { runGeminiGrade } from "../grade/runGeminiGrade";
+import { runGroqGrade } from "../grade/runGroqGrade";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -27,10 +27,10 @@ export async function POST(request: Request) {
     n8nFetch: fetch,
     getWebhookUrl: getN8nWebhookUrl,
     fallback: () =>
-      runGeminiGrade({
+      runGroqGrade({
         answers,
-        geminiFetch: fetch,
-        getGradeKey: getGeminiGradeKey,
+        groqFetch: fetch,
+        getGradeKey: getGroqGradeKey,
       }),
   });
 

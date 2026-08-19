@@ -1,4 +1,4 @@
-import type { GradeAnswer } from "./runGeminiGrade";
+import type { GradeAnswer } from "./runGroqGrade";
 
 export function parseAnswers(value: unknown): GradeAnswer[] | null {
   if (!Array.isArray(value) || value.length === 0) return null;

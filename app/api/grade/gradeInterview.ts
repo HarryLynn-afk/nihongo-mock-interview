@@ -1,12 +1,12 @@
 import { profile } from "@/lib/content/profile";
-import type { GradeAnswer, InterviewReport } from "./runGeminiGrade";
+import type { GradeAnswer, InterviewReport } from "./runGroqGrade";
 
 export async function gradeInterview({
   answers,
   n8nFetch,
   getWebhookUrl,
   fallback,
-  timeoutMs = 5_000,
+  timeoutMs = 10_000,
 }: {
   answers: GradeAnswer[];
   n8nFetch: typeof fetch;

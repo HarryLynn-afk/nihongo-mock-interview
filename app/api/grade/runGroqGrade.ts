@@ -1,8 +1,8 @@
 import { profile } from "@/lib/content/profile";
 import { getRubricPrompt, parseRawScores, scoreReport } from "@/lib/content/rubric";
 
-const GEMINI_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_GRADE_MODEL = "qwen/qwen3.6-27b";
 
 export type GradeAnswer = {
   questionIndex: number;
@@ -17,36 +17,36 @@ export type InterviewReport = ReturnType<typeof scoreReport> & {
   banner: null;
 };
 
-export async function runGeminiGrade({
+export async function runGroqGrade({
   answers,
-  geminiFetch,
+  groqFetch,
   getGradeKey,
 }: {
   answers: GradeAnswer[];
-  geminiFetch: typeof fetch;
+  groqFetch: typeof fetch;
   getGradeKey: () => string;
 }): Promise<InterviewReport | null> {
   try {
-    const res = await geminiFetch(GEMINI_URL, {
+    const res = await groqFetch(GROQ_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": getGradeKey(),
+        Authorization: `Bearer ${getGradeKey()}`,
       },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: getRubricPrompt() }] },
-        contents: [
-          {
-            parts: [{ text: JSON.stringify({ profile, answers }) }],
-          },
+        model: GROQ_GRADE_MODEL,
+        messages: [
+          { role: "system", content: getRubricPrompt() },
+          { role: "user", content: JSON.stringify({ profile, answers }) },
         ],
+        temperature: 0,
       }),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as {
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      choices?: Array<{ message?: { content?: string } }>;
     };
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    const text = data.choices?.[0]?.message?.content?.trim();
     if (!text) return null;
     const parsed = JSON.parse(text) as {
       scores?: unknown;
