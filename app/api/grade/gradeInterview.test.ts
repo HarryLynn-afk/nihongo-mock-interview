@@ -87,7 +87,7 @@ describe("gradeInterview", () => {
     expect(n8nFetch).toHaveBeenCalledOnce();
   });
 
-  it("waits 10s for n8n by default before calling the Groq fallback", async () => {
+  it("waits 20s for n8n by default before calling the Groq fallback", async () => {
     vi.useFakeTimers();
     const n8nFetch = vi.fn(
       (_url: string, init?: RequestInit) =>
@@ -107,7 +107,7 @@ describe("gradeInterview", () => {
       fallback,
     });
 
-    await vi.advanceTimersByTimeAsync(9_999);
+    await vi.advanceTimersByTimeAsync(19_999);
     expect(fallback).not.toHaveBeenCalled();
 
     await vi.advanceTimersByTimeAsync(1);

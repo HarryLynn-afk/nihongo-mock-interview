@@ -64,11 +64,14 @@ export function useAnswerCapture({
     setAnswerMode("speak");
   }
 
-  const showAnswerBox = active && answerMode === "type";
-  const speakAnswerVisible = active && answerMode === null;
-  const typeAnswerVisible = active && answerMode !== "type";
-  const submitVisible = active && answerMode !== null;
   const listening = active && answerMode === "speak" && micOn;
+  const studentTurn = !active
+    ? "none"
+    : answerMode === "speak"
+      ? "speak"
+      : answerMode === "type"
+        ? "type"
+        : "choose";
 
   useEffect(() => {
     if (!listening) return;
@@ -153,15 +156,11 @@ export function useAnswerCapture({
 
   return {
     liveCaption: listening ? spokenCaption : null,
-    showAnswerBox,
-    speakAnswerVisible,
-    typeAnswerVisible,
-    submitVisible,
     draft,
     onDraftChange: setDraft,
     onSpeakAnswer: () => setAnswerMode("speak"),
     onTypeAnswer: () => setAnswerMode("type"),
     onSubmitClick,
-    listening,
+    studentTurn,
   };
 }

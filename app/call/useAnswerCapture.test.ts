@@ -16,10 +16,7 @@ describe("useAnswerCapture", () => {
       }),
     );
 
-    expect(result.current.speakAnswerVisible).toBe(true);
-    expect(result.current.typeAnswerVisible).toBe(true);
-    expect(result.current.submitVisible).toBe(false);
-    expect(result.current.showAnswerBox).toBe(false);
+    expect(result.current.studentTurn).toBe("choose");
   });
 
   it("Type answer reveals the answer box and Submit", () => {
@@ -33,10 +30,7 @@ describe("useAnswerCapture", () => {
 
     act(() => result.current.onTypeAnswer());
 
-    expect(result.current.showAnswerBox).toBe(true);
-    expect(result.current.submitVisible).toBe(true);
-    expect(result.current.speakAnswerVisible).toBe(false);
-    expect(result.current.typeAnswerVisible).toBe(false);
+    expect(result.current.studentTurn).toBe("type");
   });
 
   it("submits a typed AnswerSubmission from the answer box", () => {
@@ -73,7 +67,7 @@ describe("useAnswerCapture", () => {
     act(() => result.current.onSubmitClick());
 
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(result.current.showAnswerBox).toBe(true);
+    expect(result.current.studentTurn).toBe("type");
   });
 
   it("does not start browser speech until Speak answer is chosen", () => {
@@ -107,7 +101,7 @@ describe("useAnswerCapture", () => {
     expect(created[0]?.start).toHaveBeenCalled();
   });
 
-  it("listening is true after Speak answer while the mic is on", () => {
+  it("studentTurn is speak after Speak answer", () => {
     const { result } = renderHook(() =>
       useAnswerCapture({
         active: true,
@@ -116,12 +110,9 @@ describe("useAnswerCapture", () => {
       }),
     );
 
-    expect(result.current.listening).toBe(false);
-
     act(() => result.current.onSpeakAnswer());
 
-    expect(result.current.listening).toBe(true);
-    expect(result.current.speakAnswerVisible).toBe(false);
+    expect(result.current.studentTurn).toBe("speak");
   });
 
   it("updates the live Japanese caption from browser speech after Speak answer", () => {
@@ -219,13 +210,12 @@ describe("useAnswerCapture", () => {
 
     act(() => result.current.onTypeAnswer());
     act(() => result.current.onDraftChange("途中の答え"));
-    expect(result.current.showAnswerBox).toBe(true);
+    expect(result.current.studentTurn).toBe("type");
 
     rerender({ active: false });
     rerender({ active: true });
 
-    expect(result.current.showAnswerBox).toBe(false);
-    expect(result.current.speakAnswerVisible).toBe(true);
+    expect(result.current.studentTurn).toBe("choose");
     expect(result.current.draft).toBe("");
   });
 
@@ -239,9 +229,7 @@ describe("useAnswerCapture", () => {
       }),
     );
 
-    expect(result.current.submitVisible).toBe(true);
-    expect(result.current.speakAnswerVisible).toBe(false);
-    expect(result.current.typeAnswerVisible).toBe(true);
+    expect(result.current.studentTurn).toBe("speak");
   });
 
   it("submits the recorded audio clip from MediaRecorder on Speak submit", async () => {

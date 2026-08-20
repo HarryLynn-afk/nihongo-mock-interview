@@ -13,12 +13,13 @@ describe("SpeakAnswerButton", () => {
     expect(screen.queryByTestId("speak-answer-glow")).not.toBeInTheDocument();
   });
 
-  it("shows the listening glow after Speak answer is active", () => {
+  it("shows a recording control when listening", () => {
     render(<SpeakAnswerButton listening={true} onClick={vi.fn()} />);
 
     const button = screen.getByRole("button", { name: /speak answer/i });
     expect(button).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByTestId("speak-answer-glow")).toBeInTheDocument();
+    expect(screen.getByTestId("speak-answer-recording")).toBeInTheDocument();
+    expect(screen.queryByTestId("speak-answer-glow")).not.toBeInTheDocument();
   });
 
   it("starts listening when the idle control is clicked", async () => {

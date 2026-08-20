@@ -61,6 +61,15 @@ describe("Call screen", () => {
     return user;
   }
 
+  async function openTypeAnswer(user: ReturnType<typeof userEvent.setup>) {
+    const typeButton = screen.queryByRole("button", { name: /type answer/i });
+    if (typeButton) {
+      await user.click(typeButton);
+      return;
+    }
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+  }
+
   function hud() {
     return within(screen.getByTestId("language-hud"));
   }
@@ -159,7 +168,7 @@ describe("Call screen", () => {
     expect(screen.queryByText("Interview complete")).not.toBeInTheDocument();
   });
 
-  it("Speak answer stays as a pressed listening control after it is chosen", async () => {
+  it("Speak answer becomes a recording control after it is chosen", async () => {
     const user = await startStudentTurn();
 
     await user.click(screen.getByRole("button", { name: /speak answer/i }));
@@ -167,13 +176,35 @@ describe("Call screen", () => {
     expect(
       screen.getByRole("button", { name: /speak answer/i }),
     ).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByTestId("speak-answer-glow")).toBeInTheDocument();
+    expect(screen.getByTestId("speak-answer-recording")).toBeInTheDocument();
+    expect(screen.queryByTestId("speak-answer-glow")).not.toBeInTheDocument();
+  });
+
+  it("hides Type answer after Speak answer is chosen", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+
+    expect(
+      screen.queryByRole("button", { name: /type answer/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /submit answer/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows a Listening live transcript after Speak answer", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+
+    expect(screen.getByTestId("live-transcript")).toHaveTextContent("Listening");
   });
 
   it("Type answer reveals the answer box and Submit on the same call screen", async () => {
     const user = await startStudentTurn();
 
-    await user.click(screen.getByRole("button", { name: /type answer/i }));
+    await openTypeAnswer(user);
 
     expect(screen.getByRole("textbox", { name: /answer/i })).toBeInTheDocument();
     expect(
@@ -200,7 +231,7 @@ describe("Call screen", () => {
   it("typed submit advances to the next Question's Japanese HUD caption", async () => {
     const user = await startStudentTurn();
 
-    await user.click(screen.getByRole("button", { name: /type answer/i }));
+    await openTypeAnswer(user);
     await user.type(
       screen.getByRole("textbox", { name: /answer/i }),
       "はじめまして",
@@ -215,7 +246,7 @@ describe("Call screen", () => {
   it("sidebar lists each submitted turn in order and shows Question 2 of 3", async () => {
     const user = await startStudentTurn();
 
-    await user.click(screen.getByRole("button", { name: /type answer/i }));
+    await openTypeAnswer(user);
     await user.type(
       screen.getByRole("textbox", { name: /answer/i }),
       "はじめまして",
@@ -359,7 +390,7 @@ describe("Call screen", () => {
     });
 
     const user = await startStudentTurn();
-    await user.click(screen.getByRole("button", { name: /type answer/i }));
+    await openTypeAnswer(user);
     await user.type(
       screen.getByRole("textbox", { name: /answer/i }),
       "はじめまして",
@@ -399,7 +430,7 @@ describe("Call screen", () => {
       endedHandlers.splice(0).forEach((handler) => handler());
     });
 
-    await user.click(screen.getByRole("button", { name: /type answer/i }));
+    await openTypeAnswer(user);
     await user.type(
       screen.getByRole("textbox", { name: /answer/i }),
       "はじめまして",
@@ -427,7 +458,7 @@ describe("Call screen", () => {
     expect(hud().getByText(pitchAnswers[0].english)).toBeInTheDocument();
     expect(hud().getByText(pitchAnswers[0].burmese)).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /type answer/i }));
+    await openTypeAnswer(user);
     await user.type(
       screen.getByRole("textbox", { name: /answer/i }),
       "garbage transcript that must not be matched",
@@ -452,7 +483,7 @@ describe("Call screen", () => {
     await act(async () => {
       endedHandlers.splice(0).forEach((handler) => handler());
     });
-    await user.click(screen.getByRole("button", { name: /type answer/i }));
+    await openTypeAnswer(user);
     await user.type(screen.getByRole("textbox", { name: /answer/i }), "答え1");
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
 
@@ -561,7 +592,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await user.click(screen.getByRole("button", { name: /type answer/i }));
+      await openTypeAnswer(user);
       await user.type(
         screen.getByRole("textbox", { name: /answer/i }),
         `答え${question.id}`,
@@ -629,7 +660,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await user.click(screen.getByRole("button", { name: /type answer/i }));
+      await openTypeAnswer(user);
       await user.type(
         screen.getByRole("textbox", { name: /answer/i }),
         `答え${question.id}`,
@@ -689,7 +720,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await user.click(screen.getByRole("button", { name: /type answer/i }));
+      await openTypeAnswer(user);
       await user.type(
         screen.getByRole("textbox", { name: /answer/i }),
         `答え${question.id}`,
@@ -750,7 +781,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await user.click(screen.getByRole("button", { name: /type answer/i }));
+      await openTypeAnswer(user);
       await user.type(
         screen.getByRole("textbox", { name: /answer/i }),
         `答え${question.id}`,
@@ -812,7 +843,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await user.click(screen.getByRole("button", { name: /type answer/i }));
+      await openTypeAnswer(user);
       await user.type(
         screen.getByRole("textbox", { name: /answer/i }),
         `答え${question.id}`,
@@ -877,7 +908,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await user.click(screen.getByRole("button", { name: /type answer/i }));
+      await openTypeAnswer(user);
       await user.type(
         screen.getByRole("textbox", { name: /answer/i }),
         `答え${question.id}`,
@@ -935,7 +966,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await user.click(screen.getByRole("button", { name: /type answer/i }));
+      await openTypeAnswer(user);
       await user.type(
         screen.getByRole("textbox", { name: /answer/i }),
         `答え${question.id}`,

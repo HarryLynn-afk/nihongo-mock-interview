@@ -10,7 +10,7 @@ export async function gradeInterview({
   n8nFetch,
   getWebhookUrl,
   fallback,
-  timeoutMs = 10_000,
+  timeoutMs = 20_000,
 }: {
   answers: GradeAnswer[];
   n8nFetch: typeof fetch;

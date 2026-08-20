@@ -63,16 +63,12 @@ export default function CallPage() {
 
   const {
     liveCaption,
-    showAnswerBox,
-    speakAnswerVisible,
-    typeAnswerVisible,
-    submitVisible,
     draft,
     onDraftChange,
     onSpeakAnswer,
     onTypeAnswer,
     onSubmitClick,
-    listening,
+    studentTurn,
   } = useAnswerCapture({
     active: phase === "studentAnswering",
     micOn,
@@ -122,90 +118,108 @@ export default function CallPage() {
   return (
     <div
       data-testid="call-screen"
-      className="flex min-h-screen flex-col items-center justify-center gap-6 bg-ink p-6 md:flex-row"
+      className="min-h-screen overflow-y-auto bg-ink p-4 md:p-6"
     >
-      <InterviewSidebar phase={phase} answers={answers} />
-      {phase === "done" && report ? (
-        <InterviewReportScreen
-          view={buildReportView({
-            report: selectDisplayedReport({ isPitchMode, live: report }),
-            answers: answers.map(({ questionIndex: index, inputMode }) => ({
-              questionIndex: index,
-              inputMode,
-            })),
-          })}
-        />
-      ) : (
-        <>
-          <div className="w-full max-w-md">
-            <StudentTile
-              cameraState={cameraState}
-              micOn={micOn}
-              videoRef={videoRef}
-              onToggleCamera={toggleCamera}
-              onToggleMic={toggleMic}
+      <div className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col items-center gap-6 md:min-h-[calc(100vh-3rem)]">
+        <div className="flex w-full flex-col items-center gap-6 md:flex-row md:items-start md:justify-center">
+          <InterviewSidebar phase={phase} answers={answers} />
+          {phase === "done" && report ? (
+            <InterviewReportScreen
+              view={buildReportView({
+                report: selectDisplayedReport({ isPitchMode, live: report }),
+                answers: answers.map(({ questionIndex: index, inputMode }) => ({
+                  questionIndex: index,
+                  inputMode,
+                })),
+              })}
             />
-          </div>
-          <div className="w-full max-w-md">
-            <SenseiTile />
-          </div>
-        </>
-      )}
+          ) : (
+            <>
+              <div className="w-full max-w-sm lg:max-w-md">
+                <StudentTile
+                  cameraState={cameraState}
+                  micOn={micOn}
+                  videoRef={videoRef}
+                  onToggleCamera={toggleCamera}
+                  onToggleMic={toggleMic}
+                />
+              </div>
+              <div className="w-full max-w-sm lg:max-w-md">
+                <SenseiTile />
+              </div>
+            </>
+          )}
+        </div>
 
-      {phase !== "done" && currentQuestion ? (
-        <div className="fixed inset-x-0 bottom-24 flex justify-center px-6">
+        {phase !== "done" && currentQuestion ? (
           <LanguageHud
             speaker={phase === "studentAnswering" ? "student" : "sensei"}
             caption={currentQuestion.japanese}
-            liveCaption={liveCaption}
+            liveCaption={studentTurn === "speak" ? null : liveCaption}
             english={pitchCaptions?.english ?? liveEnglish}
             burmese={pitchCaptions?.burmese ?? null}
           />
-        </div>
-      ) : null}
-
-      <div className="fixed bottom-6 left-1/2 flex w-full max-w-xl -translate-x-1/2 flex-col items-center gap-3 px-6">
-        {phase === "studentAnswering" && showAnswerBox ? (
-          <textarea
-            aria-label="Answer"
-            value={draft}
-            onChange={(event) => onDraftChange(event.target.value)}
-            className="h-24 w-full rounded-xl border border-indigo/30 bg-ink px-4 py-3 text-paper"
-          />
         ) : null}
-        <div className="flex items-center gap-3">
-          {speakAnswerVisible || listening ? (
-            <SpeakAnswerButton
-              listening={listening}
-              onClick={handleSpeakAnswer}
+
+        <div className="flex w-full max-w-xl flex-col items-center gap-4">
+          {phase === "studentAnswering" && studentTurn === "type" ? (
+            <textarea
+              aria-label="Answer"
+              value={draft}
+              onChange={(event) => onDraftChange(event.target.value)}
+              className="h-24 w-full rounded-xl border border-indigo/30 bg-ink px-4 py-3 text-paper"
             />
           ) : null}
-          {typeAnswerVisible ? (
-            <button
-              type="button"
-              onClick={onTypeAnswer}
-              className="rounded-full bg-paper/10 px-5 py-3 font-medium text-paper"
+          {studentTurn === "speak" ? (
+            <div
+              data-testid="live-transcript"
+              className="w-full rounded-2xl border border-paper/10 bg-paper/5 px-4 py-4 text-center"
             >
-              Type answer
-            </button>
+              <p className="text-xs font-medium tracking-wide text-paper/60">
+                Live transcript
+              </p>
+              <p className="mt-2 text-lg leading-relaxed text-paper">
+                {liveCaption ?? "Listening…"}
+              </p>
+            </div>
           ) : null}
-          {submitVisible ? (
-            <button
-              type="button"
-              onClick={onSubmitClick}
-              className="rounded-full bg-indigo px-6 py-3 font-medium text-paper transition-colors hover:bg-indigo/90"
-            >
-              Submit answer
-            </button>
-          ) : phase === "done" && !report ? (
-            <p className="rounded-full bg-paper/10 px-6 py-3 font-medium text-paper">
-              Interview complete
-            </p>
+          <div className="flex flex-col items-center gap-4">
+            {studentTurn === "choose" ? (
+              <div className="flex items-center gap-3">
+                <SpeakAnswerButton
+                  listening={false}
+                  onClick={handleSpeakAnswer}
+                />
+                <button
+                  type="button"
+                  onClick={onTypeAnswer}
+                  className="rounded-full bg-paper/10 px-5 py-3 font-medium text-paper"
+                >
+                  Type answer
+                </button>
+              </div>
+            ) : null}
+            {studentTurn === "speak" ? (
+              <SpeakAnswerButton listening={true} onClick={handleSpeakAnswer} />
+            ) : null}
+            {studentTurn === "speak" || studentTurn === "type" ? (
+              <button
+                type="button"
+                onClick={onSubmitClick}
+                className="rounded-full bg-indigo px-6 py-3 font-medium text-paper transition-colors hover:bg-indigo/90"
+              >
+                Submit answer
+              </button>
+            ) : phase === "done" && !report ? (
+              <p className="rounded-full bg-paper/10 px-6 py-3 font-medium text-paper">
+                Interview complete
+              </p>
+            ) : null}
+          </div>
+          {report?.banner ? (
+            <p className="text-sm text-paper/80">{report.banner}</p>
           ) : null}
         </div>
-        {report?.banner ? (
-          <p className="text-sm text-paper/80">{report.banner}</p>
-        ) : null}
       </div>
     </div>
   );
