@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import { InterviewSidebar } from "./InterviewSidebar";
 import { InterviewReportScreen } from "./InterviewReportScreen";
 import { LanguageHud } from "./LanguageHud";
@@ -34,33 +34,6 @@ export default function CallPage() {
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("pitch") === "1";
 
-  const [englishOverlay, setEnglishOverlay] = useState<{
-    forCaption: string;
-    text: string;
-  } | null>(null);
-
-  const requestEnglish = useCallback(
-    (japanese: string) => {
-      if (isPitchMode || japanese.trim().length === 0) return;
-      fetch("/api/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          japanese,
-          context: "school interview answer",
-        }),
-      })
-        .then((res) => res.json())
-        .then((data: { english?: string | null }) => {
-          if (typeof data.english === "string" && data.english.length > 0) {
-            setEnglishOverlay({ forCaption: japanese, text: data.english });
-          }
-        })
-        .catch(() => {});
-    },
-    [isPitchMode],
-  );
-
   const {
     liveCaption,
     draft,
@@ -74,14 +47,9 @@ export default function CallPage() {
     micOn,
     autoSpeak: isPitchMode,
     onSubmit: (submission) => {
-      requestEnglish(submission.transcript);
       submitAnswer(submission);
     },
   });
-
-  useEffect(() => {
-    if (liveCaption) requestEnglish(liveCaption);
-  }, [liveCaption, requestEnglish]);
 
   useEffect(() => {
     fetch("/api/warm-n8n", { method: "POST" }).catch(() => {});
@@ -110,18 +78,16 @@ export default function CallPage() {
     isPitchMode && phase === "studentAnswering" && questionIndex !== null
       ? getPitchCaptions(questionIndex)
       : null;
-  const liveEnglish =
-    englishOverlay && englishOverlay.forCaption === liveCaption
-      ? englishOverlay.text
-      : null;
-
   return (
     <div
       data-testid="call-screen"
       className="min-h-screen overflow-y-auto bg-ink p-4 md:p-6"
     >
-      <div className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col items-center gap-6 md:min-h-[calc(100vh-3rem)]">
-        <div className="flex w-full flex-col items-center gap-6 md:flex-row md:items-start md:justify-center">
+      <div className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col items-center gap-5 md:min-h-[calc(100vh-3rem)] md:gap-6">
+        <div
+          data-testid="call-stage"
+          className="flex w-full flex-col items-center gap-4 md:flex-row md:items-start md:justify-center md:gap-5"
+        >
           <InterviewSidebar phase={phase} answers={answers} />
           {phase === "done" && report ? (
             <InterviewReportScreen
@@ -156,12 +122,15 @@ export default function CallPage() {
             speaker={phase === "studentAnswering" ? "student" : "sensei"}
             caption={currentQuestion.japanese}
             liveCaption={studentTurn === "speak" ? null : liveCaption}
-            english={pitchCaptions?.english ?? liveEnglish}
+            english={pitchCaptions?.english ?? null}
             burmese={pitchCaptions?.burmese ?? null}
           />
         ) : null}
 
-        <div className="flex w-full max-w-xl flex-col items-center gap-4">
+        <div
+          data-testid="answer-dock"
+          className="flex w-full max-w-xl flex-col items-center gap-4"
+        >
           {phase === "studentAnswering" && studentTurn === "type" ? (
             <textarea
               aria-label="Answer"

@@ -19,13 +19,13 @@ export function InterviewSidebar({
   return (
     <aside
       data-testid="interview-sidebar"
-      className="flex w-full max-w-xs flex-col gap-4 rounded-2xl border border-indigo/30 bg-ink p-4 text-paper"
+      className="flex w-full max-w-xs flex-col gap-3 rounded-2xl border border-indigo/20 bg-paper/5 p-4 text-paper md:max-w-56"
     >
       <p className="font-medium">
         Question {view.questionNumber} of {view.questionCount}
       </p>
       <p className="text-sm text-paper/70">{STATUS_LABEL[view.status]}</p>
-      <ol className="flex flex-col gap-3 text-sm text-paper/90">
+      <ol className="flex max-h-72 flex-col gap-3 overflow-y-auto pr-1 text-xs leading-relaxed text-paper/80">
         {view.entries.map((entry, index) => (
           <li key={`${entry.speaker}-${index}`}>{entry.text}</li>
         ))}

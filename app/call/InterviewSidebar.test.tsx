@@ -24,4 +24,15 @@ describe("InterviewSidebar", () => {
     expect(screen.getByText("Student answering")).toBeInTheDocument();
     expect(screen.queryByText("Sensei speaking")).not.toBeInTheDocument();
   });
+
+  it("keeps the transcript rail compact and scrollable", () => {
+    render(<InterviewSidebar phase="done" answers={[
+      { questionIndex: 0, transcript: "はじめまして。" },
+      { questionIndex: 1, transcript: "日本で日本語を勉強したいです。" },
+      { questionIndex: 2, transcript: "卒業後は大学院に進学したいです。" },
+    ]} />);
+
+    expect(screen.getByTestId("interview-sidebar")).toHaveClass("md:max-w-56");
+    expect(screen.getByRole("list")).toHaveClass("max-h-72", "overflow-y-auto");
+  });
 });

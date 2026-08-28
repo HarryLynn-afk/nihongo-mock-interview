@@ -311,20 +311,7 @@ describe("Call screen", () => {
     expect(screen.getByText("こんにちは")).toBeInTheDocument();
   });
 
-  it("POSTs /api/translate for a live student caption and shows English under it", async () => {
-    fetchMock.mockImplementation((input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url.includes("/api/translate")) {
-        return Promise.resolve(
-          new Response(JSON.stringify({ english: "Hello." }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          }),
-        );
-      }
-      return Promise.resolve(new Response(null, { status: 202 }));
-    });
-
+  it("shows a live student transcript without calling /api/translate", async () => {
     const created: Array<{
       onresult: ((event: { results: unknown[] }) => void) | null;
       start: ReturnType<typeof vi.fn>;
@@ -357,38 +344,13 @@ describe("Call screen", () => {
       created[0]?.onresult?.({ results: [spoken] });
     });
 
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        "/api/translate",
-        expect.objectContaining({
-          method: "POST",
-          body: JSON.stringify({
-            japanese: "こんにちは",
-            context: "school interview answer",
-          }),
-        }),
-      );
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("Hello.")).toBeInTheDocument();
-    });
+    expect(screen.getByTestId("live-transcript")).toHaveTextContent("こんにちは");
+    expect(
+      fetchMock.mock.calls.some((call) => String(call[0]).includes("/api/translate")),
+    ).toBe(false);
   });
 
-  it("POSTs /api/translate after a non-pitch student answer is submitted", async () => {
-    fetchMock.mockImplementation((input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url.includes("/api/translate")) {
-        return Promise.resolve(
-          new Response(JSON.stringify({ english: "Nice to meet you." }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          }),
-        );
-      }
-      return Promise.resolve(new Response(null, { status: 202 }));
-    });
-
+  it("does not call /api/translate after a typed answer is submitted", async () => {
     const user = await startStudentTurn();
     await openTypeAnswer(user);
     await user.type(
@@ -397,19 +359,9 @@ describe("Call screen", () => {
     );
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
 
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        "/api/translate",
-        expect.objectContaining({
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            japanese: "はじめまして",
-            context: "school interview answer",
-          }),
-        }),
-      );
-    });
+    expect(
+      fetchMock.mock.calls.some((call) => String(call[0]).includes("/api/translate")),
+    ).toBe(false);
   });
 
   it("never shows the lobby and never calls /api/translate when ?pitch=1 is present", async () => {
@@ -509,7 +461,7 @@ describe("Call screen", () => {
         this.ondataavailable?.({ data: recorded });
         this.onstop?.();
       };
-      constructor(_stream: unknown) {}
+      constructor() {}
     }
     vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
 

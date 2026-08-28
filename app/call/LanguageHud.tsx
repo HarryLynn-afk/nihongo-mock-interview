@@ -19,8 +19,11 @@ export function LanguageHud({
     <div
       data-testid="language-hud"
       data-speaker={speaker}
-      className="flex w-full max-w-4xl flex-col items-center gap-4 rounded-2xl bg-ink px-8 py-5"
+      className="flex w-full max-w-3xl flex-col items-center gap-3 rounded-3xl border border-indigo/20 bg-paper/5 px-6 py-5 text-paper shadow-2xl shadow-black/10 md:px-8"
     >
+      <p className="text-xs font-medium tracking-[0.18em] text-paper/60">
+        Question
+      </p>
       <div
         data-testid="waveform"
         aria-hidden="true"
