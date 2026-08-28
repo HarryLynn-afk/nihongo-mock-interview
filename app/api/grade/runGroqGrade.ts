@@ -1,4 +1,3 @@
-import { profile } from "@/lib/content/profile";
 import { getRubricPrompt, parseRawScores, scoreReport } from "@/lib/content/rubric";
 import type { InterviewReport } from "@/lib/content/sampleReport";
 
@@ -33,7 +32,7 @@ export async function runGroqGrade({
         model: GROQ_GRADE_MODEL,
         messages: [
           { role: "system", content: getRubricPrompt() },
-          { role: "user", content: JSON.stringify({ profile, answers }) },
+          { role: "user", content: JSON.stringify({ answers }) },
         ],
         temperature: 0,
       }),
@@ -55,7 +54,7 @@ export async function runGroqGrade({
     return {
       ...scored,
       coaching,
-      profileName: profile.name,
+      profileName: "",
       source: "grade",
       banner: null,
     };

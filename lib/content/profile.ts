@@ -17,9 +17,9 @@ export type StudentProfile = {
 };
 
 /**
- * The 6 fields the read-only start-screen card must show, in the order
- * given by docs/prd-nihongo.md ("name, age, hometown, education, plan,
- * sponsor"). Issue 3 renders exactly these, nothing else.
+ * The 6 fields the start-screen card used to show (Issue 3). Direct Join
+ * (docs/prd-direct-join.md) no longer renders this card; keep the list so
+ * ProfileCard tests still document the fixture.
  */
 export const DISPLAY_CARD_FIELDS = [
   "name",

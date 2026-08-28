@@ -53,7 +53,7 @@ describe("runGroqGrade", () => {
         gatesFired: [],
         source: "grade",
         banner: null,
-        profileName: "Aung Min Khant",
+        profileName: "",
         coaching: ["Use です/ます all the way through."],
       }),
     );
@@ -118,7 +118,7 @@ describe("runGroqGrade", () => {
     });
   });
 
-  it("sends the locked profile and answer transcripts in the user message", async () => {
+  it("sends answer transcripts in the user message and no locked student card", async () => {
     const groqFetch = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -148,7 +148,7 @@ describe("runGroqGrade", () => {
     ) as { messages?: Array<{ role?: string; content?: string }> };
     const userText = body.messages?.[1]?.content ?? "";
     expect(body.messages?.[1]?.role).toBe("user");
-    expect(userText).toContain("Aung Min Khant");
+    expect(userText).not.toContain("Aung Min Khant");
     expect(userText).toContain("はじめまして。アウンミンハントです。");
     expect(userText).toContain("voice");
   });

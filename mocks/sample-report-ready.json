@@ -21,5 +21,5 @@
     "Post-graduation plan is vocational school, then engineer."
   ],
   "profileName": "Aung Min Khant",
-  "notes": "Used when both n8n and /api/grade fail, and as the ?pitch=1 canned last screen when the live headline is not Ready."
+  "notes": "Used when both n8n and /api/grade fail, and as the Pitch-mode (?pitch=1) canned last screen when the live headline is not Ready (CSC 492 presentation demo path)."
 }

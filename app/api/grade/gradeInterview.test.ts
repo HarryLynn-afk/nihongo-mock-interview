@@ -58,7 +58,7 @@ describe("gradeInterview", () => {
     const posted = JSON.parse(
       (n8nFetch.mock.calls[0][1] as RequestInit).body as string,
     ) as { profile?: { name?: string }; answers?: unknown };
-    expect(posted.profile?.name).toBe("Aung Min Khant");
+    expect(posted.profile).toBeUndefined();
     expect(posted.answers).toEqual(answers);
   });
 

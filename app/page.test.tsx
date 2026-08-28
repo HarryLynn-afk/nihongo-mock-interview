@@ -18,7 +18,7 @@ describe("Home (start screen)", () => {
     window.history.replaceState({}, "", "/");
   });
 
-  it("shows the NihonGo header, profile, and Join interview without a Ready to join dialog", () => {
+  it("shows the NihonGo header and Join interview without a Profile card or Ready to join dialog", () => {
     render(<Home />);
 
     expect(screen.getByText("NihonGo")).toBeInTheDocument();
@@ -28,6 +28,8 @@ describe("Home (start screen)", () => {
     expect(
       screen.getByRole("button", { name: "Join interview" }),
     ).toBeInTheDocument();
+    expect(screen.queryByText("Aung Min Khant")).not.toBeInTheDocument();
+    expect(screen.queryByText("Mandalay, Myanmar")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("dialog", { name: /ready to join/i }),
     ).not.toBeInTheDocument();

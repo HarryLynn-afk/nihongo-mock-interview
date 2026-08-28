@@ -13,7 +13,8 @@ export type InterviewQuestion = {
  *
  * NOTE: englishTranslation/burmeseTranslation were authored for this build
  * (the PRD locks the Japanese; it does not supply exact EN/MY wording).
- * Have a native Burmese speaker review burmeseTranslation before event day.
+ * Have a native Burmese speaker review burmeseTranslation before the
+ * CSC 492 oral exam / project presentation.
  */
 export const questions: readonly InterviewQuestion[] = [
   {

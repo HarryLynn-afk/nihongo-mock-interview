@@ -6,14 +6,15 @@ export type PitchAnswer = {
 };
 
 /**
- * Aung Min Khant's 3 locked phone-clip answers for the 18:00 pitch
- * (docs/prd-nihongo.md "18:00 pitch path"). On `?pitch=1`, the EN/MY lines
- * here are shown by questionIndex after each answer — never fuzzy-matched
- * against the live transcript.
+ * Aung Min Khant's 3 locked phone-clip answers for Pitch mode (`?pitch=1`) —
+ * the CSC 492 oral-exam / project-presentation demo path. On `?pitch=1`, the
+ * EN/MY lines here are shown by questionIndex after each answer — never
+ * fuzzy-matched against the live transcript.
  *
  * NOTE: english/burmese were authored for this build (the PRD locks the
  * Japanese phone-clip lines; it does not supply exact EN/MY wording).
- * Have a native Burmese speaker review `burmese` before event day.
+ * Have a native Burmese speaker review `burmese` before the CSC 492
+ * oral exam / project presentation.
  */
 export const pitchAnswers: readonly PitchAnswer[] = [
   {

@@ -1,4 +1,3 @@
-import { profile } from "@/lib/content/profile";
 import {
   getSampleReport,
   SCORING_UNAVAILABLE_BANNER,
@@ -32,7 +31,7 @@ export async function gradeInterview({
       method: "POST",
       signal: controller.signal,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ profile, answers }),
+      body: JSON.stringify({ answers }),
     });
     if (!res.ok) return finishWithFallback();
     const data = (await res.json()) as InterviewReport;

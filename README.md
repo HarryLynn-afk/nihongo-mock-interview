@@ -1,6 +1,11 @@
-# NihonGo — Japanese language school interview practice
+# NihonGo — AI-powered Japanese language-school interview practice
 
-Practice build for a 3-question mock admission interview with Tanaka-sensei.
+**NihonGo** is an AI-powered Japanese language-school interview practice system. It is the working product for:
+
+- **CSC 485** Introduction to Research Methodology for Computer Science — research the problem, review related work, define the research question, choose a method, consider ethics, and evaluate usefulness.
+- **CSC 492** Computer Science Project — build, test, deploy, document, defend (oral examination), and present the web application.
+
+A student joins a 3-question mock admission interview with Tanaka-sensei, answers by voice or type, and sees an Interview Readiness report.
 
 ## Stack
 
@@ -29,7 +34,9 @@ npm run lint
 ```
 
 `npm run build` fails fast if a required environment variable is missing —
-see `scripts/check-env.mjs` and `lib/server/env.ts`.
+see `scripts/check-env.mjs` and `lib/server/env/`.
+
+Presentation demo path: `/?pitch=1` (canned EN/MY captions and canned last-screen swap when the live headline is not Ready). Used for the CSC 492 oral exam / final presentation, not a separate product.
 
 ## Project layout
 
@@ -40,3 +47,7 @@ scripts/          Build-time checks (env validation)
 docs/             Generated n8n rubric snapshot (docs/rubric-generated.md)
 mocks/            Shared JSON fixtures (e.g. sample-report-ready.json)
 ```
+
+## Deploy contingency (Issue 15)
+
+Primary host is Netlify with the Next.js runtime. If that adapter blocks deploy, switch the UI to Vite + React + TS + Tailwind on Netlify and keep Netlify Functions for ElevenLabs and other key-bearing routes. Do not implement that fallback unless the Next.js adapter actually fails.

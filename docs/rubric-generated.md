@@ -9,9 +9,10 @@ For each of these six categories, give an integer score from 1 to 5:
 - grammarPoliteness: です/ます, basic particles, not casual or broken speech
 - motivation: why Japan, why this school, not anime/money/agent-driven reasons
 - studyPlan: next step after graduation, language target, realistic timeline
-- consistency: spoken answers vs. the student's written profile
+- consistency: whether the three answers agree with each other (same person, same plan, no contradictions)
 Also give 2-4 short coaching notes in plain language (です/ます and beginner grammar terms are fine).
 If an answer's inputMode is typed, score speaking only on whether they answered the question and used understandable です/ます — do not score pronunciation for that answer.
+There is no pre-filled student card. Score only from the three answers.
 Never use exam or certification labels in your scores or notes.
 Return strict JSON: { "scores": { <category>: <1-5 integer>, ... }, "coaching": [<string>, ...] }
 

@@ -37,4 +37,11 @@ describe("getRubricPrompt", () => {
     expect(prompt).toMatch(/pronunciation/i);
     expect(prompt).toMatch(/です\/ます/);
   });
+
+  it("scores consistency from the three answers agreeing, not a written profile", () => {
+    const prompt = getRubricPrompt();
+
+    expect(prompt).toMatch(/consistency:.*three answers/i);
+    expect(prompt).not.toMatch(/written profile/i);
+  });
 });
