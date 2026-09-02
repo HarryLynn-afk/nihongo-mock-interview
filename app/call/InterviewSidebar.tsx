@@ -19,7 +19,7 @@ export function InterviewSidebar({
   return (
     <aside
       data-testid="interview-sidebar"
-      className="flex w-full max-w-xs flex-col gap-3 rounded-2xl border border-indigo/20 bg-paper/5 p-4 text-paper md:max-w-56"
+      className="flex w-full max-w-xs shrink-0 flex-col gap-3 rounded-2xl border border-paper/10 bg-ink/80 p-4 text-paper md:max-w-56"
     >
       <p className="font-medium">
         Question {view.questionNumber} of {view.questionCount}
@@ -27,7 +27,12 @@ export function InterviewSidebar({
       <p className="text-sm text-paper/70">{STATUS_LABEL[view.status]}</p>
       <ol className="flex max-h-72 flex-col gap-3 overflow-y-auto pr-1 text-xs leading-relaxed text-paper/80">
         {view.entries.map((entry, index) => (
-          <li key={`${entry.speaker}-${index}`}>{entry.text}</li>
+          <li key={`${entry.speaker}-${index}`}>
+            <p className="text-[10px] font-medium tracking-wide text-paper/50">
+              {entry.speaker === "sensei" ? "Tanaka-sensei" : "You"}
+            </p>
+            <p>{entry.text}</p>
+          </li>
         ))}
       </ol>
     </aside>

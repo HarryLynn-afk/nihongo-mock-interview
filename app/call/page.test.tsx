@@ -86,6 +86,19 @@ describe("Call screen", () => {
     expect(root).toHaveClass("bg-ink");
   });
 
+  it("places Tanaka-sensei on the classroom stage and the student as an inset", () => {
+    render(<CallPage />);
+
+    const stage = screen.getByTestId("sensei-stage");
+    const inset = screen.getByTestId("student-inset");
+
+    expect(stage).toContainElement(
+      screen.getByText("Tanaka-sensei · AI · Admissions"),
+    );
+    expect(inset).toContainElement(screen.getByText("You"));
+    expect(stage).toContainElement(inset);
+  });
+
   it("sidebar shows Question 1 of 3 and Sensei speaking with no scores", () => {
     render(<CallPage />);
 

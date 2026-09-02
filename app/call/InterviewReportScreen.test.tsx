@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { InterviewReportScreen } from "./InterviewReportScreen";
 
 const view = {
@@ -31,12 +31,12 @@ describe("InterviewReportScreen", () => {
     const stamp = screen.getByText("準備OK");
     expect(stamp).toHaveClass("text-stamp-ready");
     expect(screen.getByText("92/100")).toBeInTheDocument();
-    expect(screen.getByText("Speaking")).toBeInTheDocument();
-    expect(screen.getByText("Listening")).toBeInTheDocument();
-    expect(screen.getByText("Grammar & politeness")).toBeInTheDocument();
-    expect(screen.getByText("Motivation")).toBeInTheDocument();
-    expect(screen.getByText("Study plan")).toBeInTheDocument();
-    expect(screen.getByText("Consistency")).toBeInTheDocument();
+    expect(screen.getAllByText("Speaking").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Listening").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Grammar & politeness").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Motivation").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Study plan").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Consistency").length).toBeGreaterThan(0);
     expect(
       screen.queryByText(/N5|JLPT|\bA1\b|\bPass\b|\bFail\b/),
     ).not.toBeInTheDocument();
@@ -54,6 +54,18 @@ describe("InterviewReportScreen", () => {
     render(<InterviewReportScreen view={view} />);
 
     expect(screen.getByTestId("readiness-radar")).toBeInTheDocument();
+  });
+
+  it("labels each radar axis with the six rubric categories", () => {
+    render(<InterviewReportScreen view={view} />);
+
+    const radar = within(screen.getByTestId("readiness-radar"));
+    expect(radar.getByText("Speaking")).toBeInTheDocument();
+    expect(radar.getByText("Listening")).toBeInTheDocument();
+    expect(radar.getByText("Grammar & politeness")).toBeInTheDocument();
+    expect(radar.getByText("Motivation")).toBeInTheDocument();
+    expect(radar.getByText("Study plan")).toBeInTheDocument();
+    expect(radar.getByText("Consistency")).toBeInTheDocument();
   });
 
   it("reveals radar, then stamp, then coaching — never all at once", async () => {

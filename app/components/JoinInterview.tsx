@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { InterviewLobby } from "../call/InterviewLobby";
 import { InterviewStartReminder } from "../call/InterviewStartReminder";
 import { useInterviewLobby } from "../call/useInterviewLobby";
+import { useLobbyDevices } from "../call/useLobbyDevices";
 import { saveDevicePrefs } from "./devicePrefs";
 
 export function JoinInterview() {
@@ -12,9 +13,6 @@ export function JoinInterview() {
   const isPitchMode =
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("pitch") === "1";
-
-  const [cameraOn, setCameraOn] = useState(true);
-  const [micOn, setMicOn] = useState(true);
 
   const {
     devicesVisible,
@@ -25,6 +23,15 @@ export function JoinInterview() {
     continueFromDevices,
     skipReminder,
   } = useInterviewLobby({ skipLobby: false, startIdle: true });
+
+  const {
+    cameraOn,
+    micOn,
+    cameraBlocked,
+    videoRef,
+    toggleCamera,
+    toggleMic,
+  } = useLobbyDevices({ active: devicesVisible });
 
   useEffect(() => {
     if (!interviewStarted) return;
@@ -54,9 +61,10 @@ export function JoinInterview() {
         <InterviewLobby
           cameraEnabled={cameraOn}
           micEnabled={micOn}
-          cameraBlocked={false}
-          onToggleCamera={() => setCameraOn((current) => !current)}
-          onToggleMic={() => setMicOn((current) => !current)}
+          cameraBlocked={cameraBlocked}
+          videoRef={videoRef}
+          onToggleCamera={toggleCamera}
+          onToggleMic={toggleMic}
           onContinue={continueFromDevices}
         />
       ) : null}

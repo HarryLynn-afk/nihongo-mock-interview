@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { questions } from "@/lib/content/questions";
 import { InterviewSidebar } from "./InterviewSidebar";
 
@@ -9,7 +9,25 @@ describe("InterviewSidebar", () => {
 
     expect(screen.getByText("Question 1 of 3")).toBeInTheDocument();
     expect(screen.getByText(questions[0].japanese)).toBeInTheDocument();
+    expect(screen.getByText("Tanaka-sensei")).toBeInTheDocument();
     expect(screen.queryByText(/Ready|Almost Ready|Keep Practicing|score|rubric|N5|JLPT/i)).not.toBeInTheDocument();
+  });
+
+  it("labels submitted turns Tanaka-sensei and You", () => {
+    render(
+      <InterviewSidebar
+        phase="done"
+        answers={[
+          { questionIndex: 0, transcript: "はじめまして。" },
+          { questionIndex: 1, transcript: "日本で日本語を勉強したいです。" },
+          { questionIndex: 2, transcript: "卒業後は大学院に進学したいです。" },
+        ]}
+      />,
+    );
+
+    const sidebar = within(screen.getByTestId("interview-sidebar"));
+    expect(sidebar.getAllByText("Tanaka-sensei")).toHaveLength(3);
+    expect(sidebar.getAllByText("You")).toHaveLength(3);
   });
 
   it("shows the current Turn as Sensei speaking or Student answering", () => {

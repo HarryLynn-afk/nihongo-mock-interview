@@ -86,7 +86,7 @@ export default function CallPage() {
       <div className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col items-center gap-5 md:min-h-[calc(100vh-3rem)] md:gap-6">
         <div
           data-testid="call-stage"
-          className="flex w-full flex-col items-center gap-4 md:flex-row md:items-start md:justify-center md:gap-5"
+          className="flex w-full flex-col items-stretch gap-4 md:flex-row md:items-start md:gap-5"
         >
           <InterviewSidebar phase={phase} answers={answers} />
           {phase === "done" && report ? (
@@ -100,8 +100,12 @@ export default function CallPage() {
               })}
             />
           ) : (
-            <>
-              <div className="w-full max-w-sm lg:max-w-md">
+            <div data-testid="sensei-stage" className="relative min-w-0 flex-1">
+              <SenseiTile />
+              <div
+                data-testid="student-inset"
+                className="absolute bottom-3 right-3 z-10 w-36 sm:w-44 md:w-52"
+              >
                 <StudentTile
                   cameraState={cameraState}
                   micOn={micOn}
@@ -110,10 +114,7 @@ export default function CallPage() {
                   onToggleMic={toggleMic}
                 />
               </div>
-              <div className="w-full max-w-sm lg:max-w-md">
-                <SenseiTile />
-              </div>
-            </>
+            </div>
           )}
         </div>
 
@@ -129,7 +130,7 @@ export default function CallPage() {
 
         <div
           data-testid="answer-dock"
-          className="flex w-full max-w-xl flex-col items-center gap-4"
+          className="flex w-full max-w-xl flex-col items-center gap-4 rounded-2xl border border-paper/10 bg-ink/90 px-5 py-4"
         >
           {phase === "studentAnswering" && studentTurn === "type" ? (
             <textarea

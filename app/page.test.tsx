@@ -10,11 +10,21 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("Home (start screen)", () => {
+  const getUserMedia = vi.fn();
+
   beforeEach(() => {
     pushMock.mockReset();
+    getUserMedia.mockResolvedValue({
+      getTracks: () => [],
+    } as unknown as MediaStream);
+    vi.stubGlobal("navigator", {
+      mediaDevices: { getUserMedia },
+    });
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
+    getUserMedia.mockReset();
     window.history.replaceState({}, "", "/");
   });
 
@@ -43,18 +53,27 @@ describe("Home (start screen)", () => {
 
     expect(screen.getByText("NihonGo")).toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "Japanese interview with Tanaka-sensei",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("classroom-preview")).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: /camera/i })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: /microphone/i })).toBeChecked();
+    expect(
+      screen.getByRole("button", { name: /enter classroom/i }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: /interview will start soon/i })).not.toBeInTheDocument();
     expect(pushMock).not.toHaveBeenCalled();
   });
 
-  it("Continue then Skip navigates to the call screen", async () => {
+  it("Enter classroom then Skip navigates to the call screen", async () => {
     const user = userEvent.setup();
     render(<Home />);
 
     await user.click(screen.getByRole("button", { name: "Join interview" }));
-    await user.click(screen.getByRole("button", { name: /continue/i }));
+    await user.click(screen.getByRole("button", { name: /enter classroom/i }));
     expect(
       screen.getByRole("dialog", { name: /interview will start soon/i }),
     ).toBeInTheDocument();
