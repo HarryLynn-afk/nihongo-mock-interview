@@ -366,6 +366,19 @@ describe("Call screen", () => {
     expect(sidebar.getByText("Sensei speaking")).toBeInTheDocument();
   });
 
+  it("sidebar does not list a rejected typed attempt 1", async () => {
+    const user = await startStudentTurn();
+
+    await openTypeAnswer(user);
+    await user.type(screen.getByRole("textbox", { name: /answer/i }), "hello");
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+
+    expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
+    const sidebar = within(screen.getByTestId("interview-sidebar"));
+    expect(sidebar.getByText("Question 1 of 3")).toBeInTheDocument();
+    expect(sidebar.queryByText("hello")).not.toBeInTheDocument();
+  });
+
   it("empty Speak answer submit does not skip the Question", async () => {
     const user = await startStudentTurn();
 
@@ -374,6 +387,38 @@ describe("Call screen", () => {
 
     expect(screen.getByRole("textbox", { name: /answer/i })).toBeInTheDocument();
     expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
+  });
+
+  it("keeps the Question Japanese and shows the try-again lines after empty Speak Submit", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+
+    expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
+    expect(hud().getByText("すみません、もう一度お願いします。")).toBeInTheDocument();
+    expect(
+      hud().getByText("Sorry, could you try answering that again?"),
+    ).toBeInTheDocument();
+    expect(hud().getByText("တစ်ဖန်ထပ်ဖြေပေးပါဦးနော်။")).toBeInTheDocument();
+  });
+
+  it("does not keep the try-again line after the Interview advances", async () => {
+    const user = await startStudentTurn();
+
+    await openTypeAnswer(user);
+    await user.type(
+      screen.getByRole("textbox", { name: /answer/i }),
+      "はじめまして",
+    );
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+
+    await waitFor(() => {
+      expect(hud().getByText(questions[1].japanese)).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByText("すみません、もう一度お願いします。"),
+    ).not.toBeInTheDocument();
   });
 
   it("shows a live Japanese HUD caption from browser speech after Speak answer", async () => {
@@ -689,6 +734,61 @@ describe("Call screen", () => {
     });
   });
 
+  it("does not POST /api/scribe for a failing Speak attempt 1", async () => {
+    const recorded = new Blob([new Uint8Array([7, 7, 7])], { type: "audio/webm" });
+    class FakeMediaRecorder {
+      ondataavailable: ((event: { data: Blob }) => void) | null = null;
+      onstop: (() => void) | null = null;
+      start = vi.fn();
+      stop = () => {
+        this.ondataavailable?.({ data: recorded });
+        this.onstop?.();
+      };
+      constructor() {}
+    }
+    vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
+
+    const created: Array<{
+      onresult: ((event: { results: unknown[] }) => void) | null;
+      start: ReturnType<typeof vi.fn>;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
+
+    const user = await startStudentTurn();
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+
+    await waitFor(() => {
+      expect(created[0]?.start).toHaveBeenCalled();
+    });
+
+    act(() => {
+      const spoken = Object.assign([{ transcript: "hello" }], {
+        isFinal: true,
+      });
+      created[0]?.onresult?.({ results: [spoken] });
+    });
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+
+    expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.filter((call) =>
+        String(call[0]).includes("/api/scribe"),
+      ),
+    ).toHaveLength(0);
+  });
+
   it("POSTs /api/score once after Q3 when Scribe is ready, without showing scores", async () => {
     const user = userEvent.setup();
     render(<CallPage />);
@@ -719,16 +819,22 @@ describe("Call screen", () => {
                 questionIndex: 0,
                 inputMode: "typed",
                 transcript: "答え1",
+                pushbackCount: 0,
+                forced: false,
               },
               {
                 questionIndex: 1,
                 inputMode: "typed",
                 transcript: "答え2",
+                pushbackCount: 0,
+                forced: false,
               },
               {
                 questionIndex: 2,
                 inputMode: "typed",
                 transcript: "答え3",
+                pushbackCount: 0,
+                forced: false,
               },
             ],
           }),

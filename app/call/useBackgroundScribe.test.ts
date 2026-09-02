@@ -14,7 +14,7 @@ describe("useBackgroundScribe", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const answers: StoredAnswer[] = [
-      { questionIndex: 0, inputMode: "typed", transcript: "はい。" },
+      { questionIndex: 0, inputMode: "typed", transcript: "はい。", pushbackCount: 0, forced: false },
     ];
 
     renderHook(() =>
@@ -39,6 +39,8 @@ describe("useBackgroundScribe", () => {
         inputMode: "voice",
         transcript: "こんにちは",
         audioClip: clip,
+        pushbackCount: 0,
+        forced: false,
       },
     ];
 
@@ -62,9 +64,27 @@ describe("useBackgroundScribe", () => {
 
   it("becomes ready immediately after Q3 when every answer was typed", () => {
     const answers: StoredAnswer[] = [
-      { questionIndex: 0, inputMode: "typed", transcript: "a" },
-      { questionIndex: 1, inputMode: "typed", transcript: "b" },
-      { questionIndex: 2, inputMode: "typed", transcript: "c" },
+      {
+        questionIndex: 0,
+        inputMode: "typed",
+        transcript: "a",
+        pushbackCount: 0,
+        forced: false,
+      },
+      {
+        questionIndex: 1,
+        inputMode: "typed",
+        transcript: "b",
+        pushbackCount: 1,
+        forced: false,
+      },
+      {
+        questionIndex: 2,
+        inputMode: "typed",
+        transcript: "c",
+        pushbackCount: 2,
+        forced: true,
+      },
     ];
 
     const { result } = renderHook(() =>
@@ -79,18 +99,24 @@ describe("useBackgroundScribe", () => {
           inputMode: "typed",
           transcript: "a",
           useSubmittedTranscript: true,
+          pushbackCount: 0,
+          forced: false,
         },
         {
           questionIndex: 1,
           inputMode: "typed",
           transcript: "b",
           useSubmittedTranscript: true,
+          pushbackCount: 1,
+          forced: false,
         },
         {
           questionIndex: 2,
           inputMode: "typed",
           transcript: "c",
           useSubmittedTranscript: true,
+          pushbackCount: 2,
+          forced: true,
         },
       ],
     });
@@ -112,6 +138,8 @@ describe("useBackgroundScribe", () => {
         inputMode: "voice",
         transcript: "WISPR",
         audioClip: new Blob([new Uint8Array([1])], { type: "audio/webm" }),
+        pushbackCount: 0,
+        forced: false,
       },
     ];
 
@@ -138,6 +166,8 @@ describe("useBackgroundScribe", () => {
             inputMode: "voice",
             transcript: "SCRIBE",
             useSubmittedTranscript: false,
+            pushbackCount: 0,
+            forced: false,
           },
         ],
       });
@@ -157,6 +187,8 @@ describe("useBackgroundScribe", () => {
         inputMode: "voice",
         transcript: "WISPR",
         audioClip: new Blob([new Uint8Array([1])], { type: "audio/webm" }),
+        pushbackCount: 0,
+        forced: false,
       },
     ];
 
@@ -187,6 +219,8 @@ describe("useBackgroundScribe", () => {
           inputMode: "voice",
           transcript: "WISPR",
           useSubmittedTranscript: true,
+          pushbackCount: 0,
+          forced: false,
         },
       ],
     });
@@ -202,6 +236,8 @@ describe("useBackgroundScribe", () => {
         inputMode: "voice",
         transcript: "WISPR",
         audioClip: new Blob(),
+        pushbackCount: 0,
+        forced: false,
       },
     ];
 
@@ -218,6 +254,8 @@ describe("useBackgroundScribe", () => {
           inputMode: "voice",
           transcript: "WISPR",
           useSubmittedTranscript: true,
+          pushbackCount: 0,
+          forced: false,
         },
       ],
     });
@@ -242,6 +280,8 @@ describe("useBackgroundScribe", () => {
         inputMode: "voice",
         transcript: "WISPR",
         audioClip: new Blob([new Uint8Array([1])], { type: "audio/webm" }),
+        pushbackCount: 0,
+        forced: false,
       },
     ];
 
@@ -264,6 +304,8 @@ describe("useBackgroundScribe", () => {
           inputMode: "voice",
           transcript: "WISPR",
           useSubmittedTranscript: true,
+          pushbackCount: 0,
+          forced: false,
         },
       ],
     });
@@ -282,6 +324,8 @@ describe("useBackgroundScribe", () => {
           inputMode: "voice",
           transcript: "WISPR",
           useSubmittedTranscript: true,
+          pushbackCount: 0,
+          forced: false,
         },
       ],
     });

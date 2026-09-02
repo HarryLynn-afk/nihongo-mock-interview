@@ -70,6 +70,8 @@ describe("POST /api/grade", () => {
               questionIndex: 0,
               inputMode: "voice",
               transcript: "はじめまして。",
+              pushbackCount: 0,
+              forced: false,
             },
           ],
         }),

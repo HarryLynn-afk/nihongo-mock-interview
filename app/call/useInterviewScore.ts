@@ -18,11 +18,7 @@ export function useInterviewScore(collection: ScribeCollection) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         answers: collection.answers.map(
-          ({ questionIndex, inputMode, transcript }) => ({
-            questionIndex,
-            inputMode,
-            transcript,
-          }),
+          ({ useSubmittedTranscript: _omit, ...gradeAnswer }) => gradeAnswer,
         ),
       }),
     })

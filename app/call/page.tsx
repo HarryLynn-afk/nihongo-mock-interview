@@ -17,6 +17,7 @@ import { useInterviewScore } from "./useInterviewScore";
 import { useMicToggle } from "./useMicToggle";
 import { useQuestionFlow } from "./useQuestionFlow";
 import { getPitchCaptions } from "@/lib/content/pitchAnswers";
+import { PUSHBACK_TRY_AGAIN } from "@/lib/content/pushbackCopy";
 import { loadDevicePrefs, type DevicePrefs } from "../components/devicePrefs";
 
 const DEFAULT_DEVICE_PREFS: DevicePrefs = { cameraOn: true, micOn: true };
@@ -52,6 +53,7 @@ export default function CallPage() {
     onSpeakOrType,
     onSubmitClick,
     studentTurn,
+    pushbackVisible,
   } = useAnswerCapture({
     active: phase === "studentAnswering",
     micOn,
@@ -135,6 +137,7 @@ export default function CallPage() {
             liveCaption={studentTurn === "speak" ? null : liveCaption}
             english={pitchCaptions?.english ?? null}
             burmese={pitchCaptions?.burmese ?? null}
+            tryAgain={pushbackVisible ? PUSHBACK_TRY_AGAIN : null}
           />
         ) : null}
 

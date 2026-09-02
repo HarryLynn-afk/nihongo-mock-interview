@@ -6,6 +6,8 @@ export type AnswerForScoring = {
   inputMode: "voice" | "typed";
   transcript: string;
   useSubmittedTranscript: boolean;
+  pushbackCount: 0 | 1 | 2;
+  forced: boolean;
 };
 
 export type ScribeCollection =
@@ -89,12 +91,17 @@ export function useBackgroundScribe({
   return {
     status: "ready",
     answers: answers.map((answer) => {
+      const pushback = {
+        pushbackCount: answer.pushbackCount,
+        forced: answer.forced,
+      };
       if (answer.inputMode === "typed") {
         return {
           questionIndex: answer.questionIndex,
           inputMode: "typed" as const,
           transcript: answer.transcript,
           useSubmittedTranscript: true,
+          ...pushback,
         };
       }
       const outcome = outcomes[answer.questionIndex];
@@ -104,6 +111,7 @@ export function useBackgroundScribe({
           inputMode: "voice" as const,
           transcript: outcome.text,
           useSubmittedTranscript: false,
+          ...pushback,
         };
       }
       return {
@@ -111,6 +119,7 @@ export function useBackgroundScribe({
         inputMode: "voice" as const,
         transcript: answer.transcript,
         useSubmittedTranscript: true,
+        ...pushback,
       };
     }),
   };

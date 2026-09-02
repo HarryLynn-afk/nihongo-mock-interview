@@ -16,6 +16,8 @@ const answers = [
     questionIndex: 0,
     inputMode: "voice" as const,
     transcript: "はじめまして。アウンミンハントです。",
+    pushbackCount: 0 as const,
+    forced: false,
   },
 ];
 

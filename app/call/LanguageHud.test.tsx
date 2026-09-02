@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { LanguageHud } from "./LanguageHud";
+import { PUSHBACK_TRY_AGAIN } from "@/lib/content/pushbackCopy";
 
 describe("LanguageHud", () => {
   it("shows the Japanese caption when sensei is speaking", () => {
@@ -79,5 +80,24 @@ describe("LanguageHud", () => {
 
     expect(screen.getByText("I am Aung Min Khant.")).toBeInTheDocument();
     expect(screen.getByText("ကျွန်တော် အောင်မင်းခန့်ပါ။")).toBeInTheDocument();
+  });
+
+  it("keeps the Question caption and shows the try-again lines underneath", () => {
+    render(
+      <LanguageHud
+        speaker="student"
+        caption="はじめに、簡単に自己紹介をお願いします。"
+        tryAgain={PUSHBACK_TRY_AGAIN}
+      />,
+    );
+
+    expect(
+      screen.getByText("はじめに、簡単に自己紹介をお願いします。"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(PUSHBACK_TRY_AGAIN.japanese),
+    ).toBeInTheDocument();
+    expect(screen.getByText(PUSHBACK_TRY_AGAIN.english)).toBeInTheDocument();
+    expect(screen.getByText(PUSHBACK_TRY_AGAIN.burmese)).toBeInTheDocument();
   });
 });

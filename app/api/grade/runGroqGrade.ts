@@ -10,6 +10,8 @@ export type GradeAnswer = {
   questionIndex: number;
   inputMode: "voice" | "typed";
   transcript: string;
+  pushbackCount: 0 | 1 | 2;
+  forced: boolean;
 };
 
 export async function runGroqGrade({

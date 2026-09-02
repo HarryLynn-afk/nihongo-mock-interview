@@ -7,6 +7,8 @@ import type { AnswerSubmission } from "./useQuestionFlow";
 const typed = (transcript = "ok"): AnswerSubmission => ({
   inputMode: "typed",
   transcript,
+  pushbackCount: 0,
+  forced: false,
 });
 
 describe("useQuestionFlow", () => {
@@ -58,6 +60,8 @@ describe("useQuestionFlow", () => {
       result.current.submitAnswer({
         inputMode: "typed",
         transcript: "はじめまして。アウンミンハントです。",
+        pushbackCount: 0,
+        forced: false,
       }),
     );
 
@@ -66,6 +70,8 @@ describe("useQuestionFlow", () => {
         questionIndex: 0,
         inputMode: "typed",
         transcript: "はじめまして。アウンミンハントです。",
+        pushbackCount: 0,
+        forced: false,
       },
     ]);
     expect(result.current.currentQuestion).toBe(questions[1]);

@@ -5,8 +5,19 @@ import type { InterviewQuestion } from "@/lib/content/questions";
 export type QuestionPhase = "senseiSpeaking" | "studentAnswering" | "done";
 
 export type AnswerSubmission =
-  | { inputMode: "typed"; transcript: string }
-  | { inputMode: "voice"; transcript: string; audioClip: Blob };
+  | {
+      inputMode: "typed";
+      transcript: string;
+      pushbackCount: 0 | 1 | 2;
+      forced: boolean;
+    }
+  | {
+      inputMode: "voice";
+      transcript: string;
+      audioClip: Blob;
+      pushbackCount: 0 | 1 | 2;
+      forced: boolean;
+    };
 
 export type StoredAnswer = AnswerSubmission & { questionIndex: number };
 

@@ -7,6 +7,8 @@ const answers = [
     questionIndex: 0,
     inputMode: "voice" as const,
     transcript: "はじめまして。",
+    pushbackCount: 0 as const,
+    forced: false,
   },
 ];
 
