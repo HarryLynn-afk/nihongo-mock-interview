@@ -12,7 +12,8 @@ describe("getSampleReport", () => {
     expect(report.profileName).toBe("Aung Min Khant");
     expect(report.scores).toEqual(sample.scores);
     expect(report.gatesFired).toEqual([]);
-    expect(report.coaching).toEqual(sample.coaching);
+    expect(report.critiques).toEqual(sample.critiques);
+    expect(report.critiques).toHaveLength(3);
     expect(report.source).toBe("sample");
     expect(report.banner).toBe("Scoring unavailable — sample report.");
   });

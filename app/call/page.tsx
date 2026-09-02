@@ -7,8 +7,8 @@ import { LanguageHud } from "./LanguageHud";
 import { SpeakAnswerButton } from "./SpeakAnswerButton";
 import { SenseiTile } from "./SenseiTile";
 import { StudentTile } from "./StudentTile";
+import { UsefulnessStep } from "./UsefulnessStep";
 import { buildReportView } from "./buildReportView";
-import { selectDisplayedReport } from "./selectDisplayedReport";
 import { playQuestionAudio } from "./playQuestionAudio";
 import { useAnswerCapture } from "./useAnswerCapture";
 import { useBackgroundScribe } from "./useBackgroundScribe";
@@ -18,6 +18,10 @@ import { useMicToggle } from "./useMicToggle";
 import { useQuestionFlow } from "./useQuestionFlow";
 import { getPitchCaptions } from "@/lib/content/pitchAnswers";
 import { PUSHBACK_TRY_AGAIN } from "@/lib/content/pushbackCopy";
+import {
+  buildUsefulnessView,
+  createSessionId,
+} from "@/lib/content/survey";
 import { loadDevicePrefs, type DevicePrefs } from "../components/devicePrefs";
 
 const DEFAULT_DEVICE_PREFS: DevicePrefs = { cameraOn: true, micOn: true };
@@ -25,6 +29,9 @@ const DEFAULT_DEVICE_PREFS: DevicePrefs = { cameraOn: true, micOn: true };
 export default function CallPage() {
   const [devicePrefs, setDevicePrefs] = useState(DEFAULT_DEVICE_PREFS);
   const [isPitchMode, setIsPitchMode] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [formEnabled, setFormEnabled] = useState(false);
+  const [revealDone, setRevealDone] = useState(false);
 
   useEffect(() => {
     setDevicePrefs(loadDevicePrefs());
@@ -41,6 +48,23 @@ export default function CallPage() {
     useQuestionFlow();
   const scribe = useBackgroundScribe({ answers, phase });
   const { report } = useInterviewScore(scribe);
+
+  useEffect(() => {
+    if (!report) return;
+    setSessionId((current) => current ?? createSessionId());
+  }, [report]);
+
+  useEffect(() => {
+    if (!report) return;
+    fetch("/api/survey")
+      .then((res) => res.json())
+      .then((data: { enabled?: boolean }) => {
+        setFormEnabled(Boolean(data.enabled));
+      })
+      .catch(() => {
+        setFormEnabled(false);
+      });
+  }, [report]);
 
   const {
     liveCaption,
@@ -90,6 +114,15 @@ export default function CallPage() {
     isPitchMode && phase === "studentAnswering" && questionIndex !== null
       ? getPitchCaptions(questionIndex)
       : null;
+  const usefulnessView =
+    sessionId === null
+      ? null
+      : buildUsefulnessView({
+          isPitchMode,
+          formEnabled,
+          revealDone,
+          sessionId,
+        });
   return (
     <div
       data-testid="call-screen"
@@ -104,12 +137,14 @@ export default function CallPage() {
           {phase === "done" && report ? (
             <InterviewReportScreen
               view={buildReportView({
-                report: selectDisplayedReport({ isPitchMode, live: report }),
+                report,
                 answers: answers.map(({ questionIndex: index, inputMode }) => ({
                   questionIndex: index,
                   inputMode,
                 })),
               })}
+              sessionId={sessionId ?? undefined}
+              onRevealComplete={() => setRevealDone(true)}
             />
           ) : (
             <div data-testid="sensei-stage" className="relative min-w-0 flex-1">
@@ -129,6 +164,20 @@ export default function CallPage() {
             </div>
           )}
         </div>
+
+        {usefulnessView && report ? (
+          <UsefulnessStep
+            view={usefulnessView}
+            report={report}
+            answers={answers.map(
+              ({ questionIndex: index, pushbackCount, forced }) => ({
+                questionIndex: index,
+                pushbackCount,
+                forced,
+              }),
+            )}
+          />
+        ) : null}
 
         {phase !== "done" && currentQuestion ? (
           <LanguageHud

@@ -48,7 +48,15 @@ describe("POST /api/grade", () => {
               message: {
                 content: JSON.stringify({
                   scores: SAMPLE_SCORES,
-                  coaching: ["Use です/ます all the way through."],
+                  critiques: [
+                    {
+                      questionIndex: 0,
+                      quote: "はじめまして",
+                      explanation: "Use です/ます all the way through.",
+                      rewrite: "はじめまして。",
+                      category: "speaking",
+                    },
+                  ],
                 }),
               },
             },

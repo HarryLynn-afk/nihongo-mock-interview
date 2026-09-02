@@ -25,7 +25,15 @@ const n8nReport: InterviewReport = {
     consistency: { raw: 4, weight: 10, points: 8 },
   },
   gatesFired: [],
-  coaching: ["Use です/ます all the way through."],
+  critiques: [
+    {
+      questionIndex: 0,
+      quote: "はじめまして",
+      explanation: "Use です/ます all the way through.",
+      rewrite: "はじめまして。",
+      category: "speaking",
+    },
+  ],
   profileName: "Aung Min Khant",
   source: "n8n",
   banner: null,
@@ -62,6 +70,39 @@ describe("gradeInterview", () => {
     ) as { profile?: { name?: string }; answers?: unknown };
     expect(posted.profile).toBeUndefined();
     expect(posted.answers).toEqual(answers);
+  });
+
+  it("treats old coaching-only n8n JSON as a miss and calls Groq", async () => {
+    const coachingOnly = {
+      headline: "Ready",
+      stamp: "準備OK",
+      total: 92,
+      scores: n8nReport.scores,
+      gatesFired: [],
+      coaching: ["Use です/ます all the way through."],
+      profileName: "Aung Min Khant",
+      source: "n8n",
+      banner: null,
+    };
+    const n8nFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(coachingOnly), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const fallbackReport: InterviewReport = { ...n8nReport, source: "grade" };
+    const fallback = vi.fn().mockResolvedValue(fallbackReport);
+
+    const report = await gradeInterview({
+      answers,
+      n8nFetch,
+      getWebhookUrl: () => "https://example.com/webhook/nihongo-grade",
+      fallback,
+    });
+
+    expect(fallback).toHaveBeenCalledOnce();
+    expect(report).toEqual(fallbackReport);
+    expect(n8nFetch).toHaveBeenCalledOnce();
   });
 
   it("calls the Groq fallback once when n8n exceeds timeoutMs, without retrying n8n", async () => {

@@ -44,15 +44,23 @@ function revealClass(visible: boolean) {
   return `transition-opacity duration-500 ${visible ? "opacity-100" : "opacity-0"}`;
 }
 
-export function InterviewReportScreen({ view }: { view: ReportView }) {
+export function InterviewReportScreen({
+  view,
+  sessionId,
+  onRevealComplete,
+}: {
+  view: ReportView;
+  sessionId?: string;
+  onRevealComplete?: () => void;
+}) {
   const [stage, setStage] = useState(0);
 
   useEffect(() => {
     const stamp = window.setTimeout(() => setStage(1), REPORT_STAMP_REVEAL_MS);
-    const coaching = window.setTimeout(
-      () => setStage(2),
-      REPORT_COACHING_REVEAL_MS,
-    );
+    const coaching = window.setTimeout(() => {
+      setStage(2);
+      onRevealComplete?.();
+    }, REPORT_COACHING_REVEAL_MS);
     return () => {
       window.clearTimeout(stamp);
       window.clearTimeout(coaching);
@@ -65,6 +73,11 @@ export function InterviewReportScreen({ view }: { view: ReportView }) {
       className="flex w-full max-w-2xl flex-1 flex-col items-center gap-5 rounded-2xl border border-paper/10 bg-ink p-6 text-paper"
     >
       <h1 className="text-xl font-medium">{view.title}</h1>
+      {sessionId ? (
+        <p data-testid="session-id" className="text-[10px] tracking-wide text-paper/40">
+          {sessionId}
+        </p>
+      ) : null}
       <div data-testid="readiness-radar" className={revealClass(stage >= 0)}>
         <svg viewBox="0 0 220 220" className="h-56 w-56">
           {[0.4, 0.7, 1].map((level) => (
@@ -121,13 +134,25 @@ export function InterviewReportScreen({ view }: { view: ReportView }) {
         ))}
       </ul>
       <ul
-        data-testid="report-coaching"
-        className={`flex w-full flex-col gap-2 text-sm text-paper/90 ${revealClass(stage >= 2)}`}
+        data-testid="report-critiques"
+        className={`flex w-full flex-col gap-3 text-sm text-paper/90 ${revealClass(stage >= 2)}`}
       >
-        {view.coaching.map((line) => (
-          <li key={line}>{line}</li>
+        {view.critiques.map((critique) => (
+          <li key={`${critique.quote}-${critique.rewrite}`}>
+            <p>{critique.quote}</p>
+            <p>{critique.explanation}</p>
+            <p>{critique.rewrite}</p>
+            <p>{critique.burmese}</p>
+          </li>
         ))}
       </ul>
+      {view.notes.length > 0 ? (
+        <ul className="flex w-full flex-col gap-2 text-sm text-paper/80">
+          {view.notes.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+      ) : null}
     </section>
   );
 }

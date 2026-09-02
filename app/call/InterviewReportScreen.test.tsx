@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, within } from "@testing-library/react";
 import { InterviewReportScreen } from "./InterviewReportScreen";
+import type { ReportView } from "./buildReportView";
 
-const view = {
+const view: ReportView = {
   title: "Interview Readiness",
   stamp: "準備OK" as const,
   stampColorClass: "text-stamp-ready",
@@ -16,7 +17,16 @@ const view = {
     { key: "studyPlan" as const, label: "Study plan", raw: 5, points: 20 },
     { key: "consistency" as const, label: "Consistency", raw: 4, points: 8 },
   ],
-  coaching: ["Use です/ます all the way through."],
+  critiques: [
+    {
+      quote: "はじめまして",
+      explanation: "Clear self-introduction.",
+      rewrite: "はじめまして",
+      burmese:
+        "သင်ပြောခဲ့သည့်စာကြောင်း − 「はじめまして」။ အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
+    },
+  ],
+  notes: ["This answer was typed, so pronunciation was not checked."],
 };
 
 describe("InterviewReportScreen", () => {
@@ -42,11 +52,27 @@ describe("InterviewReportScreen", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows coaching notes", () => {
+  it("shows quoted critiques instead of freeform coaching notes", () => {
     render(<InterviewReportScreen view={view} />);
 
+    const critiques = within(screen.getByTestId("report-critiques"));
+    expect(critiques.getAllByText("はじめまして")).toHaveLength(2);
+    expect(critiques.getByText("Clear self-introduction.")).toBeInTheDocument();
     expect(
-      screen.getByText("Use です/ます all the way through."),
+      critiques.getByText(
+        "သင်ပြောခဲ့သည့်စာကြောင်း − 「はじめまして」။ အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("report-coaching"),
+    ).not.toBeInTheDocument();
+    expect(
+      critiques.queryByText(
+        "This answer was typed, so pronunciation was not checked.",
+      ),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("This answer was typed, so pronunciation was not checked."),
     ).toBeInTheDocument();
   });
 
@@ -68,13 +94,13 @@ describe("InterviewReportScreen", () => {
     expect(radar.getByText("Consistency")).toBeInTheDocument();
   });
 
-  it("reveals radar, then stamp, then coaching — never all at once", async () => {
+  it("reveals radar, then stamp, then critiques — never all at once", async () => {
     vi.useFakeTimers();
     render(<InterviewReportScreen view={view} />);
 
     expect(screen.getByTestId("readiness-radar")).toHaveClass("opacity-100");
     expect(screen.getByTestId("report-stamp")).toHaveClass("opacity-0");
-    expect(screen.getByTestId("report-coaching")).toHaveClass("opacity-0");
+    expect(screen.getByTestId("report-critiques")).toHaveClass("opacity-0");
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(699);
@@ -85,12 +111,45 @@ describe("InterviewReportScreen", () => {
       await vi.advanceTimersByTimeAsync(1);
     });
     expect(screen.getByTestId("report-stamp")).toHaveClass("opacity-100");
-    expect(screen.getByTestId("report-coaching")).toHaveClass("opacity-0");
+    expect(screen.getByTestId("report-critiques")).toHaveClass("opacity-0");
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700);
     });
-    expect(screen.getByTestId("report-coaching")).toHaveClass("opacity-100");
+    expect(screen.getByTestId("report-critiques")).toHaveClass("opacity-100");
+
+    vi.useRealTimers();
+  });
+
+  it("shows a small session id tag on the report", () => {
+    render(
+      <InterviewReportScreen
+        view={view}
+        sessionId="11111111-1111-4111-8111-111111111111"
+      />,
+    );
+
+    expect(screen.getByTestId("session-id")).toHaveTextContent(
+      "11111111-1111-4111-8111-111111111111",
+    );
+  });
+
+  it("notifies when the critique reveal finishes", async () => {
+    vi.useFakeTimers();
+    const onRevealComplete = vi.fn();
+    render(
+      <InterviewReportScreen view={view} onRevealComplete={onRevealComplete} />,
+    );
+
+    expect(onRevealComplete).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1399);
+    });
+    expect(onRevealComplete).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(onRevealComplete).toHaveBeenCalledTimes(1);
 
     vi.useRealTimers();
   });

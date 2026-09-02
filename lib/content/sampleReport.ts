@@ -1,11 +1,12 @@
 import type { ScoredReport } from "./rubric";
+import type { QuotedCritique } from "./parseQuotedCritiques";
 import sample from "@/mocks/sample-report-ready.json";
 
 export const SCORING_UNAVAILABLE_BANNER =
   "Scoring unavailable — sample report." as const;
 
 export type InterviewReport = ScoredReport & {
-  coaching: string[];
+  critiques: QuotedCritique[];
   profileName: string;
   source: "n8n" | "grade" | "sample";
   banner: string | null;
@@ -20,7 +21,7 @@ export function getSampleReport(
     total: sample.total,
     scores: sample.scores,
     gatesFired: sample.gatesFired,
-    coaching: sample.coaching,
+    critiques: sample.critiques as InterviewReport["critiques"],
     profileName: sample.profileName,
     source: "sample",
     banner,

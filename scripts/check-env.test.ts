@@ -37,4 +37,11 @@ describe("scripts/check-env.mjs", () => {
 
     expect(result.status).toBe(0);
   });
+
+  it("does not require RESEARCH_FORM_URL", () => {
+    const result = runCheckEnv(ALL_REQUIRED_ENV);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).not.toMatch(/RESEARCH_FORM_URL/);
+  });
 });

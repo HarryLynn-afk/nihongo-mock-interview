@@ -2,6 +2,7 @@ import {
   getSampleReport,
   SCORING_UNAVAILABLE_BANNER,
 } from "@/lib/content/sampleReport";
+import { parseQuotedCritiques } from "@/lib/content/parseQuotedCritiques";
 import type { GradeAnswer, InterviewReport } from "./runGroqGrade";
 
 export async function gradeInterview({
@@ -34,9 +35,10 @@ export async function gradeInterview({
       body: JSON.stringify({ answers }),
     });
     if (!res.ok) return finishWithFallback();
-    const data = (await res.json()) as InterviewReport;
-    if (typeof data?.headline === "string") {
-      return { ...data, source: "n8n", banner: null };
+    const data = (await res.json()) as InterviewReport & { critiques?: unknown };
+    const critiques = parseQuotedCritiques(data?.critiques, answers);
+    if (typeof data?.headline === "string" && critiques) {
+      return { ...data, critiques, source: "n8n", banner: null };
     }
     return finishWithFallback();
   } catch {

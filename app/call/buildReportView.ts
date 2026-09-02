@@ -1,5 +1,9 @@
 import type { InterviewReport } from "@/lib/content/sampleReport";
 import type { Headline, RubricCategoryKey } from "@/lib/content/rubric";
+import {
+  formatQuotedCritique,
+  type FormattedCritique,
+} from "@/lib/content/critiqueCopy";
 
 const TYPED_LINE =
   "This answer was typed, so pronunciation was not checked.";
@@ -43,7 +47,8 @@ export type ReportView = {
     raw: number;
     points: number;
   }>;
-  coaching: string[];
+  critiques: FormattedCritique[];
+  notes: string[];
 };
 
 export function buildReportView({
@@ -53,16 +58,16 @@ export function buildReportView({
   report: InterviewReport;
   answers: readonly { questionIndex: number; inputMode: "voice" | "typed" }[];
 }): ReportView {
-  const coaching = [...(report.coaching ?? [])];
+  const notes: string[] = [];
   if (answers.some((answer) => answer.inputMode === "typed")) {
-    coaching.push(TYPED_LINE);
+    notes.push(TYPED_LINE);
   }
   const speakingGated = report.gatesFired.includes("speaking");
   const planGated =
     report.gatesFired.includes("motivation") ||
     report.gatesFired.includes("studyPlan");
   if (speakingGated && !planGated) {
-    coaching.push(SPEAKING_GAP_LINE);
+    notes.push(SPEAKING_GAP_LINE);
   }
 
   return {
@@ -77,6 +82,7 @@ export function buildReportView({
       raw: report.scores[key].raw,
       points: report.scores[key].points,
     })),
-    coaching,
+    critiques: report.critiques.map(formatQuotedCritique),
+    notes,
   };
 }

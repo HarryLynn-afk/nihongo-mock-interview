@@ -88,4 +88,23 @@ describe("lib/server/env/* per-purpose modules", () => {
     const { getWisprKey } = await import("./wispr");
     expect(getWisprKey()).toBeUndefined();
   });
+
+  it("research form URL is optional — missing var returns null and does not throw", async () => {
+    setAllRequiredEnv();
+    delete process.env.RESEARCH_FORM_URL;
+
+    const { getResearchFormUrl } = await import("./researchForm");
+    expect(getResearchFormUrl()).toBeNull();
+  });
+
+  it("research form URL getter returns the URL when set", async () => {
+    setAllRequiredEnv();
+    process.env.RESEARCH_FORM_URL =
+      "https://docs.google.com/forms/d/e/test/formResponse";
+
+    const { getResearchFormUrl } = await import("./researchForm");
+    expect(getResearchFormUrl()).toBe(
+      "https://docs.google.com/forms/d/e/test/formResponse",
+    );
+  });
 });

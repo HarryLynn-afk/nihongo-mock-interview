@@ -45,7 +45,15 @@ describe("POST /api/score", () => {
         consistency: { raw: 4, weight: 10, points: 8 },
       },
       gatesFired: [],
-      coaching: ["Use です/ます all the way through."],
+      critiques: [
+        {
+          questionIndex: 0,
+          quote: "はじめまして",
+          explanation: "Use です/ます all the way through.",
+          rewrite: "はじめまして。",
+          category: "speaking",
+        },
+      ],
       profileName: "Aung Min Khant",
       source: "n8n",
       banner: null,
@@ -109,7 +117,15 @@ describe("POST /api/score", () => {
                         studyPlan: 5,
                         consistency: 4,
                       },
-                      coaching: ["Use です/ます all the way through."],
+                      critiques: [
+                        {
+                          questionIndex: 0,
+                          quote: "はじめまして",
+                          explanation: "Use です/ます all the way through.",
+                          rewrite: "はじめまして。",
+                          category: "speaking",
+                        },
+                      ],
                     }),
                   },
                 },

@@ -48,11 +48,13 @@ export function getRubricPrompt(): string {
     "You are grading a beginner Japanese language-school admission interview practice session.",
     "For each of these six categories, give an integer score from 1 to 5:",
     categoryLines,
-    "Also give 2-4 short coaching notes in plain language (です/ます and beginner grammar terms are fine).",
+    "Also give exactly one quoted critique per answer: an exact-substring quote from that answer's transcript, a short English explanation, a Japanese rewrite, and exactly one category key from the list above.",
+    "Quote must be copied from that transcript. Use （無言） as the quote only when the transcript is empty after trim.",
+    "Rewrite is Japanese only. If rewrite equals quote, that is an affirming critique. If an answer has forced true, rewrite must not equal quote and must include Hiragana or Katakana; never use （無言） as the rewrite.",
     "If an answer's inputMode is typed, score speaking only on whether they answered the question and used understandable です/ます — do not score pronunciation for that answer.",
     "There is no pre-filled student card. Score only from the three answers.",
-    "Never use exam or certification labels in your scores or notes.",
-    'Return strict JSON: { "scores": { <category>: <1-5 integer>, ... }, "coaching": [<string>, ...] }',
+    "Never use exam or certification labels in your scores or critiques.",
+    'Return strict JSON: { "scores": { <category>: <1-5 integer>, ... }, "critiques": [{ "questionIndex": <0-2 integer>, "quote": <string>, "explanation": <English string>, "rewrite": <Japanese string>, "category": <category key> }] }',
   ].join("\n");
 }
 

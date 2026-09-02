@@ -121,14 +121,14 @@ Freeform 2–4 coaching notes can be praise-only. The research path needs one qu
 Change `getRubricPrompt()` so the LLM returns **RawScores** plus exactly three critiques (`questionIndex`, exact-substring `quote`, English `explanation`, Japanese `rewrite`, one `RubricCategoryKey`). Do not retune weights/Gates/Headline. Parse/validate: quote is a substring of that answer’s transcript, except `（無言）` only when transcript is empty after trim; if `forced`, `rewrite !== quote` and rewrite has Hiragana or Katakana; empty transcript cannot use a non-placeholder quote. Invalid or old coaching-only n8n JSON is a **miss** → `runGroqGrade`. Sample only if both fail. Update `InterviewReport` to carry critiques instead of coaching strings. Update `mocks/sample-report-ready.json` / `getSampleReport` with three valid quoted critiques. Regenerate `docs/rubric-generated.md` (`rubricDoc.test.ts`).
 
 ### Acceptance Criteria
-- [ ] `getRubricPrompt()` asks for quoted critiques (quote, explanation, rewrite, category), not unconstrained 2–4 coaching notes
-- [ ] Old `{ scores, coaching }` n8n payload is a miss; Groq runs
-- [ ] Fabricated quote (not a substring, and not legal `（無言）`) is a miss
-- [ ] `forced` + `rewrite === quote` is a miss
-- [ ] Dual-fail sample includes three quoted critiques (not an empty coaching list)
-- [ ] `scoreReport` weights/Gates/Headline unchanged
-- [ ] RubricDoc snapshot matches `docs/rubric-generated.md`
-- [ ] Tests mock `fetch`; no live n8n/Groq
+- [x] `getRubricPrompt()` asks for quoted critiques (quote, explanation, rewrite, category), not unconstrained 2–4 coaching notes
+- [x] Old `{ scores, coaching }` n8n payload is a miss; Groq runs
+- [x] Fabricated quote (not a substring, and not legal `（無言）`) is a miss
+- [x] `forced` + `rewrite === quote` is a miss
+- [x] Dual-fail sample includes three quoted critiques (not an empty coaching list)
+- [x] `scoreReport` weights/Gates/Headline unchanged
+- [x] RubricDoc snapshot matches `docs/rubric-generated.md`
+- [x] Tests mock `fetch`; no live n8n/Groq
 
 ### Technical Notes
 - `lib/content/rubric.ts`, new parse helper beside `parseRawScores`, `runGroqGrade.ts`, `gradeInterview.ts`, `sampleReport.ts`, `docs/rubric-generated.md`.
@@ -153,12 +153,12 @@ Critique is report-only, under the six **RawScores**, radar, total, **Headline**
 `buildReportView` / `InterviewReportScreen`: drop the old coaching list. Show one critique per **Question**: Japanese `quote`, English `explanation`, Japanese `rewrite`, and the MY frame. Corrective (`rewrite !== quote`): PRD corrective template. Affirming (`rewrite === quote`): affirming template + affirming `{explanation_my}`. Map `RubricCategoryKey` to the PRD’s two MY phrase sets (drafts). Keep typed-answer pronunciation line if still required by existing tests; do not keep the old 2–4 coaching notes. Copy lives in `lib/content/`.
 
 ### Acceptance Criteria
-- [ ] Report still shows six scores, radar, total, **Stamp**
-- [ ] Three critiques render; old freeform coaching array is not shown
-- [ ] Affirming MY uses the “you said it well” frame, not “instead”
-- [ ] Corrective MY uses the “instead / rewrite” frame
-- [ ] MY punctuation is `။` / `၊` as in the PRD
-- [ ] Critiques do not appear during Q1–Q3
+- [x] Report still shows six scores, radar, total, **Stamp**
+- [x] Three critiques render; old freeform coaching array is not shown
+- [x] Affirming MY uses the “you said it well” frame, not “instead”
+- [x] Corrective MY uses the “instead / rewrite” frame
+- [x] MY punctuation is `။` / `၊` as in the PRD
+- [x] Critiques do not appear during Q1–Q3
 
 ### Technical Notes
 - `app/call/buildReportView.ts`, `InterviewReportScreen.tsx`, tests. Typed-line in `buildReportView` may stay.
@@ -182,10 +182,10 @@ Headline-based swap to the canned sample would show quotes the student never sai
 Retire Headline-based last-screen swap in `selectDisplayedReport`: **Pitch mode** displays the live **InterviewReport** even when **Headline** is not `Ready`. Dual-fail `source: "sample"` + banner still uses `getSampleReport`. Update tests that expected a canned Ready swap.
 
 ### Acceptance Criteria
-- [ ] `?pitch=1` + live AlmostReady/KeepPracticing shows that live report (not canned Ready)
-- [ ] `?pitch=1` + live Ready still shows the live report
-- [ ] Dual-fail sample + scoring-unavailable banner still shows
-- [ ] Non-pitch testers still see the live report (unchanged)
+- [x] `?pitch=1` + live AlmostReady/KeepPracticing shows that live report (not canned Ready)
+- [x] `?pitch=1` + live Ready still shows the live report
+- [x] Dual-fail sample + scoring-unavailable banner still shows
+- [x] Non-pitch testers still see the live report (unchanged)
 
 ### Technical Notes
 - `app/call/selectDisplayedReport.ts` and `.test.ts`; call page wiring if any.
@@ -211,17 +211,17 @@ Without a post-report rating, the CSC 485 question has no in-product evidence (`
 After radar/stamp/critique reveal finishes, show the **Usefulness step** (not during Q1–Q3): locked consent + usefulness + usability copy (EN+MY from the PRD), two 1–5 ratings both required to Submit, optional comment, Skip. Generate a random session id; show a small tag on the **Interview Readiness** report; include it in every POST. POST (Submit or Skip) must leave the browser: session id, **Headline**, total, source collapsed to `live` | `sample` (not `n8n` vs `grade`), per-**Question** `pushbackCount` and `forced`, ratings/comment or `skipped`. Optional env URL: missing URL **hides** the step and must not fail `scripts/check-env.mjs` / `npm run build`. `?pitch=1` never shows the step. Keep `InterviewReport.source` in the client for debug; do not send n8n vs Groq on the form.
 
 ### Acceptance Criteria
-- [ ] Step appears only after the report reveal, never on `?pitch=1`
-- [ ] Submit disabled until both ratings are 1–5
-- [ ] Skip POSTs `skipped` (not silence)
-- [ ] Submit POST includes session id, Headline, total, live/sample, Q1–Q3 `pushbackCount`/`forced`
-- [ ] Session id is visible on the report
-- [ ] Missing form URL: no step, report still works, `npm run build` env check still passes without that URL
-- [ ] Tests mock the POST; no live Google Form in CI
+- [x] Step appears only after the report reveal, never on `?pitch=1`
+- [x] Submit disabled until both ratings are 1–5
+- [x] Skip POSTs `skipped` (not silence)
+- [x] Submit POST includes session id, Headline, total, live/sample, Q1–Q3 `pushbackCount`/`forced`
+- [x] Session id is visible on the report
+- [x] Missing form URL: no step, report still works, `npm run build` env check still passes without that URL
+- [x] Tests mock the POST; no live Google Form in CI
 
 ### Technical Notes
 - New content module for survey copy; optional env getter that does **not** use `requireEnv` (unlike TTS/Scribe). Client POST vs thin route: do not put the form URL in a server-only module imported by `"use client"` if that leaks; follow existing env isolation.
-- Open Questions remain: exact env var name, Google Form entry IDs, session-id format (UUID vs short token — pick one in `/build-plan` and stick to it).
+- Env var: `RESEARCH_FORM_URL` (optional). Session id: `crypto.randomUUID()`. Entry IDs live in `RESEARCH_FORM_FIELDS` (Issue 29).
 - Ubiquitous language: **InterviewReport**, **Headline**, **Pitch mode**, **Usefulness step**.
 
 ### Out of Scope

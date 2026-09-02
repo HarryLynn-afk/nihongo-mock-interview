@@ -38,10 +38,13 @@ describe("getRubricPrompt", () => {
     expect(prompt).toMatch(/です\/ます/);
   });
 
-  it("scores consistency from the three answers agreeing, not a written profile", () => {
+  it("asks for quoted critiques per Question, not unconstrained coaching notes", () => {
     const prompt = getRubricPrompt();
 
-    expect(prompt).toMatch(/consistency:.*three answers/i);
-    expect(prompt).not.toMatch(/written profile/i);
+    expect(prompt).toMatch(/quote/i);
+    expect(prompt).toMatch(/explanation/i);
+    expect(prompt).toMatch(/rewrite/i);
+    expect(prompt).toMatch(/category/i);
+    expect(prompt).not.toMatch(/"coaching"/);
   });
 });

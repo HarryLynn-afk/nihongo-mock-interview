@@ -14,12 +14,29 @@
     "consistency": { "raw": 4, "weight": 10, "points": 8 }
   },
   "gatesFired": [],
-  "coaching": [
-    "Use です/ます all the way through, not casual だ/る.",
-    "Self-intro covered name, age, hometown, and the IT goal.",
-    "You named this school, Akihabara, and IT career guidance.",
-    "Post-graduation plan is vocational school, then engineer."
+  "critiques": [
+    {
+      "questionIndex": 0,
+      "quote": "アウン・ミン・タントです",
+      "explanation": "Use です/ます all the way through, not casual だ/る.",
+      "rewrite": "アウン・ミン・タントです。",
+      "category": "speaking"
+    },
+    {
+      "questionIndex": 1,
+      "quote": "この学校で日本語を勉強したいです",
+      "explanation": "You named this school, Akihabara, and IT career guidance.",
+      "rewrite": "この学校で日本語を勉強したいです。",
+      "category": "motivation"
+    },
+    {
+      "questionIndex": 2,
+      "quote": "専門学校でウェブを勉強します",
+      "explanation": "Post-graduation plan is vocational school, then engineer.",
+      "rewrite": "専門学校でウェブを勉強します。",
+      "category": "studyPlan"
+    }
   ],
   "profileName": "Aung Min Khant",
-  "notes": "Used when both n8n and /api/grade fail, and as the Pitch-mode (?pitch=1) canned last screen when the live headline is not Ready (CSC 492 presentation demo path)."
+  "notes": "Used when both n8n and /api/grade fail. Dual-fail sample includes quoted critiques so the last screen is not an empty coaching list."
 }

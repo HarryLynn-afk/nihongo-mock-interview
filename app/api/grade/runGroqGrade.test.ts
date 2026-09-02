@@ -11,6 +11,16 @@ const SAMPLE_SCORES = {
   consistency: 4,
 };
 
+const critiques = [
+  {
+    questionIndex: 0,
+    quote: "はじめまして",
+    explanation: "Use です/ます all the way through.",
+    rewrite: "はじめまして。アウンミンハントです。",
+    category: "speaking" as const,
+  },
+];
+
 const answers = [
   {
     questionIndex: 0,
@@ -31,7 +41,7 @@ describe("runGroqGrade", () => {
               message: {
                 content: JSON.stringify({
                   scores: SAMPLE_SCORES,
-                  coaching: ["Use です/ます all the way through."],
+                  critiques,
                 }),
               },
             },
@@ -56,7 +66,7 @@ describe("runGroqGrade", () => {
         source: "grade",
         banner: null,
         profileName: "",
-        coaching: ["Use です/ます all the way through."],
+        critiques,
       }),
     );
     expect(groqFetch).toHaveBeenCalledWith(
@@ -95,7 +105,7 @@ describe("runGroqGrade", () => {
               message: {
                 content: JSON.stringify({
                   scores: SAMPLE_SCORES,
-                  coaching: [],
+                  critiques,
                 }),
               },
             },
@@ -129,7 +139,7 @@ describe("runGroqGrade", () => {
               message: {
                 content: JSON.stringify({
                   scores: SAMPLE_SCORES,
-                  coaching: [],
+                  critiques,
                 }),
               },
             },

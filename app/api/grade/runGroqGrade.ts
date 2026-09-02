@@ -1,4 +1,5 @@
 import { getRubricPrompt, parseRawScores, scoreReport } from "@/lib/content/rubric";
+import { parseQuotedCritiques } from "@/lib/content/parseQuotedCritiques";
 import type { InterviewReport } from "@/lib/content/sampleReport";
 
 export type { InterviewReport };
@@ -47,15 +48,14 @@ export async function runGroqGrade({
     if (!text) return null;
     const parsed = JSON.parse(text) as {
       scores?: unknown;
-      coaching?: unknown;
+      critiques?: unknown;
     };
     const scored = scoreReport(parseRawScores(parsed.scores));
-    const coaching = Array.isArray(parsed.coaching)
-      ? parsed.coaching.filter((item): item is string => typeof item === "string")
-      : [];
+    const critiques = parseQuotedCritiques(parsed.critiques, answers);
+    if (!critiques) return null;
     return {
       ...scored,
-      coaching,
+      critiques,
       profileName: "",
       source: "grade",
       banner: null,
