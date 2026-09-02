@@ -283,20 +283,38 @@ describe("Call screen", () => {
     ).toBeInTheDocument();
   });
 
-  it("does not show Speak or type while listening", async () => {
+  it("shows Speak or type while listening and paused", async () => {
     const user = await startStudentTurn();
 
     await user.click(screen.getByRole("button", { name: /speak answer/i }));
 
     expect(
-      screen.queryByRole("button", { name: /^speak or type$/i }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: /^speak or type$/i }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /pause listening/i }));
 
     expect(
-      screen.queryByRole("button", { name: /^speak or type$/i }),
+      screen.getByRole("button", { name: /^speak or type$/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("Speak or type from Speak restores Speak answer and Type answer without submitting", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    await user.click(screen.getByRole("button", { name: /^speak or type$/i }));
+
+    expect(screen.queryByTestId("live-transcript")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /submit answer/i }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /speak answer/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /type answer/i }),
+    ).toBeInTheDocument();
   });
 
   it("does not show the answer box just because the mic is off", async () => {
@@ -504,6 +522,32 @@ describe("Call screen", () => {
       screen.queryByTestId("speak-answer-recording"),
     ).not.toBeInTheDocument();
     expect(screen.queryByTestId("live-transcript")).not.toBeInTheDocument();
+  });
+
+  it("with ?pitch=1 Speak or type from Speak stays on Speak or Type", async () => {
+    window.history.pushState({}, "", "/call?pitch=1");
+
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+    });
+    await act(async () => {
+      endedHandlers.splice(0).forEach((handler) => handler());
+    });
+
+    await user.click(screen.getByRole("button", { name: /^speak or type$/i }));
+
+    expect(
+      screen.getByRole("button", { name: /speak answer/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /type answer/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("speak-answer-recording"),
+    ).not.toBeInTheDocument();
   });
 
   it("with ?pitch=1 shows locked EN/MY for the current question index, not the typed transcript", async () => {

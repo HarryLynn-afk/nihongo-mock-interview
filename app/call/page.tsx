@@ -187,7 +187,7 @@ export default function CallPage() {
                 onClick={onToggleSpeakPause}
               />
             ) : null}
-            {studentTurn === "type" ? (
+            {studentTurn === "speak" || studentTurn === "type" ? (
               <button
                 type="button"
                 onClick={onSpeakOrType}

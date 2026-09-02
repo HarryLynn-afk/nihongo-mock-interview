@@ -52,6 +52,26 @@ describe("useAnswerCapture", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it("Speak or type from paused Speak returns to choose and clears pause", () => {
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit,
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => result.current.onToggleSpeakPause());
+    act(() => result.current.onSpeakOrType());
+
+    expect(result.current.studentTurn).toBe("choose");
+    expect(result.current.speakPaused).toBe(false);
+    expect(result.current.liveCaption).toBeNull();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it("submits a typed AnswerSubmission from the answer box", () => {
     const onSubmit = vi.fn();
     const { result } = renderHook(() =>

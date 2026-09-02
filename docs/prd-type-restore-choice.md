@@ -1,5 +1,5 @@
 # PRD — Type Restore to Speak or Type
-**Status:** Draft
+**Status:** Draft — Speak restore exclusion superseded by `docs/prd-speak-restore-choice.md` (2026-09-02).
 **Date:** 2026-09-02
 **Built by:** Kyaw Naing Lin
 
@@ -29,7 +29,7 @@ The student practicing on `/call` during `studentTurn === "type"`, including pit
 - Accessible name **Speak or type** (button role), so tests and screen readers match the visible label.
 
 ### Must NOT Have (explicit exclusions)
-- No restore control on Speak (listening or paused). Pause stays the Speak stop-talking control; empty Submit still opens Type.
+- ~~No restore control on Speak (listening or paused).~~ Superseded: see `docs/prd-speak-restore-choice.md`. Pause still pauses listening; empty Submit still opens Type.
 - Not a one-click jump into Speak / listening.
 - Do not keep typed text across restore.
 - Not undo after **Submit answer**.

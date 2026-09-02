@@ -193,6 +193,7 @@ export function useAnswerCapture({
     onToggleSpeakPause: () => setSpeakPaused((current) => !current),
     onTypeAnswer: () => setAnswerMode("type"),
     onSpeakOrType: () => {
+      resetSpeakSession();
       setAnswerMode(null);
       setDraft("");
     },
