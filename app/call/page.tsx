@@ -49,6 +49,7 @@ export default function CallPage() {
     onSpeakAnswer,
     onToggleSpeakPause,
     onTypeAnswer,
+    onSpeakOrType,
     onSubmitClick,
     studentTurn,
   } = useAnswerCapture({
@@ -185,6 +186,15 @@ export default function CallPage() {
                 paused={speakPaused}
                 onClick={onToggleSpeakPause}
               />
+            ) : null}
+            {studentTurn === "type" ? (
+              <button
+                type="button"
+                onClick={onSpeakOrType}
+                className="rounded-full bg-paper/10 px-5 py-3 font-medium text-paper"
+              >
+                Speak or type
+              </button>
             ) : null}
             {studentTurn === "speak" || studentTurn === "type" ? (
               <button

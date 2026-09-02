@@ -238,6 +238,67 @@ describe("Call screen", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("shows Speak or type on the Type screen", async () => {
+    const user = await startStudentTurn();
+
+    await openTypeAnswer(user);
+
+    const restore = screen.getByRole("button", { name: /^speak or type$/i });
+    expect(restore).toHaveClass("bg-paper/10");
+    expect(restore).not.toHaveClass("bg-indigo");
+  });
+
+  it("Speak or type restores Speak answer and Type answer without submitting", async () => {
+    const user = await startStudentTurn();
+
+    await openTypeAnswer(user);
+    await user.type(screen.getByRole("textbox", { name: /answer/i }), "途中");
+    await user.click(screen.getByRole("button", { name: /^speak or type$/i }));
+
+    expect(
+      screen.queryByRole("textbox", { name: /answer/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /submit answer/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /speak answer/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /type answer/i }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /type answer/i }));
+    expect(screen.getByRole("textbox", { name: /answer/i })).toHaveValue("");
+  });
+
+  it("shows Speak or type after empty Speak submit", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+
+    expect(
+      screen.getByRole("button", { name: /^speak or type$/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show Speak or type while listening", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+
+    expect(
+      screen.queryByRole("button", { name: /^speak or type$/i }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /pause listening/i }));
+
+    expect(
+      screen.queryByRole("button", { name: /^speak or type$/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it("does not show the answer box just because the mic is off", async () => {
     const user = await startStudentTurn();
 
@@ -415,6 +476,34 @@ describe("Call screen", () => {
     expect(
       fetchMock.mock.calls.some((call) => String(call[0]).includes("/api/translate")),
     ).toBe(false);
+  });
+
+  it("with ?pitch=1 Speak or type stays on Speak or Type after Type", async () => {
+    window.history.pushState({}, "", "/call?pitch=1");
+
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+    });
+    await act(async () => {
+      endedHandlers.splice(0).forEach((handler) => handler());
+    });
+
+    await openTypeAnswer(user);
+    await user.click(screen.getByRole("button", { name: /^speak or type$/i }));
+
+    expect(
+      screen.getByRole("button", { name: /speak answer/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /type answer/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("speak-answer-recording"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("live-transcript")).not.toBeInTheDocument();
   });
 
   it("with ?pitch=1 shows locked EN/MY for the current question index, not the typed transcript", async () => {

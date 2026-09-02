@@ -57,15 +57,18 @@ export function useAnswerCapture({
   const audioChunksRef = useRef<Blob[]>([]);
   const transcriptBaseRef = useRef("");
   const recorderRef = useRef<MediaRecorderLike | null>(null);
+  const autoSpeakUsedRef = useRef(false);
 
   if (!active) {
+    autoSpeakUsedRef.current = false;
     if (answerMode !== null) setAnswerMode(null);
     if (draft !== "") setDraft("");
     if (spokenCaption !== null) setSpokenCaption(null);
     if (speakPaused) setSpeakPaused(false);
     audioChunksRef.current = [];
     transcriptBaseRef.current = "";
-  } else if (autoSpeak && answerMode === null) {
+  } else if (autoSpeak && answerMode === null && !autoSpeakUsedRef.current) {
+    autoSpeakUsedRef.current = true;
     setAnswerMode("speak");
   }
 
@@ -189,6 +192,10 @@ export function useAnswerCapture({
     },
     onToggleSpeakPause: () => setSpeakPaused((current) => !current),
     onTypeAnswer: () => setAnswerMode("type"),
+    onSpeakOrType: () => {
+      setAnswerMode(null);
+      setDraft("");
+    },
     onSubmitClick,
     studentTurn,
   };

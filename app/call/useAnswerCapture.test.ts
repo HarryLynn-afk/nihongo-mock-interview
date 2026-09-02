@@ -33,6 +33,25 @@ describe("useAnswerCapture", () => {
     expect(result.current.studentTurn).toBe("type");
   });
 
+  it("Speak or type from Type returns to choose and clears the draft", () => {
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit,
+      }),
+    );
+
+    act(() => result.current.onTypeAnswer());
+    act(() => result.current.onDraftChange("途中の答え"));
+    act(() => result.current.onSpeakOrType());
+
+    expect(result.current.studentTurn).toBe("choose");
+    expect(result.current.draft).toBe("");
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it("submits a typed AnswerSubmission from the answer box", () => {
     const onSubmit = vi.fn();
     const { result } = renderHook(() =>
@@ -68,6 +87,22 @@ describe("useAnswerCapture", () => {
 
     expect(onSubmit).not.toHaveBeenCalled();
     expect(result.current.studentTurn).toBe("type");
+  });
+
+  it("Speak or type from empty-Speak Type also returns to choose", () => {
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit: vi.fn(),
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => result.current.onSubmitClick());
+    act(() => result.current.onSpeakOrType());
+
+    expect(result.current.studentTurn).toBe("choose");
   });
 
   it("does not start browser speech until Speak answer is chosen", () => {
@@ -297,6 +332,46 @@ describe("useAnswerCapture", () => {
         onSubmit: vi.fn(),
       }),
     );
+
+    expect(result.current.studentTurn).toBe("speak");
+  });
+
+  it("autoSpeak does not re-enter Speak after Speak or type", () => {
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        autoSpeak: true,
+        onSubmit: vi.fn(),
+      }),
+    );
+
+    expect(result.current.studentTurn).toBe("speak");
+
+    act(() => result.current.onSubmitClick());
+    expect(result.current.studentTurn).toBe("type");
+
+    act(() => result.current.onSpeakOrType());
+
+    expect(result.current.studentTurn).toBe("choose");
+  });
+
+  it("autoSpeak starts Speak again on the next student turn", () => {
+    const { result, rerender } = renderHook(
+      ({ active }) =>
+        useAnswerCapture({
+          active,
+          micOn: true,
+          autoSpeak: true,
+          onSubmit: vi.fn(),
+        }),
+      { initialProps: { active: true } },
+    );
+
+    expect(result.current.studentTurn).toBe("speak");
+
+    rerender({ active: false });
+    rerender({ active: true });
 
     expect(result.current.studentTurn).toBe("speak");
   });
