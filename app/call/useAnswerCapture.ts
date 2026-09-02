@@ -53,18 +53,24 @@ export function useAnswerCapture({
   const [answerMode, setAnswerMode] = useState<AnswerMode>(null);
   const [draft, setDraft] = useState("");
   const [spokenCaption, setSpokenCaption] = useState<string | null>(null);
-  const audioClipRef = useRef<Blob | null>(null);
+  const [speakPaused, setSpeakPaused] = useState(false);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const transcriptBaseRef = useRef("");
   const recorderRef = useRef<MediaRecorderLike | null>(null);
 
   if (!active) {
     if (answerMode !== null) setAnswerMode(null);
     if (draft !== "") setDraft("");
     if (spokenCaption !== null) setSpokenCaption(null);
+    if (speakPaused) setSpeakPaused(false);
+    audioChunksRef.current = [];
+    transcriptBaseRef.current = "";
   } else if (autoSpeak && answerMode === null) {
     setAnswerMode("speak");
   }
 
-  const listening = active && answerMode === "speak" && micOn;
+  const listening =
+    active && answerMode === "speak" && micOn && !speakPaused;
   const studentTurn = !active
     ? "none"
     : answerMode === "speak"
@@ -75,7 +81,6 @@ export function useAnswerCapture({
 
   useEffect(() => {
     if (!listening) return;
-    audioClipRef.current = null;
 
     const Ctor = getSpeechRecognitionCtor();
     let recognition: SpeechRecognitionLike | undefined;
@@ -86,7 +91,14 @@ export function useAnswerCapture({
       recognition.continuous = true;
       recognition.onresult = (event) => {
         const last = event.results[event.results.length - 1];
-        setSpokenCaption(last[0].transcript);
+        const text = last[0].transcript;
+        const result = last as { isFinal?: boolean };
+        if (result.isFinal) {
+          transcriptBaseRef.current += text;
+          setSpokenCaption(transcriptBaseRef.current);
+        } else {
+          setSpokenCaption(transcriptBaseRef.current + text);
+        }
       };
       recognition.start();
     }
@@ -105,7 +117,7 @@ export function useAnswerCapture({
           stream = micStream;
           const recorder = new Recorder(micStream);
           recorder.ondataavailable = (event) => {
-            if (event.data.size > 0) audioClipRef.current = event.data;
+            if (event.data.size > 0) audioChunksRef.current.push(event.data);
           };
           recorder.start();
           recorderRef.current = recorder;
@@ -126,6 +138,13 @@ export function useAnswerCapture({
     };
   }, [listening]);
 
+  function resetSpeakSession() {
+    setSpeakPaused(false);
+    audioChunksRef.current = [];
+    transcriptBaseRef.current = "";
+    setSpokenCaption(null);
+  }
+
   const onSubmitClick = useCallback(() => {
     if (answerMode === "type") {
       onSubmit({ inputMode: "typed", transcript: draft });
@@ -136,7 +155,12 @@ export function useAnswerCapture({
         onSubmit({
           inputMode: "voice",
           transcript: spokenCaption,
-          audioClip: audioClipRef.current ?? new Blob(),
+          audioClip: new Blob(
+            audioChunksRef.current.length > 0
+              ? audioChunksRef.current
+              : [new Blob()],
+            { type: "audio/webm" },
+          ),
         });
       };
       const recorder = recorderRef.current;
@@ -155,10 +179,15 @@ export function useAnswerCapture({
   }, [answerMode, onSubmit, draft, spokenCaption]);
 
   return {
-    liveCaption: listening ? spokenCaption : null,
+    liveCaption: answerMode === "speak" ? spokenCaption : null,
+    speakPaused,
     draft,
     onDraftChange: setDraft,
-    onSpeakAnswer: () => setAnswerMode("speak"),
+    onSpeakAnswer: () => {
+      resetSpeakSession();
+      setAnswerMode("speak");
+    },
+    onToggleSpeakPause: () => setSpeakPaused((current) => !current),
     onTypeAnswer: () => setAnswerMode("type"),
     onSubmitClick,
     studentTurn,

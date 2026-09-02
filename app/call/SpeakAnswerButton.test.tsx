@@ -16,10 +16,34 @@ describe("SpeakAnswerButton", () => {
   it("shows a recording control when listening", () => {
     render(<SpeakAnswerButton listening={true} onClick={vi.fn()} />);
 
-    const button = screen.getByRole("button", { name: /speak answer/i });
+    const button = screen.getByRole("button", { name: /pause listening/i });
     expect(button).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("speak-answer-recording")).toBeInTheDocument();
     expect(screen.queryByTestId("speak-answer-glow")).not.toBeInTheDocument();
+  });
+
+  it("shows a paused control that resumes listening when clicked", async () => {
+    const onClick = vi.fn();
+    const user = userEvent.setup();
+    render(<SpeakAnswerButton listening={false} paused onClick={onClick} />);
+
+    const button = screen.getByRole("button", { name: /resume listening/i });
+    expect(button).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByTestId("speak-answer-paused")).toBeInTheDocument();
+
+    await user.click(button);
+
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it("pauses listening when the recording control is clicked", async () => {
+    const onClick = vi.fn();
+    const user = userEvent.setup();
+    render(<SpeakAnswerButton listening={true} onClick={onClick} />);
+
+    await user.click(screen.getByRole("button", { name: /pause listening/i }));
+
+    expect(onClick).toHaveBeenCalledOnce();
   });
 
   it("starts listening when the idle control is clicked", async () => {

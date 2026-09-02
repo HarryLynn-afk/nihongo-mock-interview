@@ -2,15 +2,26 @@ import Image from "next/image";
 
 type SpeakAnswerButtonProps = {
   listening: boolean;
+  paused?: boolean;
   onClick: () => void;
 };
 
-export function SpeakAnswerButton({ listening, onClick }: SpeakAnswerButtonProps) {
+export function SpeakAnswerButton({
+  listening,
+  paused = false,
+  onClick,
+}: SpeakAnswerButtonProps) {
+  const ariaLabel = paused
+    ? "Resume listening"
+    : listening
+      ? "Pause listening"
+      : "Speak answer";
+
   return (
     <button
       type="button"
-      onClick={listening ? undefined : onClick}
-      aria-label="Speak answer"
+      onClick={onClick}
+      aria-label={ariaLabel}
       aria-pressed={listening}
       className="relative size-16 shrink-0 rounded-full"
     >
@@ -28,6 +39,17 @@ export function SpeakAnswerButton({ listening, onClick }: SpeakAnswerButtonProps
               height={24}
               className="h-full w-full"
             />
+          </span>
+        </span>
+      ) : paused ? (
+        <span
+          data-testid="speak-answer-paused"
+          aria-hidden="true"
+          className="relative flex size-full items-center justify-center overflow-clip rounded-full bg-[#d97706]"
+        >
+          <span className="flex gap-1">
+            <span className="h-5 w-1.5 rounded-full bg-paper" />
+            <span className="h-5 w-1.5 rounded-full bg-paper" />
           </span>
         </span>
       ) : (

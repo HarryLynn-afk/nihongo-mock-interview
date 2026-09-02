@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { InterviewSidebar } from "./InterviewSidebar";
 import { InterviewReportScreen } from "./InterviewReportScreen";
 import { LanguageHud } from "./LanguageHud";
@@ -17,28 +17,37 @@ import { useInterviewScore } from "./useInterviewScore";
 import { useMicToggle } from "./useMicToggle";
 import { useQuestionFlow } from "./useQuestionFlow";
 import { getPitchCaptions } from "@/lib/content/pitchAnswers";
-import { loadDevicePrefs } from "../components/devicePrefs";
+import { loadDevicePrefs, type DevicePrefs } from "../components/devicePrefs";
+
+const DEFAULT_DEVICE_PREFS: DevicePrefs = { cameraOn: true, micOn: true };
 
 export default function CallPage() {
-  const prefs = loadDevicePrefs();
+  const [devicePrefs, setDevicePrefs] = useState(DEFAULT_DEVICE_PREFS);
+  const [isPitchMode, setIsPitchMode] = useState(false);
+
+  useEffect(() => {
+    setDevicePrefs(loadDevicePrefs());
+    setIsPitchMode(
+      new URLSearchParams(window.location.search).get("pitch") === "1",
+    );
+  }, []);
+
   const { cameraState, toggleCamera, videoRef } = useCameraStream({
-    startOn: prefs.cameraOn,
+    startOn: devicePrefs.cameraOn,
   });
-  const { micOn, toggleMic } = useMicToggle({ initialOn: prefs.micOn });
+  const { micOn, toggleMic } = useMicToggle({ initialOn: devicePrefs.micOn });
   const { phase, currentQuestion, questionIndex, answers, endSenseiTurn, submitAnswer } =
     useQuestionFlow();
   const scribe = useBackgroundScribe({ answers, phase });
   const { report } = useInterviewScore(scribe);
 
-  const isPitchMode =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("pitch") === "1";
-
   const {
     liveCaption,
+    speakPaused,
     draft,
     onDraftChange,
     onSpeakAnswer,
+    onToggleSpeakPause,
     onTypeAnswer,
     onSubmitClick,
     studentTurn,
@@ -149,7 +158,8 @@ export default function CallPage() {
                 Live transcript
               </p>
               <p className="mt-2 text-lg leading-relaxed text-paper">
-                {liveCaption ?? "Listening…"}
+                {liveCaption ??
+                  (speakPaused ? "Paused" : "Listening…")}
               </p>
             </div>
           ) : null}
@@ -170,7 +180,11 @@ export default function CallPage() {
               </div>
             ) : null}
             {studentTurn === "speak" ? (
-              <SpeakAnswerButton listening={true} onClick={handleSpeakAnswer} />
+              <SpeakAnswerButton
+                listening={!speakPaused}
+                paused={speakPaused}
+                onClick={onToggleSpeakPause}
+              />
             ) : null}
             {studentTurn === "speak" || studentTurn === "type" ? (
               <button

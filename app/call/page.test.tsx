@@ -187,7 +187,7 @@ describe("Call screen", () => {
     await user.click(screen.getByRole("button", { name: /speak answer/i }));
 
     expect(
-      screen.getByRole("button", { name: /speak answer/i }),
+      screen.getByRole("button", { name: /pause listening/i }),
     ).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("speak-answer-recording")).toBeInTheDocument();
     expect(screen.queryByTestId("speak-answer-glow")).not.toBeInTheDocument();
@@ -212,6 +212,16 @@ describe("Call screen", () => {
     await user.click(screen.getByRole("button", { name: /speak answer/i }));
 
     expect(screen.getByTestId("live-transcript")).toHaveTextContent("Listening");
+  });
+
+  it("pauses listening when the recording control is clicked", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    await user.click(screen.getByRole("button", { name: /pause listening/i }));
+
+    expect(screen.getByTestId("speak-answer-paused")).toBeInTheDocument();
+    expect(screen.getByTestId("live-transcript")).toHaveTextContent("Paused");
   });
 
   it("Type answer reveals the answer box and Submit on the same call screen", async () => {

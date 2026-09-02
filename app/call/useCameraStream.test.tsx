@@ -16,6 +16,12 @@ describe("useCameraStream", () => {
     getUserMedia.mockReset();
   });
 
+  it("does not request the camera when startOn is false", () => {
+    renderHook(() => useCameraStream({ startOn: false }));
+
+    expect(getUserMedia).not.toHaveBeenCalled();
+  });
+
   it("settles to 'on' once getUserMedia resolves with a stream", async () => {
     getUserMedia.mockResolvedValue({} as MediaStream);
 

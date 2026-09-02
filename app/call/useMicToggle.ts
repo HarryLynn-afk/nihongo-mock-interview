@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * Pure UI toggle state for the mic on/off control. Real audio capture
@@ -6,6 +6,10 @@ import { useState } from "react";
  */
 export function useMicToggle({ initialOn = true }: { initialOn?: boolean } = {}) {
   const [micOn, setMicOn] = useState(initialOn);
+
+  useEffect(() => {
+    setMicOn(initialOn);
+  }, [initialOn]);
 
   function toggleMic() {
     setMicOn((current) => !current);

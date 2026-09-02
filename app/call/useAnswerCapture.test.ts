@@ -153,6 +153,75 @@ describe("useAnswerCapture", () => {
     expect(result.current.liveCaption).toBe("こんにちは");
   });
 
+  it("pauses speech recognition without clearing the live caption", () => {
+    const created: FakeSpeechRecognition[] = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
+
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit: vi.fn(),
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => {
+      created[0]?.onresult?.({
+        results: [Object.assign([{ transcript: "こんにちは" }], { isFinal: true })],
+      });
+    });
+    act(() => result.current.onToggleSpeakPause());
+
+    expect(result.current.speakPaused).toBe(true);
+    expect(result.current.liveCaption).toBe("こんにちは");
+    expect(created[0]?.stop).toHaveBeenCalled();
+  });
+
+  it("resumes speech recognition after a pause", () => {
+    const created: FakeSpeechRecognition[] = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
+
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit: vi.fn(),
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => result.current.onToggleSpeakPause());
+    act(() => result.current.onToggleSpeakPause());
+
+    expect(result.current.speakPaused).toBe(false);
+    expect(created[1]?.start).toHaveBeenCalled();
+  });
+
   it("submits a voice AnswerSubmission from the live caption", () => {
     const created: Array<{
       onresult: ((event: { results: unknown[] }) => void) | null;
@@ -300,7 +369,7 @@ describe("useAnswerCapture", () => {
         transcript: "こんにちは",
       }),
     );
-    expect(onSubmit.mock.calls[0][0].audioClip).toBe(recorded);
+    expect(onSubmit.mock.calls[0][0].audioClip.size).toBe(recorded.size);
   });
 
   it("does not keep the previous turn's audio clip after the student turn resets", async () => {
@@ -365,7 +434,7 @@ describe("useAnswerCapture", () => {
       });
     });
     act(() => result.current.onSubmitClick());
-    expect(onSubmit.mock.calls[0][0].audioClip).toBe(recorded);
+    expect(onSubmit.mock.calls[0][0].audioClip.size).toBe(recorded.size);
 
     rerender({ active: false });
     created.length = 0;
@@ -380,6 +449,6 @@ describe("useAnswerCapture", () => {
     act(() => result.current.onSubmitClick());
 
     expect(onSubmit.mock.calls[1][0].transcript).toBe("Q2");
-    expect(onSubmit.mock.calls[1][0].audioClip).not.toBe(recorded);
+    expect(onSubmit.mock.calls[1][0].audioClip.size).not.toBe(recorded.size);
   });
 });

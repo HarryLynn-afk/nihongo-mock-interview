@@ -17,15 +17,26 @@ export function useCameraStream({ startOn = true }: { startOn?: boolean } = {}) 
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
+    if (!startOn) {
+      streamRef.current?.getTracks?.().forEach((track) => track.stop());
+      streamRef.current = null;
+      if (videoRef.current) videoRef.current.srcObject = null;
+      setCameraState("off");
+      return;
+    }
+
     let cancelled = false;
 
     navigator.mediaDevices
       .getUserMedia({ video: true })
       .then((stream) => {
-        if (cancelled) return;
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
         streamRef.current = stream;
         if (videoRef.current) videoRef.current.srcObject = stream;
-        if (startOn) setCameraState("on");
+        setCameraState("on");
       })
       .catch(() => {
         if (!cancelled) setCameraState("blocked");
@@ -33,6 +44,9 @@ export function useCameraStream({ startOn = true }: { startOn?: boolean } = {}) 
 
     return () => {
       cancelled = true;
+      streamRef.current?.getTracks?.().forEach((track) => track.stop());
+      streamRef.current = null;
+      if (videoRef.current) videoRef.current.srcObject = null;
     };
   }, [startOn]);
 
