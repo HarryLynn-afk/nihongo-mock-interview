@@ -1,3 +1,9 @@
+import {
+  isGroqCapacityLimit,
+  noteGroqCapacityLimit,
+  shouldSkipGroqCall,
+} from "../groqCapacity";
+
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL = "openai/gpt-oss-20b";
 
@@ -14,6 +20,8 @@ export async function translateJapanese({
   getTranslateKey: () => string;
   timeoutMs?: number;
 }): Promise<string | null> {
+  if (shouldSkipGroqCall("translate")) return null;
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -37,6 +45,10 @@ export async function translateJapanese({
       }),
     });
 
+    if (isGroqCapacityLimit(res.status)) {
+      noteGroqCapacityLimit("translate");
+      return null;
+    }
     if (!res.ok) return null;
 
     const data = (await res.json()) as {

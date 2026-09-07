@@ -49,9 +49,11 @@ describe("POST /api/score", () => {
     delete process.env.N8N_WEBHOOK_URL;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     process.env = { ...ORIGINAL_ENV };
     vi.unstubAllGlobals();
+    const { resetGroqCapacityForTests } = await import("../groqCapacity");
+    resetGroqCapacityForTests();
   });
 
   it("returns 400 when answers are missing", async () => {
@@ -163,5 +165,76 @@ describe("POST /api/score", () => {
     expect(body.report.source).toBe("sample");
     expect(body.report.headline).toBe("Ready");
     expect(body.report.banner).toBe("Scoring unavailable — sample report.");
+  });
+
+  it("returns the sample report when Groq rate-limits, without a 429 in the JSON", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response("Too Many Requests", { status: 429 })),
+    );
+
+    const { POST } = await import("./route");
+    const res = await POST(
+      new Request("http://localhost/api/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          answers: [
+            {
+              questionIndex: 0,
+              inputMode: "typed",
+              transcript: "はじめまして。",
+              pushbackCount: 0,
+              forced: false,
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      report: { source: string; banner: string | null; headline: string };
+    };
+    expect(body.report.source).toBe("sample");
+    expect(body.report.headline).toBe("Ready");
+    expect(body.report.banner).toBe("Scoring unavailable — sample report.");
+    expect(JSON.stringify(body)).not.toMatch(/429|Too Many Requests|rate limit/i);
+  });
+
+  it("skips Groq on the next score after a 429 and still returns the sample", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("Too Many Requests", { status: 429 }))
+      .mockImplementation(groqFetchMock());
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { POST } = await import("./route");
+    const payload = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        answers: [
+          {
+            questionIndex: 0,
+            inputMode: "typed",
+            transcript: "はじめまして。",
+            pushbackCount: 0,
+            forced: false,
+          },
+        ],
+      }),
+    };
+
+    const first = await POST(new Request("http://localhost/api/score", payload));
+    const second = await POST(new Request("http://localhost/api/score", payload));
+
+    const firstBody = (await first.json()) as { report: { source: string } };
+    const secondBody = (await second.json()) as { report: { source: string } };
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(firstBody.report.source).toBe("sample");
+    expect(secondBody.report.source).toBe("sample");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

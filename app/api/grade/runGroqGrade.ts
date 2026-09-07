@@ -1,6 +1,11 @@
 import { getRubricPrompt, parseRawScores, scoreReport } from "@/lib/content/rubric";
 import { parseQuotedCritiques } from "@/lib/content/parseQuotedCritiques";
 import type { InterviewReport } from "@/lib/content/sampleReport";
+import {
+  isGroqCapacityLimit,
+  noteGroqCapacityLimit,
+  shouldSkipGroqCall,
+} from "../groqCapacity";
 
 export type { InterviewReport };
 
@@ -47,14 +52,22 @@ export async function runGroqGrade({
   answers,
   groqFetch,
   getGradeKey,
+  timeoutMs = 20_000,
 }: {
   answers: GradeAnswer[];
   groqFetch: typeof fetch;
   getGradeKey: () => string;
+  timeoutMs?: number;
 }): Promise<InterviewReport | null> {
+  if (shouldSkipGroqCall("grade")) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const res = await groqFetch(GROQ_URL, {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${getGradeKey()}`,
@@ -70,6 +83,10 @@ export async function runGroqGrade({
         response_format: { type: "json_object" },
       }),
     });
+    if (isGroqCapacityLimit(res.status)) {
+      noteGroqCapacityLimit("grade");
+      return null;
+    }
     if (!res.ok) return null;
     const data = (await res.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
@@ -90,5 +107,7 @@ export async function runGroqGrade({
     };
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeout);
   }
 }

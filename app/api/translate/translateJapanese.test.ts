@@ -1,7 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetGroqCapacityForTests } from "../groqCapacity";
 import { translateJapanese } from "./translateJapanese";
 
 describe("translateJapanese", () => {
+  afterEach(() => {
+    resetGroqCapacityForTests();
+  });
+
   it("returns English when Groq responds within the timeout", async () => {
     const groqFetch = vi.fn().mockResolvedValue(
       new Response(
@@ -66,5 +71,34 @@ describe("translateJapanese", () => {
     });
 
     expect(english).toBeNull();
+  });
+
+  it("returns null on Groq 429 and skips the next translate call", async () => {
+    const groqFetch = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("Too Many Requests", { status: 429 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "Hello." } }],
+          }),
+          { status: 200 },
+        ),
+      );
+
+    const first = await translateJapanese({
+      japanese: "はじめまして。",
+      groqFetch,
+      getTranslateKey: () => "test-translate-key",
+    });
+    const second = await translateJapanese({
+      japanese: "はじめまして。",
+      groqFetch,
+      getTranslateKey: () => "test-translate-key",
+    });
+
+    expect(first).toBeNull();
+    expect(second).toBeNull();
+    expect(groqFetch).toHaveBeenCalledOnce();
   });
 });

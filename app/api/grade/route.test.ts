@@ -21,9 +21,11 @@ describe("POST /api/grade", () => {
     };
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     process.env = { ...ORIGINAL_ENV };
     vi.unstubAllGlobals();
+    const { resetGroqCapacityForTests } = await import("../groqCapacity");
+    resetGroqCapacityForTests();
   });
 
   it("returns 400 when answers are missing", async () => {

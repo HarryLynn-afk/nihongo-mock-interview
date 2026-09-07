@@ -11,9 +11,11 @@ describe("POST /api/translate", () => {
     };
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     process.env = { ...ORIGINAL_ENV };
     vi.unstubAllGlobals();
+    const { resetGroqCapacityForTests } = await import("../groqCapacity");
+    resetGroqCapacityForTests();
   });
 
   it("returns 400 when japanese is missing", async () => {
@@ -84,5 +86,29 @@ describe("POST /api/translate", () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ english: null });
+  });
+
+  it("returns 200 { english: null } when Groq rate-limits, without a 429 in the JSON", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response("Too Many Requests", { status: 429 })),
+    );
+
+    const { POST } = await import("./route");
+    const res = await POST(
+      new Request("http://localhost/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          japanese: "はじめまして",
+          context: "school interview answer",
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toEqual({ english: null });
+    expect(JSON.stringify(body)).not.toMatch(/429|Too Many Requests|rate limit/i);
   });
 });

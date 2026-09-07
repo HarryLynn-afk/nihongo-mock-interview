@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { getRubricPrompt } from "@/lib/content/rubric";
+import { resetGroqCapacityForTests } from "../groqCapacity";
 import { runGroqGrade } from "./runGroqGrade";
 
 const SAMPLE_SCORES = {
@@ -32,6 +33,10 @@ const answers = [
 ];
 
 describe("runGroqGrade", () => {
+  afterEach(() => {
+    resetGroqCapacityForTests();
+  });
+
   it("scores Groq raw 1-5s with qwen/qwen3.6-27b and the grade key", async () => {
     const groqFetch = vi.fn().mockResolvedValue(
       new Response(
@@ -201,5 +206,92 @@ describe("runGroqGrade", () => {
     expect(userText).not.toContain("Aung Min Khant");
     expect(userText).toContain("はじめまして。アウンミンハントです。");
     expect(userText).toContain("voice");
+  });
+
+  it("returns null on Groq 429 and skips the next Groq grade call", async () => {
+    const groqFetch = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("Too Many Requests", { status: 429 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify({
+                    scores: SAMPLE_SCORES,
+                    critiques,
+                  }),
+                },
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      );
+
+    const first = await runGroqGrade({
+      answers,
+      groqFetch,
+      getGradeKey: () => "test-grade-key",
+    });
+    const second = await runGroqGrade({
+      answers,
+      groqFetch,
+      getGradeKey: () => "test-grade-key",
+    });
+
+    expect(first).toBeNull();
+    expect(second).toBeNull();
+    expect(groqFetch).toHaveBeenCalledOnce();
+  });
+
+  it("returns null when Groq hangs past timeoutMs without skipping the next grade", async () => {
+    let capturedSignal: AbortSignal | undefined;
+    const groqFetch = vi.fn((_url: string, init?: RequestInit) => {
+      if (groqFetch.mock.calls.length === 1) {
+        return new Promise<Response>((_resolve, reject) => {
+          capturedSignal = init?.signal ?? undefined;
+          init?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("Aborted", "AbortError")),
+          );
+        });
+      }
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify({
+                    scores: SAMPLE_SCORES,
+                    critiques,
+                  }),
+                },
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      );
+    });
+
+    const first = await runGroqGrade({
+      answers,
+      groqFetch,
+      getGradeKey: () => "test-grade-key",
+      timeoutMs: 50,
+    });
+    const second = await runGroqGrade({
+      answers,
+      groqFetch,
+      getGradeKey: () => "test-grade-key",
+      timeoutMs: 50,
+    });
+
+    expect(first).toBeNull();
+    expect(second).toEqual(expect.objectContaining({ source: "grade" }));
+    expect(capturedSignal?.aborted).toBe(true);
+    expect(groqFetch).toHaveBeenCalledTimes(2);
   });
 });
