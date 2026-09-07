@@ -15,7 +15,7 @@ const view = buildUsefulnessView({
 
 const report: InterviewReport = {
   ...getSampleReport(null),
-  source: "n8n",
+  source: "grade",
 };
 
 const answers = [

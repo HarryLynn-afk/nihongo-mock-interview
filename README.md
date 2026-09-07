@@ -19,7 +19,7 @@ npm install
 cp .env.example .env.local
 # Each key is scoped to one purpose only — see .env.example for details:
 #   ELEVENLABS_TTS_API_KEY, ELEVENLABS_SCRIBE_API_KEY,
-#   GROQ_TRANSLATE_API_KEY, GROQ_GRADE_API_KEY, N8N_WEBHOOK_URL
+#   GROQ_TRANSLATE_API_KEY, GROQ_GRADE_API_KEY
 # (WISPR_API_KEY optional)
 ```
 
@@ -44,7 +44,7 @@ Presentation demo path: `/?pitch=1` (canned EN/MY captions and canned last-scree
 app/              Next.js App Router routes (pages + API route handlers)
 lib/server/       Server-only modules (env access, etc.) — never imported client-side
 scripts/          Build-time checks (env validation)
-docs/             Generated n8n rubric snapshot (docs/rubric-generated.md)
+docs/             Generated Groq-grade rubric snapshot (docs/rubric-generated.md)
 mocks/            Shared JSON fixtures (e.g. sample-report-ready.json)
 ```
 

@@ -29,7 +29,7 @@ const report: InterviewReport = {
     },
   ],
   profileName: "Aung Min Khant",
-  source: "n8n",
+  source: "grade",
   banner: null,
 };
 

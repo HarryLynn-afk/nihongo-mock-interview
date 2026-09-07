@@ -74,12 +74,12 @@ describe("buildUsefulnessView", () => {
   });
 });
 
-const n8nReport: InterviewReport = {
+const groqReport: InterviewReport = {
   ...getSampleReport(null),
   headline: "AlmostReady",
   stamp: "もう少し",
   total: 70,
-  source: "n8n",
+  source: "grade",
 };
 
 const surveyAnswers = [
@@ -91,7 +91,7 @@ const surveyAnswers = [
 describe("buildSurveyPayload", () => {
   it("on Skip includes session id, Headline, total, live source, and per-Question Pushback without ratings", () => {
     const payload = buildSurveyPayload({
-      report: n8nReport,
+      report: groqReport,
       answers: surveyAnswers,
       sessionId: "11111111-1111-4111-8111-111111111111",
       outcome: { skipped: true },
@@ -111,7 +111,7 @@ describe("buildSurveyPayload", () => {
 
   it("on Submit includes both 1-5 ratings and the optional comment", () => {
     const payload = buildSurveyPayload({
-      report: n8nReport,
+      report: groqReport,
       answers: surveyAnswers,
       sessionId: "11111111-1111-4111-8111-111111111111",
       outcome: {
@@ -137,7 +137,7 @@ describe("buildSurveyPayload", () => {
 
   it("stores a blank comment as null", () => {
     const payload = buildSurveyPayload({
-      report: n8nReport,
+      report: groqReport,
       answers: surveyAnswers,
       sessionId: "11111111-1111-4111-8111-111111111111",
       outcome: {

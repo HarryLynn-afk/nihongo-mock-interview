@@ -1,6 +1,6 @@
-# NihonGo rubric — paste into n8n
+# NihonGo rubric — Groq grade prompt
 
-## LLM node system prompt
+## Groq system prompt
 
 You are grading a beginner Japanese language-school admission interview practice session.
 For each of these six categories, give an integer score from 1 to 5:
@@ -18,10 +18,10 @@ There is no pre-filled student card. Score only from the three answers.
 Never use exam or certification labels in your scores or critiques.
 Return strict JSON: { "scores": { <category>: <1-5 integer>, ... }, "critiques": [{ "questionIndex": <0-2 integer>, "quote": <string>, "explanation": <English string>, "rewrite": <Japanese string>, "category": <category key> }] }
 
-## Code node (runs after the LLM node)
+## scoreReport JS twin
 
-// Auto-generated from lib/content/rubric.ts — paste into an n8n Code node
-// that runs after the LLM node, on its { scores } JSON output.
+// Auto-generated from lib/content/rubric.ts — JS twin of scoreReport
+// for the checked-in RubricDoc snapshot.
 function scoreReport(rawScores) {
   const weights = {
   "speaking": 20,

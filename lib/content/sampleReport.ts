@@ -8,7 +8,7 @@ export const SCORING_UNAVAILABLE_BANNER =
 export type InterviewReport = ScoredReport & {
   critiques: QuotedCritique[];
   profileName: string;
-  source: "n8n" | "grade" | "sample";
+  source: "grade" | "sample";
   banner: string | null;
 };
 

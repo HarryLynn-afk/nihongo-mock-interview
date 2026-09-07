@@ -38,5 +38,5 @@
     }
   ],
   "profileName": "Aung Min Khant",
-  "notes": "Used when both n8n and /api/grade fail. Dual-fail sample includes quoted critiques so the last screen is not an empty coaching list."
+  "notes": "Used when Groq grading misses. Sample includes quoted critiques so the last screen is not an empty coaching list."
 }

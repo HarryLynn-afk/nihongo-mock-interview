@@ -88,10 +88,6 @@ export default function CallPage() {
   });
 
   useEffect(() => {
-    fetch("/api/warm-n8n", { method: "POST" }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
     if (!currentQuestion) return;
 
     let cancelled = false;

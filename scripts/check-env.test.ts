@@ -16,7 +16,6 @@ const ALL_REQUIRED_ENV = {
   ELEVENLABS_SCRIBE_API_KEY: "test-key",
   GROQ_TRANSLATE_API_KEY: "test-key",
   GROQ_GRADE_API_KEY: "test-key",
-  N8N_WEBHOOK_URL: "https://example.com/webhook",
 };
 
 describe("scripts/check-env.mjs", () => {
@@ -43,5 +42,17 @@ describe("scripts/check-env.mjs", () => {
 
     expect(result.status).toBe(0);
     expect(result.stderr).not.toMatch(/RESEARCH_FORM_URL/);
+  });
+
+  it("does not require N8N_WEBHOOK_URL", () => {
+    const envWithoutN8n: Record<string, string | undefined> = {
+      ...ALL_REQUIRED_ENV,
+    };
+    delete envWithoutN8n.N8N_WEBHOOK_URL;
+
+    const result = runCheckEnv(envWithoutN8n);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).not.toMatch(/N8N_WEBHOOK_URL/);
   });
 });

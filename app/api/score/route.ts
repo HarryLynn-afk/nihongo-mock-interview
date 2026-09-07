@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { getGroqGradeKey } from "@/lib/server/env/groqGrade";
-import { getN8nWebhookUrl } from "@/lib/server/env/n8n";
 import { gradeInterview } from "../grade/gradeInterview";
 import { parseAnswers } from "../grade/parseAnswers";
 import { runGroqGrade } from "../grade/runGroqGrade";
 
-/** n8n wait is 20s, then Groq. Keep the route alive long enough for both. */
+/** Groq grade can be slow; keep the route alive for the in-process call. */
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
@@ -26,9 +25,6 @@ export async function POST(request: Request) {
   }
 
   const report = await gradeInterview({
-    answers,
-    n8nFetch: fetch,
-    getWebhookUrl: getN8nWebhookUrl,
     fallback: () =>
       runGroqGrade({
         answers,

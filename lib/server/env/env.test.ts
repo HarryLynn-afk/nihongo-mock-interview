@@ -7,7 +7,6 @@ const ALL_KEYS = {
   ELEVENLABS_SCRIBE_API_KEY: "test-elevenlabs-scribe-key",
   GROQ_GRADE_API_KEY: "test-groq-grade-key",
   GROQ_TRANSLATE_API_KEY: "test-groq-translate-key",
-  N8N_WEBHOOK_URL: "https://example.com/webhook",
 } as const;
 
 function setAllRequiredEnv() {
@@ -31,17 +30,15 @@ describe("lib/server/env/* per-purpose modules", () => {
     const { getElevenLabsScribeKey } = await import("./elevenlabsScribe");
     const { getGroqTranslateKey } = await import("./groqTranslate");
     const { getGroqGradeKey } = await import("./groqGrade");
-    const { getN8nWebhookUrl } = await import("./n8n");
 
     expect(getElevenLabsTtsKey()).toBe(ALL_KEYS.ELEVENLABS_TTS_API_KEY);
     expect(getElevenLabsScribeKey()).toBe(ALL_KEYS.ELEVENLABS_SCRIBE_API_KEY);
     expect(getGroqTranslateKey()).toBe(ALL_KEYS.GROQ_TRANSLATE_API_KEY);
     expect(getGroqGradeKey()).toBe(ALL_KEYS.GROQ_GRADE_API_KEY);
-    expect(getN8nWebhookUrl()).toBe(ALL_KEYS.N8N_WEBHOOK_URL);
   });
 
   // The whole reason we split env.ts into per-purpose modules: a missing
-  // Scribe key must not break /api/tts, /api/warm-n8n, /api/translate,
+  // Scribe key must not break /api/tts, /api/translate,
   // etc. Each module's fail-fast must be scoped to only itself.
   it.each([
     {
@@ -52,7 +49,7 @@ describe("lib/server/env/* per-purpose modules", () => {
     {
       missing: "ELEVENLABS_TTS_API_KEY",
       failingImport: "./elevenlabsTts",
-      unrelatedImport: "./n8n",
+      unrelatedImport: "./groqGrade",
     },
     {
       missing: "GROQ_TRANSLATE_API_KEY",
@@ -63,11 +60,6 @@ describe("lib/server/env/* per-purpose modules", () => {
       missing: "GROQ_GRADE_API_KEY",
       failingImport: "./groqGrade",
       unrelatedImport: "./groqTranslate",
-    },
-    {
-      missing: "N8N_WEBHOOK_URL",
-      failingImport: "./n8n",
-      unrelatedImport: "./elevenlabsTts",
     },
   ])(
     "$missing missing → $failingImport throws, but $unrelatedImport still imports",

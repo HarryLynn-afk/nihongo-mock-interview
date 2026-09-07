@@ -125,24 +125,20 @@ describe("Call screen", () => {
     expect(screen.getByText("You")).toBeInTheDocument();
   });
 
-  it("on mount, warms the n8n webhook and starts playing Q1 audio without a join dialog", async () => {
+  it("on mount, starts playing Q1 audio without a join dialog and does not warm n8n", async () => {
     render(<CallPage />);
-
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        "/api/warm-n8n",
-        expect.objectContaining({ method: "POST" }),
-      );
-    });
-
-    expect(screen.queryByRole("dialog", { name: /ready to join/i })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("dialog", { name: /interview will start soon/i }),
-    ).not.toBeInTheDocument();
 
     await waitFor(() => {
       expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
     });
+
+    expect(
+      fetchMock.mock.calls.some((call) => String(call[0]).includes("/api/warm-n8n")),
+    ).toBe(false);
+    expect(screen.queryByRole("dialog", { name: /ready to join/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: /interview will start soon/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("HUD shows the active Question's Japanese while sensei speaks", async () => {
@@ -966,7 +962,7 @@ describe("Call screen", () => {
                   },
                 ],
                 profileName: "Aung Min Khant",
-                source: "n8n",
+                source: "grade",
                 banner: null,
               },
             }),
@@ -1033,7 +1029,7 @@ describe("Call screen", () => {
                   },
                 ],
                 profileName: "Aung Min Khant",
-                source: "n8n",
+                source: "grade",
                 banner: null,
               },
             }),
@@ -1105,7 +1101,7 @@ describe("Call screen", () => {
                   },
                 ],
                 profileName: "Aung Min Khant",
-                source: "n8n",
+                source: "grade",
                 banner: null,
               },
             }),
@@ -1180,7 +1176,7 @@ describe("Call screen", () => {
                   },
                 ],
                 profileName: "Aung Min Khant",
-                source: "n8n",
+                source: "grade",
                 banner: null,
               },
             }),
@@ -1253,7 +1249,7 @@ describe("Call screen", () => {
                   },
                 ],
                 profileName: "Aung Min Khant",
-                source: "n8n",
+                source: "grade",
                 banner: null,
               },
             }),
@@ -1319,7 +1315,7 @@ describe("Call screen", () => {
                   },
                 ],
                 profileName: "Aung Min Khant",
-                source: "n8n",
+                source: "grade",
                 banner: null,
               },
             }),
@@ -1385,7 +1381,7 @@ describe("Call screen", () => {
                   },
                 ],
                 profileName: "Aung Min Khant",
-                source: "n8n",
+                source: "grade",
                 banner: null,
               },
             }),
@@ -1467,7 +1463,7 @@ describe("Call screen", () => {
                   },
                 ],
                 profileName: "Aung Min Khant",
-                source: "n8n",
+                source: "grade",
                 banner: null,
               },
             }),

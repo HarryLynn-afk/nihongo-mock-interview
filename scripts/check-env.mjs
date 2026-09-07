@@ -5,7 +5,6 @@ const REQUIRED_ENV_VARS = [
   "ELEVENLABS_SCRIBE_API_KEY",
   "GROQ_TRANSLATE_API_KEY",
   "GROQ_GRADE_API_KEY",
-  "N8N_WEBHOOK_URL",
 ];
 
 const missing = REQUIRED_ENV_VARS.filter((name) => !process.env[name]);
