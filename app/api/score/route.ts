@@ -5,6 +5,9 @@ import { gradeInterview } from "../grade/gradeInterview";
 import { parseAnswers } from "../grade/parseAnswers";
 import { runGroqGrade } from "../grade/runGroqGrade";
 
+/** n8n wait is 20s, then Groq. Keep the route alive long enough for both. */
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   let body: unknown;
   try {

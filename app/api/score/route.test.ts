@@ -168,6 +168,79 @@ describe("POST /api/score", () => {
     ).toBe(false);
   });
 
+  it("returns Groq { report } for typed answers when n8n hits a usage limit, not the sample", async () => {
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("api.groq.com")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              choices: [
+                {
+                  message: {
+                    content: JSON.stringify({
+                      scores: {
+                        speaking: 5,
+                        listening: 4,
+                        grammarPoliteness: 4,
+                        motivation: 5,
+                        studyPlan: 5,
+                        consistency: 4,
+                      },
+                      critiques: [
+                        {
+                          questionIndex: 0,
+                          quote: "はじめまして",
+                          explanation: "Use です/ます all the way through.",
+                          rewrite: "はじめまして。",
+                          category: "speaking",
+                        },
+                      ],
+                    }),
+                  },
+                },
+              ],
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      return Promise.resolve(
+        new Response("execution limit reached", { status: 429 }),
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { POST } = await import("./route");
+    const res = await POST(
+      new Request("http://localhost/api/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          answers: [
+            {
+              questionIndex: 0,
+              inputMode: "typed",
+              transcript: "はじめまして。",
+              pushbackCount: 0,
+              forced: false,
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      report: { source: string; banner: string | null };
+    };
+    expect(body.report.source).toBe("grade");
+    expect(body.report.banner).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[0][0])).toContain("webhook/nihongo-grade");
+    expect(String(fetchMock.mock.calls[1][0])).toContain("api.groq.com");
+  });
+
   it("returns the sample report with the scoring-unavailable banner when n8n and Groq both fail", async () => {
     vi.stubGlobal(
       "fetch",

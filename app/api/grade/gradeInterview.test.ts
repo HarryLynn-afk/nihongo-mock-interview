@@ -160,6 +160,25 @@ describe("gradeInterview", () => {
     expect(fallback).toHaveBeenCalledOnce();
   });
 
+  it("calls the Groq fallback once when n8n returns a usage-limit status, without retrying n8n", async () => {
+    const n8nFetch = vi.fn().mockResolvedValue(
+      new Response("execution limit reached", { status: 429 }),
+    );
+    const fallbackReport: InterviewReport = { ...n8nReport, source: "grade" };
+    const fallback = vi.fn().mockResolvedValue(fallbackReport);
+
+    const report = await gradeInterview({
+      answers,
+      n8nFetch,
+      getWebhookUrl: () => "https://example.com/webhook/nihongo-grade",
+      fallback,
+    });
+
+    expect(report).toEqual(fallbackReport);
+    expect(fallback).toHaveBeenCalledOnce();
+    expect(n8nFetch).toHaveBeenCalledOnce();
+  });
+
   it("uses the sample report with the scoring-unavailable banner when n8n and the Groq fallback both fail", async () => {
     const n8nFetch = vi.fn().mockRejectedValue(new Error("n8n down"));
     const fallback = vi.fn().mockResolvedValue(null);
