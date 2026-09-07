@@ -58,8 +58,7 @@ export function parseQuotedCritiques(
       return null;
     }
     if (row.rewrite === SILENT_QUOTE) return null;
-    if (answer.forced) {
-      if (row.rewrite === row.quote) return null;
+    if (answer.forced && row.rewrite !== row.quote) {
       if (!/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(row.rewrite)) {
         return null;
       }

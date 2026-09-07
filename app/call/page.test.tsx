@@ -1063,9 +1063,9 @@ describe("Call screen", () => {
     await waitFor(() => {
       expect(screen.getByTestId("interview-report")).toBeInTheDocument();
     });
-    expect(screen.getByText("Interview Readiness")).toBeInTheDocument();
+    expect(screen.getByText("Practice Interview Readiness")).toBeInTheDocument();
     expect(screen.getByText("準備OK")).toBeInTheDocument();
-    expect(screen.getByText("92/100")).toBeInTheDocument();
+    expect(screen.getByText("90/100")).toBeInTheDocument();
     expect(
       screen.queryByText("Scoring unavailable — sample report."),
     ).not.toBeInTheDocument();
@@ -1134,10 +1134,10 @@ describe("Call screen", () => {
       expect(screen.getByTestId("interview-report")).toBeInTheDocument();
     });
     expect(screen.getByText("もう少し")).toBeInTheDocument();
-    expect(screen.getByText("70/100")).toBeInTheDocument();
+    expect(screen.getByText("73/100")).toBeInTheDocument();
     expect(screen.getByText("はじめまして")).toBeInTheDocument();
     expect(screen.queryByText("準備OK")).not.toBeInTheDocument();
-    expect(screen.queryByText("92/100")).not.toBeInTheDocument();
+    expect(screen.queryByText("90/100")).not.toBeInTheDocument();
     expect(screen.queryByText("アウン・ミン・タントです")).not.toBeInTheDocument();
     expect(
       screen.queryByText("Scoring unavailable — sample report."),
@@ -1209,10 +1209,10 @@ describe("Call screen", () => {
       expect(screen.getByTestId("interview-report")).toBeInTheDocument();
     });
     expect(screen.getByText("要練習")).toBeInTheDocument();
-    expect(screen.getByText("70/100")).toBeInTheDocument();
+    expect(screen.getByText("73/100")).toBeInTheDocument();
     expect(screen.getByText("はじめまして")).toBeInTheDocument();
     expect(screen.queryByText("準備OK")).not.toBeInTheDocument();
-    expect(screen.queryByText("92/100")).not.toBeInTheDocument();
+    expect(screen.queryByText("90/100")).not.toBeInTheDocument();
     expect(screen.queryByText("アウン・ミン・タントです")).not.toBeInTheDocument();
     expect(
       screen.queryByText("Scoring unavailable — sample report."),
@@ -1282,8 +1282,8 @@ describe("Call screen", () => {
       expect(screen.getByTestId("interview-report")).toBeInTheDocument();
     });
     expect(screen.getByText("準備OK")).toBeInTheDocument();
-    expect(screen.getByText("88/100")).toBeInTheDocument();
-    expect(screen.queryByText("92/100")).not.toBeInTheDocument();
+    expect(screen.getByText("85/100")).toBeInTheDocument();
+    expect(screen.queryByText("90/100")).not.toBeInTheDocument();
   });
 
   it("without ?pitch=1 shows the honest AlmostReady live report", async () => {
@@ -1348,8 +1348,8 @@ describe("Call screen", () => {
       expect(screen.getByTestId("interview-report")).toBeInTheDocument();
     });
     expect(screen.getByText("もう少し")).toBeInTheDocument();
-    expect(screen.getByText("70/100")).toBeInTheDocument();
-    expect(screen.queryByText("92/100")).not.toBeInTheDocument();
+    expect(screen.getByText("73/100")).toBeInTheDocument();
+    expect(screen.queryByText("90/100")).not.toBeInTheDocument();
   });
 
   it("shows the Usefulness step and session id after the report reveal when the form is enabled", async () => {

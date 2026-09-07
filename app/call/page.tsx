@@ -124,40 +124,45 @@ export default function CallPage() {
       data-testid="call-screen"
       className="min-h-screen overflow-y-auto bg-ink p-4 md:p-6"
     >
-      <div className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col items-center gap-5 md:min-h-[calc(100vh-3rem)] md:gap-6">
+      <div className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-7xl flex-col items-center gap-5 md:min-h-[calc(100vh-3rem)] md:gap-6">
         <div
           data-testid="call-stage"
           className="flex w-full flex-col items-stretch gap-4 md:flex-row md:items-start md:gap-5"
         >
-          <InterviewSidebar phase={phase} answers={answers} />
           {phase === "done" && report ? (
             <InterviewReportScreen
               view={buildReportView({
                 report,
-                answers: answers.map(({ questionIndex: index, inputMode }) => ({
-                  questionIndex: index,
-                  inputMode,
-                })),
+                answers: answers.map(
+                  ({ questionIndex: index, inputMode, transcript }) => ({
+                    questionIndex: index,
+                    inputMode,
+                    transcript,
+                  }),
+                ),
               })}
               sessionId={sessionId ?? undefined}
               onRevealComplete={() => setRevealDone(true)}
             />
           ) : (
-            <div data-testid="sensei-stage" className="relative min-w-0 flex-1">
-              <SenseiTile />
-              <div
-                data-testid="student-inset"
-                className="absolute bottom-3 right-3 z-10 w-36 sm:w-44 md:w-52"
-              >
-                <StudentTile
-                  cameraState={cameraState}
-                  micOn={micOn}
-                  videoRef={videoRef}
-                  onToggleCamera={toggleCamera}
-                  onToggleMic={toggleMic}
-                />
+            <>
+              <InterviewSidebar phase={phase} answers={answers} />
+              <div data-testid="sensei-stage" className="relative min-w-0 flex-1">
+                <SenseiTile />
+                <div
+                  data-testid="student-inset"
+                  className="absolute bottom-3 right-3 z-10 w-36 sm:w-44 md:w-52"
+                >
+                  <StudentTile
+                    cameraState={cameraState}
+                    micOn={micOn}
+                    videoRef={videoRef}
+                    onToggleCamera={toggleCamera}
+                    onToggleMic={toggleMic}
+                  />
+                </div>
               </div>
-            </div>
+            </>
           )}
         </div>
 
@@ -186,10 +191,11 @@ export default function CallPage() {
           />
         ) : null}
 
-        <div
-          data-testid="answer-dock"
-          className="flex w-full max-w-xl flex-col items-center gap-4 rounded-2xl border border-paper/10 bg-ink/90 px-5 py-4"
-        >
+        {phase === "done" && report ? null : (
+          <div
+            data-testid="answer-dock"
+            className="flex w-full max-w-xl flex-col items-center gap-4 rounded-2xl border border-paper/10 bg-ink/90 px-5 py-4"
+          >
           {phase === "studentAnswering" && studentTurn === "type" ? (
             <textarea
               aria-label="Answer"
@@ -258,10 +264,8 @@ export default function CallPage() {
               </p>
             ) : null}
           </div>
-          {report?.banner ? (
-            <p className="text-sm text-paper/80">{report.banner}</p>
-          ) : null}
         </div>
+        )}
       </div>
     </div>
   );

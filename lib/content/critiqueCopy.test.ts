@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { formatQuotedCritique } from "./critiqueCopy";
+import {
+  formatQuotedCritique,
+  futureGoalSpecificity,
+  stretchImprovement,
+} from "./critiqueCopy";
 
 describe("formatQuotedCritique", () => {
   it("uses the affirming MY frame when rewrite equals quote", () => {
@@ -46,5 +50,12 @@ describe("formatQuotedCritique", () => {
 
     expect(view.burmese).toContain("မေးခွန်းနှင့် ပိုမိုကိုက်ညီအောင် အဖြေပေးရန်");
     expect(view.burmese).not.toContain("အသံထွက်");
+  });
+
+  it("builds optional-enhancement copy for a strong affirming critique", () => {
+    expect(stretchImprovement("motivation")).toMatch(/career goal/i);
+    expect(futureGoalSpecificity("将来ITエンジニアになりたいです")).toBe("specific");
+    expect(futureGoalSpecificity("将来働きたいです")).toBe("vague");
+    expect(futureGoalSpecificity("日本語が好きです")).toBe("missing");
   });
 });

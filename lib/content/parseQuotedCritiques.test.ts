@@ -77,21 +77,29 @@ describe("parseQuotedCritiques", () => {
     ]);
   });
 
-  it("rejects forced true when rewrite equals quote", () => {
+  it("allows an affirming critique when forced is true if rewrite equals quote", () => {
     expect(
       parseQuotedCritiques(
         [
           {
             questionIndex: 0,
-            quote: "hello",
-            explanation: "Forced through.",
-            rewrite: "hello",
+            quote: "はじめまして",
+            explanation: "Clear self-introduction.",
+            rewrite: "はじめまして",
             category: "speaking",
           },
         ],
-        [{ questionIndex: 0, transcript: "hello", forced: true }],
+        [{ questionIndex: 0, transcript: "はじめまして", forced: true }],
       ),
-    ).toBeNull();
+    ).toEqual([
+      {
+        questionIndex: 0,
+        quote: "はじめまして",
+        explanation: "Clear self-introduction.",
+        rewrite: "はじめまして",
+        category: "speaking",
+      },
+    ]);
   });
 
   it("rejects forced true when rewrite has no Hiragana or Katakana", () => {

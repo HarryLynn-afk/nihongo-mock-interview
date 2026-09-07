@@ -95,7 +95,9 @@ export async function runGroqGrade({
     if (!text) return null;
     const parsed = parseGroqGradeJson(text);
     if (!parsed) return null;
-    const scored = scoreReport(parseRawScores(parsed.scores));
+    const scored = scoreReport(parseRawScores(parsed.scores), {
+      assessSpeaking: answers.some((answer) => answer.inputMode === "voice"),
+    });
     const critiques = parseQuotedCritiques(parsed.critiques, answers);
     if (!critiques) return null;
     return {

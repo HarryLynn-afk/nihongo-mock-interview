@@ -89,4 +89,22 @@ describe("scoreReport", () => {
     expect(result.total).toBeGreaterThanOrEqual(75);
     expect(result.headline).toBe("AlmostReady");
   });
+
+  it("does not Gate speaking or require speaking >= 4 when assessSpeaking is false", () => {
+    const result = scoreReport(
+      {
+        speaking: 1,
+        listening: 5,
+        grammarPoliteness: 5,
+        motivation: 5,
+        studyPlan: 5,
+        consistency: 5,
+      },
+      { assessSpeaking: false },
+    );
+
+    expect(result.gatesFired).toEqual([]);
+    expect(result.headline).toBe("Ready");
+    expect(result.total).toBe(100);
+  });
 });
