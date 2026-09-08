@@ -89,6 +89,13 @@ export const questionBank: readonly BankQuestion[] = [
     burmeseTranslation: "ယခု အခြေအနေကို ပြောပါ။ ကျောင်းသားလား၊ အလုပ်လုပ်နေသလား။",
   },
   {
+    id: 114,
+    topic: "educationWork",
+    japanese: "学校を卒業してから今まで、何をしていましたか。",
+    englishTranslation: "What have you been doing from graduation until now?",
+    burmeseTranslation: "ကျောင်းပြီးပြီးကတည်းက ယခုအထိ ဘာလုပ်နေခဲ့သလဲ။",
+  },
+  {
     id: 121,
     topic: "japaneseStudyHistory",
     japanese: "日本語の勉強はいつ始めましたか。",
@@ -173,6 +180,20 @@ export const questionBank: readonly BankQuestion[] = [
     burmeseTranslation: "ဘာကြောင့် ဒီသင်တန်းကို ရွေးတာလဲ။",
   },
   {
+    id: 154,
+    topic: "schoolChoice",
+    japanese: "この学校のどんなところに興味がありますか。",
+    englishTranslation: "What about this school interests you?",
+    burmeseTranslation: "ဒီကျောင်းရဲ့ ဘယ်အချက်ကို စိတ်ဝင်စားသလဲ။",
+  },
+  {
+    id: 155,
+    topic: "schoolChoice",
+    japanese: "この学校では、どんなコースを勉強したいですか。",
+    englishTranslation: "What course do you want to study at this school?",
+    burmeseTranslation: "ဒီကျောင်းတွင် ဘယ်လို သင်တန်း တက်ချင်သလဲ။",
+  },
+  {
     id: 161,
     topic: "studyPlan",
     japanese: "日本語学校では、どのくらい勉強する予定ですか。",
@@ -187,8 +208,15 @@ export const questionBank: readonly BankQuestion[] = [
     burmeseTranslation: "ဂျပန်တွင် နေစဉ် ဘယ်လို သင်မည်နည်း။",
   },
   {
-    id: 163,
+    id: 164,
     topic: "studyPlan",
+    japanese: "日本語学校では、どのような目標を持って勉強しますか。",
+    englishTranslation: "What goals will you study toward at the language school?",
+    burmeseTranslation: "ဂျပန်စာကျောင်းတွင် ဘယ်လို ရည်မှန်းချက်ထားပြီး သင်မည်နည်း။",
+  },
+  {
+    id: 163,
+    topic: "futurePlan",
     japanese: "日本語学校のあと、何を勉強したいですか。",
     englishTranslation: "What do you want to study after language school?",
     burmeseTranslation: "ဂျပန်စာကျောင်းပြီးရင် ဘာဆက်သင်ချင်သလဲ။",
@@ -236,6 +264,20 @@ export const questionBank: readonly BankQuestion[] = [
     burmeseTranslation: "စပွန်ဆာသည် ဘာအလုပ် လုပ်သလဲ။",
   },
   {
+    id: 184,
+    topic: "financialSupport",
+    japanese: "スポンサーは、どうしてあなたを支援しますか。",
+    englishTranslation: "Why is your sponsor supporting you?",
+    burmeseTranslation: "စပွန်ဆာသည် ဘာကြောင့် သင့်ကို ကူညီသလဲ။",
+  },
+  {
+    id: 185,
+    topic: "financialSupport",
+    japanese: "授業料と生活費について、どのように準備していますか。",
+    englishTranslation: "How are you preparing for tuition and living costs?",
+    burmeseTranslation: "ကျောင်းစရိတ်နှင့် နေထိုင်စရိတ်ကို ဘယ်လို ပြင်ဆင်ထားသလဲ။",
+  },
+  {
     id: 191,
     topic: "lifeInJapan",
     japanese: "日本では、どこに住む予定ですか。",
@@ -260,6 +302,38 @@ export const questionBank: readonly BankQuestion[] = [
 
 export const followUpBank: readonly BankQuestion[] = [
   {
+    id: 201,
+    topic: "selfIntroduction",
+    isFollowUp: true,
+    japanese: "出身地や、今していることについて、もう少し教えてください。",
+    englishTranslation: "Please tell me a little more about your hometown and what you do now.",
+    burmeseTranslation: "မွေးရပ်နှင့် ယခု ဘာလုပ်နေသည်ကို နည်းနည်း ပိုပြောပြပါ။",
+  },
+  {
+    id: 211,
+    topic: "educationWork",
+    isFollowUp: true,
+    japanese: "卒業してから今まで、何をしていましたか。",
+    englishTranslation: "What have you been doing since you graduated?",
+    burmeseTranslation: "ဘွဲ့ရပြီးကတည်းက ယခုအထိ ဘာလုပ်နေခဲ့သလဲ။",
+  },
+  {
+    id: 221,
+    topic: "japaneseStudyHistory",
+    isFollowUp: true,
+    japanese: "日本語の勉強は、一日にどのくらいしていますか。",
+    englishTranslation: "How much Japanese do you study each day?",
+    burmeseTranslation: "ဂျပန်စာကို တစ်နေ့ ဘယ်လောက် သင်သလဲ။",
+  },
+  {
+    id: 231,
+    topic: "japaneseLevel",
+    isFollowUp: true,
+    japanese: "日本語の試験を受けたことがありますか。",
+    englishTranslation: "Have you taken a Japanese language test?",
+    burmeseTranslation: "ဂျပန်စာ စာမေးပွဲ ဖြေဖူးသလား။",
+  },
+  {
     id: 241,
     topic: "motivationJapan",
     isFollowUp: true,
@@ -268,6 +342,22 @@ export const followUpBank: readonly BankQuestion[] = [
       "Besides anime or culture, do you have an academic or career goal?",
     burmeseTranslation:
       "အန်နီမေး သို့မဟုတ် ယဉ်ကျေးမှုအပြင် ပညာရေး သို့မဟုတ် အလုပ် ရည်မှန်းချက် ရှိသလား။",
+  },
+  {
+    id: 251,
+    topic: "schoolChoice",
+    isFollowUp: true,
+    japanese: "この学校のどんなコースやサポートに興味がありますか。",
+    englishTranslation: "Which course or support at this school interests you?",
+    burmeseTranslation: "ဒီကျောင်းရဲ့ ဘယ်သင်တန်း သို့မဟုတ် အကူအညီကို စိတ်ဝင်စားသလဲ။",
+  },
+  {
+    id: 261,
+    topic: "studyPlan",
+    isFollowUp: true,
+    japanese: "日本語学校では、毎日どのように勉強しますか。",
+    englishTranslation: "How will you study each day at the language school?",
+    burmeseTranslation: "ဂျပန်စာကျောင်းတွင် နေ့စဉ် ဘယ်လို သင်မည်နည်း။",
   },
   {
     id: 271,
@@ -286,12 +376,12 @@ export const followUpBank: readonly BankQuestion[] = [
     burmeseTranslation: "လစဉ် နေထိုင်စရိတ် ဘယ်လောက် လိုမည် ထင်သလဲ။",
   },
   {
-    id: 261,
-    topic: "studyPlan",
+    id: 291,
+    topic: "lifeInJapan",
     isFollowUp: true,
-    japanese: "その計画を、もう少し具体的に教えてください。",
-    englishTranslation: "Please tell me that plan in a little more detail.",
-    burmeseTranslation: "ထိုအစီအစဉ်ကို နည်းနည်း ပိုပြီး တိတိကျကျ ပြောပြပါ။",
+    japanese: "住む場所や毎日の生活について、どのように準備していますか。",
+    englishTranslation: "How are you preparing for housing and daily life?",
+    burmeseTranslation: "နေရာနှင့် နေ့စဉ် နေထိုင်ရေးကို ဘယ်လို ပြင်ဆင်ထားသလဲ။",
   },
 ];
 
@@ -319,15 +409,10 @@ export function variantsForTopic(topic: QuestionTopicKey): BankQuestion[] {
 
 export function followUpForTopic(topic: QuestionTopicKey): BankQuestion {
   const specific = followUpBank.find((item) => item.topic === topic);
-  if (specific) return specific;
-  return {
-    id: 200 + SESSION_TOPIC_ORDER.indexOf(topic),
-    topic,
-    isFollowUp: true,
-    japanese: "もう少し詳しく教えてください。",
-    englishTranslation: "Please tell me a little more.",
-    burmeseTranslation: "နည်းနည်း ပိုပြီး အသေးစိတ် ပြောပြပါ။",
-  };
+  if (!specific) {
+    throw new Error(`Missing follow-up for topic: ${topic}`);
+  }
+  return specific;
 }
 
 export function pickSessionQuestions(

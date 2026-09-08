@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   CORE_SESSION_LENGTH,
   SESSION_TOPIC_ORDER,
+  followUpBank,
+  followUpForTopic,
   getBankQuestionById,
   pickSessionQuestions,
   questionBank,
@@ -45,7 +47,7 @@ describe("questionBank", () => {
   });
 
   it("never contains forbidden exam terms", () => {
-    const allText = questionBank
+    const allText = [...questionBank, ...followUpBank]
       .map((q) => `${q.japanese} ${q.englishTranslation} ${q.burmeseTranslation}`)
       .join(" ");
     for (const term of FORBIDDEN_TERMS) {
@@ -53,9 +55,28 @@ describe("questionBank", () => {
     }
   });
 
+  it("keeps after-language-school study as a future-plan question", () => {
+    const moved = questionBank.find((item) => item.id === 163);
+    expect(moved?.topic).toBe("futurePlan");
+    expect(variantsForTopic("studyPlan").some((item) => item.id === 163)).toBe(
+      false,
+    );
+  });
+
+  it("has a topic-specific follow-up for every core topic", () => {
+    for (const topic of SESSION_TOPIC_ORDER) {
+      const followUp = followUpForTopic(topic);
+      expect(followUp.topic).toBe(topic);
+      expect(followUp.isFollowUp).toBe(true);
+      expect(followUp.japanese).not.toBe("もう少し詳しく教えてください。");
+    }
+    expect(followUpBank).toHaveLength(SESSION_TOPIC_ORDER.length);
+  });
+
   it("resolves generated follow-up ids so TTS can play them", () => {
     const followUp = getBankQuestionById(200);
     expect(followUp?.isFollowUp).toBe(true);
-    expect(followUp?.japanese).toContain("詳しく");
+    expect(followUp?.topic).toBe("selfIntroduction");
+    expect(followUp?.japanese).toContain("出身地");
   });
 });
