@@ -8,7 +8,7 @@ describe("POST /api/scribe", () => {
     vi.resetModules();
     process.env = {
       ...ORIGINAL_ENV,
-      ELEVENLABS_SCRIBE_API_KEY: "test-scribe-key",
+      GROQ_STT_API_KEY: "test-stt-key",
     };
   });
 
@@ -29,14 +29,14 @@ describe("POST /api/scribe", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns { transcript } from Scribe using ELEVENLABS_SCRIBE_API_KEY", async () => {
-    const scribeFetch = vi.fn().mockResolvedValue(
+  it("returns { transcript } from Groq Whisper using GROQ_STT_API_KEY", async () => {
+    const whisperFetch = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ text: "はじめまして。" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       }),
     );
-    vi.stubGlobal("fetch", scribeFetch);
+    vi.stubGlobal("fetch", whisperFetch);
 
     const { POST } = await import("./route");
     const form = new FormData();
@@ -56,11 +56,11 @@ describe("POST /api/scribe", () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ transcript: "はじめまして。" });
-    expect(scribeFetch).toHaveBeenCalledWith(
-      "https://api.elevenlabs.io/v1/speech-to-text",
+    expect(whisperFetch).toHaveBeenCalledWith(
+      "https://api.groq.com/openai/v1/audio/transcriptions",
       expect.objectContaining({
         headers: expect.objectContaining({
-          "xi-api-key": "test-scribe-key",
+          Authorization: "Bearer test-stt-key",
         }),
       }),
     );

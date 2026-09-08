@@ -38,6 +38,12 @@ describe("Home (start screen)", () => {
     expect(
       screen.getByRole("button", { name: "Join interview" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText("Guest practice is not saved and is not part of the study."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Participant login" }),
+    ).toHaveAttribute("href", "/login");
     expect(screen.queryByText("Aung Min Khant")).not.toBeInTheDocument();
     expect(screen.queryByText("Mandalay, Myanmar")).not.toBeInTheDocument();
     expect(

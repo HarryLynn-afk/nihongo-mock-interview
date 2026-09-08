@@ -64,4 +64,21 @@ describe("resolveQuestionAudio", () => {
     expect(result.bytes).toBe(fallbackBytes);
     expect(elapsed).toBeLessThan(500); // way under timeoutMs
   });
+
+  it("waits for TTS instead of reading a missing local clip when hasFallback is false", async () => {
+    const ttsFetch = vi.fn().mockResolvedValue(ttsBytes);
+    const fallbackReader = vi.fn().mockRejectedValue(new Error("missing"));
+
+    const { source, bytes } = await resolveQuestionAudio({
+      questionId: 101,
+      ttsFetch,
+      fallbackReader,
+      timeoutMs: 50,
+      hasFallback: false,
+    });
+
+    expect(source).toBe("tts");
+    expect(bytes).toBe(ttsBytes);
+    expect(fallbackReader).not.toHaveBeenCalled();
+  });
 });

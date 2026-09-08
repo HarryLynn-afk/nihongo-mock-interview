@@ -5,7 +5,9 @@ import {
   type Headline,
   type RubricCategoryKey,
 } from "@/lib/content/rubric";
+import type { InterviewQuestion } from "@/lib/content/questions";
 import { questions } from "@/lib/content/questions";
+import { getBankQuestionById, TOPIC_NAV_LABEL } from "@/lib/content/questionBank";
 import {
   buildNextStep,
   formatQuotedCritique,
@@ -130,9 +132,11 @@ export type ReportAnswerInput = {
 export function buildReportView({
   report,
   answers,
+  sessionQuestions = questions,
 }: {
   report: InterviewReport;
   answers: readonly ReportAnswerInput[];
+  sessionQuestions?: readonly InterviewQuestion[];
 }): ReportView {
   const hasVoice = answers.some((answer) => answer.inputMode === "voice");
   const hasTyped = answers.some((answer) => answer.inputMode === "typed");
@@ -172,7 +176,7 @@ export function buildReportView({
         assessed,
       };
     }),
-    questions: questions.map((question, index) => {
+    questions: sessionQuestions.map((question, index) => {
       const critique = report.critiques.find(
         (item) => item.questionIndex === index,
       );
@@ -194,12 +198,14 @@ export function buildReportView({
           })
         : null;
       const quote = formatted?.quote ?? "";
+      const bank = getBankQuestionById(question.id);
+      const navLabel =
+        (bank ? TOPIC_NAV_LABEL[bank.topic] : QUESTION_NAV_LABELS[index]) ??
+        `Question ${index + 1}`;
       return {
         questionIndex: index,
-        navLabel: QUESTION_NAV_LABELS[index] ?? `Question ${index + 1}`,
-        categoryLabel: category
-          ? SCORE_LABELS[category]
-          : (QUESTION_NAV_LABELS[index] ?? `Question ${index + 1}`),
+        navLabel,
+        categoryLabel: category ? SCORE_LABELS[category] : navLabel,
         japanese: question.japanese,
         transcript,
         scoreText: scored ? `${scored.points}/${scored.weight}` : "—",

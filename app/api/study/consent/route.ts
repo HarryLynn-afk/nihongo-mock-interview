@@ -1,0 +1,60 @@
+import { NextResponse } from "next/server";
+import {
+  CONSENT_VERSION,
+  nextParticipantId,
+} from "@/lib/content/studyAuth";
+import { createStudyAdminClient } from "@/lib/server/study/adminClients";
+import { createStudyServerClient } from "@/lib/server/study/serverClient";
+
+export async function POST() {
+  const supabase = await createStudyServerClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "unavailable" }, { status: 503 });
+  }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.email) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const admin = createStudyAdminClient();
+  if (!admin) {
+    return NextResponse.json({ error: "unavailable" }, { status: 503 });
+  }
+
+  const existing = await admin
+    .from("participants")
+    .select("participant_id")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (existing.data?.participant_id) {
+    return NextResponse.json({ participantId: existing.data.participant_id });
+  }
+
+  const listed = await admin
+    .from("invited_emails")
+    .select("email")
+    .eq("email", user.email.toLowerCase())
+    .maybeSingle();
+  if (!listed.data) {
+    return NextResponse.json({ error: "not_invited" }, { status: 403 });
+  }
+
+  const { data: rows } = await admin.from("participants").select("participant_id");
+  const participantId = nextParticipantId(
+    (rows ?? []).map((row) => row.participant_id as string),
+  );
+
+  const { error } = await admin.from("participants").insert({
+    id: user.id,
+    email: user.email.toLowerCase(),
+    participant_id: participantId,
+    consent_version: CONSENT_VERSION,
+    consent_at: new Date().toISOString(),
+  });
+  if (error) {
+    return NextResponse.json({ error: "unavailable" }, { status: 503 });
+  }
+  return NextResponse.json({ participantId });
+}

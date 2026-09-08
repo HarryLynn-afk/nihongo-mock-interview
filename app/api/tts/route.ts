@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { getElevenLabsTtsKey } from "@/lib/server/env/elevenlabsTts";
-import { questions } from "@/lib/content/questions";
+import { findPlayableQuestion } from "@/lib/content/findPlayableQuestion";
 import { resolveQuestionAudio } from "./resolveQuestionAudio";
 
 // Sarah — matches the voice used to pre-render the local fallback clips
@@ -11,7 +11,7 @@ const SENSEI_VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
 const TTS_TIMEOUT_MS = 1500;
 
 async function fetchTts(questionId: number, signal: AbortSignal): Promise<Uint8Array> {
-  const question = questions.find((q) => q.id === questionId);
+  const question = findPlayableQuestion(questionId);
   if (!question) {
     throw new Error(`Unknown questionId: ${questionId}`);
   }
@@ -41,15 +41,20 @@ async function fetchTts(questionId: number, signal: AbortSignal): Promise<Uint8A
 
 async function readFallback(questionId: number): Promise<Uint8Array> {
   const filePath = path.join(process.cwd(), "public", `question-${questionId}.mp3`);
-  const buffer = await readFile(filePath);
-  return new Uint8Array(buffer);
+  try {
+    const buffer = await readFile(filePath);
+    return new Uint8Array(buffer);
+  } catch {
+    throw new Error(`No local fallback for question ${questionId}`);
+  }
 }
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const questionId = Number(searchParams.get("questionId"));
+  const question = findPlayableQuestion(questionId);
 
-  if (!questions.some((q) => q.id === questionId)) {
+  if (!question) {
     return NextResponse.json(
       { error: `Invalid questionId: ${searchParams.get("questionId")}` },
       { status: 400 },
@@ -61,6 +66,7 @@ export async function GET(request: Request) {
     ttsFetch: fetchTts,
     fallbackReader: readFallback,
     timeoutMs: TTS_TIMEOUT_MS,
+    hasFallback: questionId >= 1 && questionId <= 3,
   });
 
   return new Response(Buffer.from(bytes), {

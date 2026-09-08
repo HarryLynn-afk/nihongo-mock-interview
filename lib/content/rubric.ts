@@ -36,7 +36,7 @@ const CATEGORY_DESCRIPTIONS: Record<RubricCategoryKey, string> = {
   motivation: "why Japan, why this school, not anime/money/agent-driven reasons",
   studyPlan: "next step after graduation, language target, realistic timeline",
   consistency:
-    "whether the three answers agree with each other (same person, same plan, no contradictions)",
+    "whether the answers agree with each other (same person, same plan, no contradictions)",
 };
 
 export const RAW_RATING_LABEL: Record<1 | 2 | 3 | 4 | 5, string> = {
@@ -84,9 +84,9 @@ export function getRubricPrompt(): string {
     "Rewrite is Japanese only. If rewrite equals quote, keep that phrase as a useful phrase (optional enhancement), even when forced is true. Only write a different rewrite when there is a real problem. If the rewrite differs from the quote, include Hiragana or Katakana. Never use （無言） as the rewrite.",
     "If an answer's inputMode is typed, do not score pronunciation, fluency, pace, hesitation, or confidence. Still return a speaking integer; it is ignored for the practice total. The listening key means answer relevance, not a listening test.",
     "Do not tell the student to add a career or study goal if that answer already names a specific one. Do not invent evidence.",
-    "There is no pre-filled student card. Score only from the three answers.",
+    "There is no pre-filled student card. Score only from the answers in this session.",
     "Never use exam or certification labels in your scores or critiques.",
-    'Return strict JSON: { "scores": { <category>: <1-5 integer>, ... }, "critiques": [{ "questionIndex": <0-2 integer>, "quote": <string>, "explanation": <English string>, "rewrite": <Japanese string>, "category": <category key> }] }',
+    'Return strict JSON: { "scores": { <category>: <1-5 integer>, ... }, "critiques": [{ "questionIndex": <0-based integer matching each answer>, "quote": <string>, "explanation": <English string>, "rewrite": <Japanese string>, "category": <category key> }] }',
   ].join("\n");
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { InterviewSidebar } from "./InterviewSidebar";
 import { InterviewReportScreen } from "./InterviewReportScreen";
 import { LanguageHud } from "./LanguageHud";
@@ -17,35 +17,62 @@ import { useInterviewScore } from "./useInterviewScore";
 import { useMicToggle } from "./useMicToggle";
 import { useQuestionFlow } from "./useQuestionFlow";
 import { getPitchCaptions } from "@/lib/content/pitchAnswers";
+import { questions } from "@/lib/content/questions";
+import { pickSessionQuestions } from "@/lib/content/questionBank";
+import type { InterviewQuestion } from "@/lib/content/questions";
+import { loadSeenQuestionIds, saveSeenQuestionIds } from "./seenQuestionIds";
 import { PUSHBACK_TRY_AGAIN } from "@/lib/content/pushbackCopy";
 import {
   buildUsefulnessView,
   createSessionId,
 } from "@/lib/content/survey";
 import { loadDevicePrefs, type DevicePrefs } from "../components/devicePrefs";
+import { GUEST_BANNER } from "@/lib/content/studyAuth";
 
 const DEFAULT_DEVICE_PREFS: DevicePrefs = { cameraOn: true, micOn: true };
 
 export default function CallPage() {
   const [devicePrefs, setDevicePrefs] = useState(DEFAULT_DEVICE_PREFS);
   const [isPitchMode, setIsPitchMode] = useState(false);
+  const [sessionQuestions, setSessionQuestions] = useState<
+    readonly InterviewQuestion[] | null
+  >(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [formEnabled, setFormEnabled] = useState(false);
   const [revealDone, setRevealDone] = useState(false);
+  const [participantId, setParticipantId] = useState<string | null>(null);
+  const savedStudyRef = useRef(false);
 
   useEffect(() => {
     setDevicePrefs(loadDevicePrefs());
-    setIsPitchMode(
-      new URLSearchParams(window.location.search).get("pitch") === "1",
-    );
+    const pitch =
+      new URLSearchParams(window.location.search).get("pitch") === "1";
+    setIsPitchMode(pitch);
+    if (pitch) {
+      setSessionQuestions(questions);
+      return;
+    }
+    const seen = loadSeenQuestionIds();
+    const picked = pickSessionQuestions(Math.random, seen);
+    saveSeenQuestionIds([...seen, ...picked.map((item) => item.id)]);
+    setSessionQuestions(picked);
+  }, []);
+
+  useEffect(() => {
+    void fetch("/api/study/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { participantId?: string | null } | null) => {
+        if (data?.participantId) setParticipantId(data.participantId);
+      })
+      .catch(() => {});
   }, []);
 
   const { cameraState, toggleCamera, videoRef } = useCameraStream({
     startOn: devicePrefs.cameraOn,
   });
   const { micOn, toggleMic } = useMicToggle({ initialOn: devicePrefs.micOn });
-  const { phase, currentQuestion, questionIndex, answers, endSenseiTurn, submitAnswer } =
-    useQuestionFlow();
+  const { phase, currentQuestion, questionIndex, answers, sessionQuestions: flowQuestions, endSenseiTurn, submitAnswer } =
+    useQuestionFlow(sessionQuestions, { enableFollowUps: !isPitchMode && sessionQuestions !== null });
   const scribe = useBackgroundScribe({ answers, phase });
   const { report } = useInterviewScore(scribe);
 
@@ -66,6 +93,43 @@ export default function CallPage() {
       });
   }, [report]);
 
+  useEffect(() => {
+    if (!report || !participantId || savedStudyRef.current) return;
+    savedStudyRef.current = true;
+    void fetch("/api/study/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        headline: report.headline,
+        total: report.total,
+        source: report.source,
+        answers: answers.map(
+          ({
+            questionIndex: index,
+            inputMode,
+            transcript,
+            pushbackCount,
+            forced,
+            isFollowUp,
+          }) => ({
+            questionIndex: index,
+            inputMode,
+            transcript,
+            pushbackCount,
+            forced,
+            isFollowUp,
+          }),
+        ),
+        scores: report.scores,
+        pushbackCount: answers.reduce(
+          (sum, answer) => sum + answer.pushbackCount,
+          0,
+        ),
+        followUpCount: answers.filter((answer) => answer.isFollowUp).length,
+      }),
+    }).catch(() => {});
+  }, [report, participantId, answers]);
+
   const {
     liveCaption,
     speakPaused,
@@ -82,6 +146,7 @@ export default function CallPage() {
     active: phase === "studentAnswering",
     micOn,
     autoSpeak: isPitchMode,
+    liveStt: !isPitchMode,
     onSubmit: (submission) => {
       submitAnswer(submission);
     },
@@ -125,6 +190,16 @@ export default function CallPage() {
       className="min-h-screen overflow-y-auto bg-ink p-4 md:p-6"
     >
       <div className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-7xl flex-col items-center gap-5 md:min-h-[calc(100vh-3rem)] md:gap-6">
+        {!isPitchMode && !participantId ? (
+          <p className="w-full rounded-xl border border-paper/15 bg-paper/5 px-4 py-2 text-center text-sm text-paper/80">
+            {GUEST_BANNER}
+          </p>
+        ) : null}
+        {participantId ? (
+          <p className="w-full text-center text-sm text-paper/70">
+            Participant {participantId}
+          </p>
+        ) : null}
         <div
           data-testid="call-stage"
           className="flex w-full flex-col items-stretch gap-4 md:flex-row md:items-start md:gap-5"
@@ -133,6 +208,7 @@ export default function CallPage() {
             <InterviewReportScreen
               view={buildReportView({
                 report,
+                sessionQuestions: flowQuestions,
                 answers: answers.map(
                   ({ questionIndex: index, inputMode, transcript }) => ({
                     questionIndex: index,
@@ -146,7 +222,11 @@ export default function CallPage() {
             />
           ) : (
             <>
-              <InterviewSidebar phase={phase} answers={answers} />
+              <InterviewSidebar
+                phase={phase}
+                answers={answers}
+                sessionQuestions={flowQuestions}
+              />
               <div data-testid="sensei-stage" className="relative min-w-0 flex-1">
                 <SenseiTile />
                 <div
@@ -185,8 +265,16 @@ export default function CallPage() {
             speaker={phase === "studentAnswering" ? "student" : "sensei"}
             caption={currentQuestion.japanese}
             liveCaption={studentTurn === "speak" ? null : liveCaption}
-            english={pitchCaptions?.english ?? null}
-            burmese={pitchCaptions?.burmese ?? null}
+            english={
+              phase === "studentAnswering"
+                ? (pitchCaptions?.english ?? currentQuestion.englishTranslation)
+                : null
+            }
+            burmese={
+              phase === "studentAnswering"
+                ? (pitchCaptions?.burmese ?? currentQuestion.burmeseTranslation)
+                : null
+            }
             tryAgain={pushbackVisible ? PUSHBACK_TRY_AGAIN : null}
           />
         ) : null}

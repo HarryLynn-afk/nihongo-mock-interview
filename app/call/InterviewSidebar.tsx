@@ -1,5 +1,6 @@
 import { buildSidebarView } from "./buildSidebarView";
 import type { QuestionPhase } from "./useQuestionFlow";
+import type { InterviewQuestion } from "@/lib/content/questions";
 
 const STATUS_LABEL: Record<QuestionPhase, string> = {
   senseiSpeaking: "Sensei speaking",
@@ -10,11 +11,13 @@ const STATUS_LABEL: Record<QuestionPhase, string> = {
 export function InterviewSidebar({
   phase,
   answers,
+  sessionQuestions,
 }: {
   phase: QuestionPhase;
   answers: readonly { questionIndex: number; transcript: string }[];
+  sessionQuestions?: readonly InterviewQuestion[];
 }) {
-  const view = buildSidebarView({ phase, answers });
+  const view = buildSidebarView({ phase, answers, sessionQuestions });
 
   return (
     <aside

@@ -13,9 +13,9 @@ function runCheckEnv(env: Record<string, string | undefined>) {
 
 const ALL_REQUIRED_ENV = {
   ELEVENLABS_TTS_API_KEY: "test-key",
-  ELEVENLABS_SCRIBE_API_KEY: "test-key",
   GROQ_TRANSLATE_API_KEY: "test-key",
   GROQ_GRADE_API_KEY: "test-key",
+  GROQ_STT_API_KEY: "test-key",
 };
 
 describe("scripts/check-env.mjs", () => {
@@ -54,5 +54,25 @@ describe("scripts/check-env.mjs", () => {
 
     expect(result.status).toBe(0);
     expect(result.stderr).not.toMatch(/N8N_WEBHOOK_URL/);
+  });
+
+  it("does not require ELEVENLABS_SCRIBE_API_KEY", () => {
+    const envWithoutScribe: Record<string, string | undefined> = {
+      ...ALL_REQUIRED_ENV,
+    };
+    delete envWithoutScribe.ELEVENLABS_SCRIBE_API_KEY;
+
+    const result = runCheckEnv(envWithoutScribe);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).not.toMatch(/ELEVENLABS_SCRIBE_API_KEY/);
+  });
+
+  it("does not require OPENAI_STT_API_KEY or Supabase", () => {
+    const result = runCheckEnv(ALL_REQUIRED_ENV);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).not.toMatch(/OPENAI_STT_API_KEY/);
+    expect(result.stderr).not.toMatch(/SUPABASE/);
   });
 });

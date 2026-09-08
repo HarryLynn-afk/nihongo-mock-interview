@@ -6,6 +6,7 @@ const ALL_KEYS = {
   ELEVENLABS_TTS_API_KEY: "test-elevenlabs-tts-key",
   ELEVENLABS_SCRIBE_API_KEY: "test-elevenlabs-scribe-key",
   GROQ_GRADE_API_KEY: "test-groq-grade-key",
+  GROQ_STT_API_KEY: "test-groq-stt-key",
   GROQ_TRANSLATE_API_KEY: "test-groq-translate-key",
 } as const;
 
@@ -23,18 +24,22 @@ describe("lib/server/env/* per-purpose modules", () => {
     process.env = { ...ORIGINAL_ENV };
   });
 
-  it("each getter returns its own scoped value (TTS ≠ Scribe ≠ Translate ≠ Grade)", async () => {
+  it("each getter returns its own scoped value (TTS ≠ Scribe ≠ Translate ≠ Grade ≠ STT)", async () => {
     setAllRequiredEnv();
 
     const { getElevenLabsTtsKey } = await import("./elevenlabsTts");
     const { getElevenLabsScribeKey } = await import("./elevenlabsScribe");
     const { getGroqTranslateKey } = await import("./groqTranslate");
     const { getGroqGradeKey } = await import("./groqGrade");
+    const { getGroqSttKey } = await import("./groqStt");
 
     expect(getElevenLabsTtsKey()).toBe(ALL_KEYS.ELEVENLABS_TTS_API_KEY);
     expect(getElevenLabsScribeKey()).toBe(ALL_KEYS.ELEVENLABS_SCRIBE_API_KEY);
     expect(getGroqTranslateKey()).toBe(ALL_KEYS.GROQ_TRANSLATE_API_KEY);
     expect(getGroqGradeKey()).toBe(ALL_KEYS.GROQ_GRADE_API_KEY);
+    expect(getGroqSttKey()).toBe(ALL_KEYS.GROQ_STT_API_KEY);
+    expect(getGroqSttKey()).not.toBe(ALL_KEYS.GROQ_GRADE_API_KEY);
+    expect(getGroqSttKey()).not.toBe(ALL_KEYS.GROQ_TRANSLATE_API_KEY);
   });
 
   // The whole reason we split env.ts into per-purpose modules: a missing
@@ -61,6 +66,11 @@ describe("lib/server/env/* per-purpose modules", () => {
       failingImport: "./groqGrade",
       unrelatedImport: "./groqTranslate",
     },
+    {
+      missing: "GROQ_STT_API_KEY",
+      failingImport: "./groqStt",
+      unrelatedImport: "./groqGrade",
+    },
   ])(
     "$missing missing → $failingImport throws, but $unrelatedImport still imports",
     async ({ missing, failingImport, unrelatedImport }) => {
@@ -79,6 +89,25 @@ describe("lib/server/env/* per-purpose modules", () => {
 
     const { getWisprKey } = await import("./wispr");
     expect(getWisprKey()).toBeUndefined();
+  });
+
+  it("OpenAI STT key is optional — missing var does not throw", async () => {
+    setAllRequiredEnv();
+    delete process.env.OPENAI_STT_API_KEY;
+
+    const { getOpenAISttKey } = await import("./openaiStt");
+    expect(getOpenAISttKey()).toBeUndefined();
+  });
+
+  it("Supabase env is optional — missing vars do not throw", async () => {
+    setAllRequiredEnv();
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    const { isSupabaseConfigured, getSupabaseUrl } = await import("./supabase");
+    expect(getSupabaseUrl()).toBeNull();
+    expect(isSupabaseConfigured()).toBe(false);
   });
 
   it("research form URL is optional — missing var returns null and does not throw", async () => {

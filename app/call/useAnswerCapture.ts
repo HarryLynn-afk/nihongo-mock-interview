@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AnswerSubmission } from "./useQuestionFlow";
 import { transcriptPassesPushbackCheck } from "@/lib/content/pushbackCheck";
+import { startLiveTranscriptionSession } from "./startLiveTranscription";
+import type { LiveTranscriptionSession } from "./startLiveTranscription";
 
 type AnswerMode = "speak" | "type" | null;
 
@@ -8,6 +10,7 @@ type UseAnswerCaptureArgs = {
   active: boolean;
   micOn: boolean;
   autoSpeak?: boolean;
+  liveStt?: boolean;
   onSubmit: (submission: AnswerSubmission) => void;
 };
 
@@ -49,6 +52,7 @@ export function useAnswerCapture({
   active,
   micOn,
   autoSpeak = false,
+  liveStt = false,
   onSubmit,
 }: UseAnswerCaptureArgs) {
   const [answerMode, setAnswerMode] = useState<AnswerMode>(null);
@@ -61,6 +65,8 @@ export function useAnswerCapture({
   const recorderRef = useRef<MediaRecorderLike | null>(null);
   const autoSpeakUsedRef = useRef(false);
   const attemptCountRef = useRef(0);
+  const liveSessionRef = useRef<LiveTranscriptionSession | null>(null);
+  const completedWaitersRef = useRef<Array<(text: string) => void>>([]);
 
   if (!active) {
     autoSpeakUsedRef.current = false;
@@ -92,7 +98,8 @@ export function useAnswerCapture({
 
     const Ctor = getSpeechRecognitionCtor();
     let recognition: SpeechRecognitionLike | undefined;
-    if (Ctor) {
+    function startBrowserRecognition() {
+      if (!Ctor) return;
       recognition = new Ctor();
       recognition.lang = "ja-JP";
       recognition.interimResults = true;
@@ -113,6 +120,32 @@ export function useAnswerCapture({
     }
 
     let cancelled = false;
+    if (liveStt) {
+      void startLiveTranscriptionSession({
+        onEvent: (event) => {
+          if (event.kind === "delta") {
+            setSpokenCaption(transcriptBaseRef.current + event.delta);
+            if (event.delta) setPushbackVisible(false);
+            return;
+          }
+          transcriptBaseRef.current = event.transcript;
+          setSpokenCaption(event.transcript);
+          completedWaitersRef.current.splice(0).forEach((wait) => wait(event.transcript));
+        },
+      }).then((session) => {
+        if (cancelled) {
+          session?.stop();
+          return;
+        }
+        if (session) {
+          liveSessionRef.current = session;
+          return;
+        }
+        startBrowserRecognition();
+      });
+    } else {
+      startBrowserRecognition();
+    }
     let stream: MediaStream | null = null;
     const Recorder = getMediaRecorderCtor();
     if (Recorder && navigator.mediaDevices?.getUserMedia) {
@@ -136,6 +169,8 @@ export function useAnswerCapture({
 
     return () => {
       cancelled = true;
+      liveSessionRef.current?.stop();
+      liveSessionRef.current = null;
       if (recognition) {
         recognition.onresult = null;
         recognition.stop();
@@ -145,7 +180,7 @@ export function useAnswerCapture({
       recorder?.stop();
       stream?.getTracks?.().forEach((track) => track.stop());
     };
-  }, [listening]);
+  }, [listening, liveStt]);
 
   function resetSpeakSession() {
     setSpeakPaused(false);
@@ -185,56 +220,59 @@ export function useAnswerCapture({
       setPushbackVisible(true);
       return;
     }
-    if (answerMode === "speak" && spokenCaption) {
-      const submitVoice = () => {
-        const result = resolvePushback(spokenCaption);
-        if (!result.store) {
-          setPushbackVisible(true);
-          return;
-        }
-        onSubmit({
-          inputMode: "voice",
-          transcript: spokenCaption,
-          audioClip: new Blob(
-            audioChunksRef.current.length > 0
-              ? audioChunksRef.current
-              : [new Blob()],
-            { type: "audio/webm" },
-          ),
-          pushbackCount: result.pushbackCount,
-          forced: result.forced,
-        });
-      };
+    if (answerMode !== "speak") return;
+
+    const submitVoice = (transcript: string) => {
+      const result = resolvePushback(transcript);
+      if (!result.store) {
+        setPushbackVisible(true);
+        if (!transcript) setAnswerMode("type");
+        return;
+      }
+      onSubmit({
+        inputMode: "voice",
+        transcript,
+        audioClip: new Blob(
+          audioChunksRef.current.length > 0
+            ? audioChunksRef.current
+            : [new Blob()],
+          { type: "audio/webm" },
+        ),
+        pushbackCount: result.pushbackCount,
+        forced: result.forced,
+      });
+    };
+
+    const finishSpeak = (transcript: string) => {
       const recorder = recorderRef.current;
       if (recorder) {
         recorderRef.current = null;
-        recorder.onstop = submitVoice;
+        recorder.onstop = () => submitVoice(transcript);
         recorder.stop();
         return;
       }
-      submitVoice();
+      submitVoice(transcript);
+    };
+
+    const live = liveSessionRef.current;
+    if (live) {
+      void (async () => {
+        const committed = await new Promise<string | null>((resolve) => {
+          const timer = window.setTimeout(() => resolve(null), 2000);
+          completedWaitersRef.current.push((text) => {
+            window.clearTimeout(timer);
+            resolve(text);
+          });
+          live.commit();
+        });
+        live.stop();
+        liveSessionRef.current = null;
+        finishSpeak(committed ?? spokenCaption ?? "");
+      })();
       return;
     }
-    if (answerMode === "speak") {
-      const result = resolvePushback("");
-      if (result.store) {
-        onSubmit({
-          inputMode: "voice",
-          transcript: "",
-          audioClip: new Blob(
-            audioChunksRef.current.length > 0
-              ? audioChunksRef.current
-              : [new Blob()],
-            { type: "audio/webm" },
-          ),
-          pushbackCount: result.pushbackCount,
-          forced: result.forced,
-        });
-        return;
-      }
-      setPushbackVisible(true);
-      setAnswerMode("type");
-    }
+
+    finishSpeak(spokenCaption ?? "");
   }, [answerMode, onSubmit, draft, spokenCaption]);
 
   return {

@@ -1,4 +1,5 @@
 import { questions } from "@/lib/content/questions";
+import type { InterviewQuestion } from "@/lib/content/questions";
 import type { QuestionPhase } from "./useQuestionFlow";
 
 export type SidebarEntry = {
@@ -16,32 +17,37 @@ export type SidebarView = {
 export function buildSidebarView({
   phase,
   answers,
+  sessionQuestions = questions,
 }: {
   phase: QuestionPhase;
   answers: readonly { questionIndex: number; transcript: string }[];
+  sessionQuestions?: readonly InterviewQuestion[];
 }): SidebarView {
+  const list = sessionQuestions.length > 0 ? sessionQuestions : questions;
   const completed = answers.length;
   const entries: SidebarEntry[] = [];
 
   for (let index = 0; index < completed; index += 1) {
-    entries.push({ speaker: "sensei", text: questions[index].japanese });
+    const senseiText = list[index]?.japanese;
+    if (senseiText) {
+      entries.push({ speaker: "sensei", text: senseiText });
+    }
     const answer = answers.find((item) => item.questionIndex === index);
     if (answer) {
       entries.push({ speaker: "student", text: answer.transcript });
     }
   }
 
-  if (phase !== "done") {
+  if (phase !== "done" && list[completed]) {
     entries.push({
       speaker: "sensei",
-      text: questions[completed].japanese,
+      text: list[completed].japanese,
     });
   }
 
   return {
-    questionNumber:
-      phase === "done" ? questions.length : completed + 1,
-    questionCount: questions.length,
+    questionNumber: phase === "done" ? list.length : completed + 1,
+    questionCount: list.length,
     status: phase,
     entries,
   };

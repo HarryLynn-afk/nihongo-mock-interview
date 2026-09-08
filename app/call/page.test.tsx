@@ -9,6 +9,24 @@ import {
 } from "@/lib/content/sampleReport";
 import CallPage from "./page";
 
+vi.mock("@/lib/content/questionBank", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/content/questionBank")>();
+  const { questions: locked } = await import("@/lib/content/questions");
+  return {
+    ...actual,
+    pickSessionQuestions: () =>
+      locked.map((question, index) => ({
+        ...question,
+        topic: actual.SESSION_TOPIC_ORDER[index],
+      })),
+  };
+});
+
+vi.mock("@/lib/content/followUpCheck", () => ({
+  MAX_FOLLOW_UPS: 5,
+  shouldOfferFollowUp: () => false,
+}));
+
 describe("Call screen", () => {
   const getUserMedia = vi.fn();
   const fetchMock = vi.fn();

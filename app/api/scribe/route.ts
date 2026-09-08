@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getElevenLabsScribeKey } from "@/lib/server/env/elevenlabsScribe";
-import { scribeSpeech } from "./scribeSpeech";
+import { getGroqSttKey } from "@/lib/server/env/groqStt";
+import { whisperSpeech } from "./whisperSpeech";
 
 export async function POST(request: Request) {
   let form: FormData;
@@ -14,11 +14,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing audio" }, { status: 400 });
   }
 
-  const audioBytes = new Uint8Array(await audio.arrayBuffer());
-  const transcript = await scribeSpeech({
-    audioBytes,
-    scribeFetch: fetch,
-    getScribeKey: getElevenLabsScribeKey,
+  const transcript = await whisperSpeech({
+    audio,
+    whisperFetch: fetch,
+    getSttKey: getGroqSttKey,
   });
 
   return NextResponse.json({ transcript });

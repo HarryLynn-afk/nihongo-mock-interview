@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import { questions } from "@/lib/content/questions";
+import { pickSessionQuestions } from "@/lib/content/questionBank";
 import { useQuestionFlow } from "./useQuestionFlow";
 import type { AnswerSubmission } from "./useQuestionFlow";
 
@@ -68,6 +69,8 @@ describe("useQuestionFlow", () => {
     expect(result.current.answers).toEqual([
       {
         questionIndex: 0,
+        questionId: 1,
+        isFollowUp: false,
         inputMode: "typed",
         transcript: "はじめまして。アウンミンハントです。",
         pushbackCount: 0,
@@ -101,6 +104,19 @@ describe("useQuestionFlow", () => {
 
     expect(result.current.phase).toBe("senseiSpeaking");
     expect(result.current.currentQuestion).toBe(questions[0]);
+  });
+
+  it("inserts a follow-up after a vague practice answer", () => {
+    const session = pickSessionQuestions(() => 0);
+    const { result } = renderHook(() =>
+      useQuestionFlow(session, { enableFollowUps: true }),
+    );
+
+    act(() => result.current.endSenseiTurn());
+    act(() => result.current.submitAnswer(typed("はい、そうです。")));
+
+    expect(result.current.sessionQuestions.length).toBeGreaterThan(session.length);
+    expect(result.current.currentQuestion?.id).toBeGreaterThanOrEqual(200);
   });
 
   it("exposes questionIndex 0/1/2 then null when done", () => {

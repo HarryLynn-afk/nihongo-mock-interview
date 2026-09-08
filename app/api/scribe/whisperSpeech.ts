@@ -1,14 +1,15 @@
-const SCRIBE_URL = "https://api.elevenlabs.io/v1/speech-to-text";
+const GROQ_WHISPER_URL =
+  "https://api.groq.com/openai/v1/audio/transcriptions";
 
-export async function scribeSpeech({
-  audioBytes,
-  scribeFetch,
-  getScribeKey,
+export async function whisperSpeech({
+  audio,
+  whisperFetch,
+  getSttKey,
   timeoutMs = 8000,
 }: {
-  audioBytes: Uint8Array;
-  scribeFetch: typeof fetch;
-  getScribeKey: () => string;
+  audio: Blob;
+  whisperFetch: typeof fetch;
+  getSttKey: () => string;
   timeoutMs?: number;
 }): Promise<string | null> {
   const controller = new AbortController();
@@ -16,18 +17,18 @@ export async function scribeSpeech({
 
   try {
     const form = new FormData();
-    form.append("model_id", "scribe_v1");
-    form.append("language_code", "ja");
+    form.append("model", "whisper-large-v3-turbo");
+    form.append("language", "ja");
     form.append(
       "file",
-      new Blob([audioBytes], { type: "audio/webm" }),
-      "answer.webm",
+      audio,
+      audio.type.includes("mp4") ? "answer.mp4" : "answer.webm",
     );
 
-    const res = await scribeFetch(SCRIBE_URL, {
+    const res = await whisperFetch(GROQ_WHISPER_URL, {
       method: "POST",
       signal: controller.signal,
-      headers: { "xi-api-key": getScribeKey() },
+      headers: { Authorization: `Bearer ${getSttKey()}` },
       body: form,
     });
     if (!res.ok) return null;

@@ -5,6 +5,7 @@ export type ResolveArgs = {
   ttsFetch: (questionId: number, signal: AbortSignal) => Promise<Uint8Array>;
   fallbackReader: (questionId: number) => Promise<Uint8Array>;
   timeoutMs: number;
+  hasFallback?: boolean;
 };
 
 export type ResolvedAudio = {
@@ -22,7 +23,12 @@ export type ResolvedAudio = {
 export async function resolveQuestionAudio(
   args: ResolveArgs,
 ): Promise<ResolvedAudio> {
-  const { questionId, ttsFetch, fallbackReader, timeoutMs } = args;
+  const { questionId, ttsFetch, fallbackReader, timeoutMs, hasFallback = true } =
+    args;
+  if (!hasFallback) {
+    const bytes = await ttsFetch(questionId, new AbortController().signal);
+    return { source: "tts", bytes };
+  }
   const controller = new AbortController();
 
   async function useFallback(): Promise<ResolvedAudio> {

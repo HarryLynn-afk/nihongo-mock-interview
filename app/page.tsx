@@ -12,7 +12,16 @@ export default function Home() {
         </div>
 
         <div className="hidden w-full flex-col gap-3 md:flex">
+          <p className="rounded-lg border border-ink/10 bg-ink/5 px-4 py-3 text-sm text-ink/70">
+            Guest practice is not saved and is not part of the study.
+          </p>
           <JoinInterview />
+          <a
+            href="/login"
+            className="w-full rounded-full border border-ink/15 px-5 py-3 text-center font-medium text-ink transition-colors hover:bg-ink/5"
+          >
+            Participant login
+          </a>
         </div>
 
         <p className="w-full rounded-lg border border-ink/10 bg-ink/5 px-4 py-3 text-sm text-ink/70 md:hidden">

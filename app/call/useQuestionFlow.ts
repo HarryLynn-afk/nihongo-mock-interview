@@ -1,6 +1,12 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { questions } from "@/lib/content/questions";
 import type { InterviewQuestion } from "@/lib/content/questions";
+import {
+  followUpForTopic,
+  getBankQuestionById,
+  type BankQuestion,
+} from "@/lib/content/questionBank";
+import { shouldOfferFollowUp } from "@/lib/content/followUpCheck";
 
 export type QuestionPhase = "senseiSpeaking" | "studentAnswering" | "done";
 
@@ -19,27 +25,50 @@ export type AnswerSubmission =
       forced: boolean;
     };
 
-export type StoredAnswer = AnswerSubmission & { questionIndex: number };
+export type StoredAnswer = AnswerSubmission & {
+  questionIndex: number;
+  questionId?: number;
+  isFollowUp?: boolean;
+};
 
 /**
- * Sequential Q1 → Q2 → Q3 → done state machine, including the sensei/student
- * turn inside each Question. No I/O — audio playback and answer capture live
- * elsewhere and report in via endSenseiTurn() and submitAnswer().
+ * Sequential Question state machine. Pitch / tests omit args and use the
+ * 3 locked Questions. Practice passes a picked bank list after mount.
  */
-export function useQuestionFlow() {
+export function useQuestionFlow(
+  sessionQuestions?: readonly InterviewQuestion[] | null,
+  options: { enableFollowUps?: boolean } = {},
+) {
+  const { enableFollowUps = false } = options;
+  const [items, setItems] = useState<InterviewQuestion[] | null>(() =>
+    sessionQuestions === undefined ? [...questions] : null,
+  );
   const [index, setIndex] = useState(0);
   const [turn, setTurn] = useState<"sensei" | "student">("sensei");
   const [answers, setAnswers] = useState<StoredAnswer[]>([]);
+  const followUpsUsedRef = useRef(0);
 
-  const isDone = index >= questions.length;
-  const phase: QuestionPhase = isDone
-    ? "done"
-    : turn === "student"
-      ? "studentAnswering"
-      : "senseiSpeaking";
-  const currentQuestion: InterviewQuestion | null = isDone
-    ? null
-    : questions[index];
+  useEffect(() => {
+    if (!sessionQuestions || sessionQuestions.length === 0) return;
+    setItems([...sessionQuestions]);
+    setIndex(0);
+    setTurn("sensei");
+    setAnswers([]);
+    followUpsUsedRef.current = 0;
+  }, [sessionQuestions]);
+
+  const waiting = items === null;
+  const list = items ?? [];
+  const isDone = !waiting && index >= list.length;
+  const phase: QuestionPhase = waiting
+    ? "senseiSpeaking"
+    : isDone
+      ? "done"
+      : turn === "student"
+        ? "studentAnswering"
+        : "senseiSpeaking";
+  const currentQuestion: InterviewQuestion | null =
+    waiting || isDone ? null : list[index];
 
   const endSenseiTurn = useCallback(() => {
     setTurn((current) => (current === "sensei" ? "student" : current));
@@ -47,23 +76,58 @@ export function useQuestionFlow() {
 
   const submitAnswer = useCallback(
     (submission: AnswerSubmission) => {
-      if (phase !== "studentAnswering") return;
+      if (phase !== "studentAnswering" || currentQuestion === null) return;
+      const questionIndex = index;
+      const bank = getBankQuestionById(currentQuestion.id);
+      const isFollowUp =
+        currentQuestion.id >= 200 || Boolean(bank?.isFollowUp);
       setAnswers((current) => [
         ...current,
-        { ...submission, questionIndex: index },
+        {
+          ...submission,
+          questionIndex,
+          questionId: currentQuestion.id,
+          isFollowUp,
+        },
       ]);
-      setIndex((current) => Math.min(current + 1, questions.length));
+
+      if (enableFollowUps && !isFollowUp) {
+        const topic = bank?.topic ?? null;
+        if (
+          shouldOfferFollowUp({
+            transcript: submission.transcript,
+            topic,
+            followUpsUsed: followUpsUsedRef.current,
+          })
+        ) {
+          const followUp = topic ? followUpForTopic(topic) : undefined;
+          if (followUp) {
+            followUpsUsedRef.current += 1;
+            setItems((current) => {
+              if (!current) return current;
+              const next = [...current];
+              next.splice(questionIndex + 1, 0, followUp);
+              return next;
+            });
+          }
+        }
+      }
+
+      setIndex((current) => current + 1);
       setTurn("sensei");
     },
-    [phase, index],
+    [phase, index, currentQuestion, enableFollowUps],
   );
 
   return {
     phase,
     currentQuestion,
-    questionIndex: isDone ? null : index,
+    questionIndex: isDone || waiting ? null : index,
     answers,
+    sessionQuestions: list,
     endSenseiTurn,
     submitAnswer,
   };
 }
+
+export type { BankQuestion };
