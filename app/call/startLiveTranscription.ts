@@ -1,28 +1,54 @@
+import { downsampleTo16k, floatToLinear16 } from "./pcmAudio";
 import {
-  commitAudioBufferMessage,
-  parseTranscriptionEvent,
+  closeStreamMessage,
+  deepgramListenUrl,
+  joinJapanese,
+  parseDeepgramMessage,
   type ParsedTranscriptionEvent,
 } from "./transcriptionEvents";
 
 export type LiveTranscriptionSession = {
   stop: () => void;
   commit: () => void;
+  getTranscript: () => string;
+};
+
+const MAX_LISTEN_MS = 20 * 60 * 1000;
+
+type ProcessorNode = {
+  connect: (destination: unknown) => void;
+  disconnect: () => void;
+  onaudioprocess: ((event: { inputBuffer: { getChannelData: (channel: number) => Float32Array } }) => void) | null;
+};
+
+type AudioContextLike = {
+  sampleRate: number;
+  createMediaStreamSource: (stream: MediaStream) => { connect: (node: ProcessorNode) => void };
+  createScriptProcessor: (bufferSize: number, inputChannels: number, outputChannels: number) => ProcessorNode;
+  destination: unknown;
+  close: () => Promise<void> | void;
 };
 
 export async function startLiveTranscriptionSession({
   onEvent,
   fetchImpl = fetch,
   getUserMedia = () => navigator.mediaDevices.getUserMedia({ audio: true }),
-  PeerConnection = globalThis.RTCPeerConnection,
+  WebSocketImpl = globalThis.WebSocket,
+  AudioContextImpl = (
+    globalThis as typeof globalThis & { AudioContext?: new () => AudioContextLike }
+  ).AudioContext,
 }: {
   onEvent: (event: ParsedTranscriptionEvent) => void;
   fetchImpl?: typeof fetch;
   getUserMedia?: () => Promise<MediaStream>;
-  PeerConnection?: typeof RTCPeerConnection;
+  WebSocketImpl?: typeof WebSocket;
+  AudioContextImpl?: new () => AudioContextLike;
 }): Promise<LiveTranscriptionSession | null> {
-  if (typeof PeerConnection !== "function") return null;
+  if (typeof WebSocketImpl !== "function" || typeof AudioContextImpl !== "function") {
+    return null;
+  }
 
-  const tokenRes = await fetchImpl("/api/realtime-stt", { method: "POST" });
+  const tokenRes = await fetchImpl("/api/deepgram-stt", { method: "POST" });
   if (!tokenRes.ok) return null;
   let tokenBody: unknown;
   try {
@@ -31,61 +57,88 @@ export async function startLiveTranscriptionSession({
     return null;
   }
   if (typeof tokenBody !== "object" || tokenBody === null) return null;
-  const ephemeralKey = (tokenBody as { value?: unknown }).value;
-  if (typeof ephemeralKey !== "string") return null;
+  const accessToken = (tokenBody as { accessToken?: unknown }).accessToken;
+  if (typeof accessToken !== "string") return null;
 
-  const pc = new PeerConnection();
-  const dataChannel = pc.createDataChannel("oai-events");
+  let finalized = "";
+  let interim = "";
   let stream: MediaStream | null = null;
+  let audioContext: AudioContextLike | null = null;
+  let processor: ProcessorNode | null = null;
+  let socket: WebSocket | null = null;
+  let maxTimer: ReturnType<typeof setTimeout> | undefined;
 
-  dataChannel.addEventListener("message", (event: MessageEvent<string>) => {
-    try {
-      const parsed = parseTranscriptionEvent(JSON.parse(event.data));
-      if (parsed) onEvent(parsed);
-    } catch {
-      // ignore malformed realtime frames
+  function getTranscript(): string {
+    return joinJapanese(finalized, interim);
+  }
+
+  function stopSession() {
+    if (maxTimer) clearTimeout(maxTimer);
+    processor?.disconnect();
+    processor = null;
+    void audioContext?.close();
+    audioContext = null;
+    stream?.getTracks().forEach((track) => track.stop());
+    stream = null;
+    if (socket && socket.readyState === WebSocketImpl.OPEN) {
+      socket.close();
     }
-  });
+    socket = null;
+  }
 
   try {
+    socket = new WebSocketImpl(deepgramListenUrl(accessToken));
+    socket.binaryType = "arraybuffer";
     stream = await getUserMedia();
-    stream.getTracks().forEach((track) => {
-      pc.addTrack(track, stream as MediaStream);
+    audioContext = new AudioContextImpl();
+    const source = audioContext.createMediaStreamSource(stream);
+    // ScriptProcessorNode is deprecated; AudioWorklet is later technical debt.
+    processor = audioContext.createScriptProcessor(4096, 1, 1);
+    processor.onaudioprocess = (event) => {
+      if (!socket || socket.readyState !== WebSocketImpl.OPEN) return;
+      const input = event.inputBuffer.getChannelData(0);
+      const pcm = floatToLinear16(
+        downsampleTo16k(input, audioContext?.sampleRate ?? 16000),
+      );
+      socket.send(pcm);
+    };
+    source.connect(processor);
+    processor.connect(audioContext.destination);
+
+    socket.addEventListener("message", (event: MessageEvent<string | ArrayBuffer>) => {
+      if (typeof event.data !== "string") return;
+      let parsedJson: unknown;
+      try {
+        parsedJson = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+      const parsed = parseDeepgramMessage(parsedJson);
+      if (!parsed) return;
+      if (parsed.kind === "delta") {
+        interim = parsed.delta;
+      } else {
+        finalized = joinJapanese(finalized, parsed.transcript);
+        interim = "";
+      }
+      onEvent(parsed);
     });
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    const sdpResponse = await fetchImpl("https://api.openai.com/v1/realtime/calls", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${ephemeralKey}`,
-        "Content-Type": "application/sdp",
-      },
-      body: offer.sdp ?? "",
-    });
-    if (!sdpResponse.ok) {
+
+    maxTimer = setTimeout(() => {
       stopSession();
-      return null;
-    }
-    const answerSdp = await sdpResponse.text();
-    await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+    }, MAX_LISTEN_MS);
   } catch {
     stopSession();
     return null;
   }
 
-  function stopSession() {
-    dataChannel.close();
-    pc.close();
-    stream?.getTracks().forEach((track) => track.stop());
-    stream = null;
-  }
-
   return {
     stop: stopSession,
     commit: () => {
-      if (dataChannel.readyState === "open") {
-        dataChannel.send(commitAudioBufferMessage());
+      if (socket && socket.readyState === WebSocketImpl.OPEN) {
+        socket.send(closeStreamMessage());
       }
     },
+    getTranscript,
   };
 }

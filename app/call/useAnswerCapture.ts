@@ -3,6 +3,7 @@ import type { AnswerSubmission } from "./useQuestionFlow";
 import { transcriptPassesPushbackCheck } from "@/lib/content/pushbackCheck";
 import { startLiveTranscriptionSession } from "./startLiveTranscription";
 import type { LiveTranscriptionSession } from "./startLiveTranscription";
+import { joinJapanese } from "./transcriptionEvents";
 
 type AnswerMode = "speak" | "type" | null;
 
@@ -66,7 +67,6 @@ export function useAnswerCapture({
   const autoSpeakUsedRef = useRef(false);
   const attemptCountRef = useRef(0);
   const liveSessionRef = useRef<LiveTranscriptionSession | null>(null);
-  const completedWaitersRef = useRef<Array<(text: string) => void>>([]);
 
   if (!active) {
     autoSpeakUsedRef.current = false;
@@ -124,13 +124,17 @@ export function useAnswerCapture({
       void startLiveTranscriptionSession({
         onEvent: (event) => {
           if (event.kind === "delta") {
-            setSpokenCaption(transcriptBaseRef.current + event.delta);
+            setSpokenCaption(
+              joinJapanese(transcriptBaseRef.current, event.delta),
+            );
             if (event.delta) setPushbackVisible(false);
             return;
           }
-          transcriptBaseRef.current = event.transcript;
-          setSpokenCaption(event.transcript);
-          completedWaitersRef.current.splice(0).forEach((wait) => wait(event.transcript));
+          transcriptBaseRef.current = joinJapanese(
+            transcriptBaseRef.current,
+            event.transcript,
+          );
+          setSpokenCaption(transcriptBaseRef.current);
         },
       }).then((session) => {
         if (cancelled) {
@@ -257,17 +261,14 @@ export function useAnswerCapture({
     const live = liveSessionRef.current;
     if (live) {
       void (async () => {
-        const committed = await new Promise<string | null>((resolve) => {
-          const timer = window.setTimeout(() => resolve(null), 2000);
-          completedWaitersRef.current.push((text) => {
-            window.clearTimeout(timer);
-            resolve(text);
-          });
-          live.commit();
+        live.commit();
+        await new Promise((resolve) => {
+          window.setTimeout(resolve, 800);
         });
+        const committed = live.getTranscript();
         live.stop();
         liveSessionRef.current = null;
-        finishSpeak(committed ?? spokenCaption ?? "");
+        finishSpeak(committed || spokenCaption || "");
       })();
       return;
     }

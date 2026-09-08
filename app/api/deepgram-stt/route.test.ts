@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const ORIGINAL_ENV = { ...process.env };
 
-describe("POST /api/realtime-stt", () => {
+describe("POST /api/deepgram-stt", () => {
   beforeEach(() => {
     vi.resetModules();
     process.env = { ...ORIGINAL_ENV };
@@ -10,30 +10,30 @@ describe("POST /api/realtime-stt", () => {
 
   afterEach(() => {
     process.env = { ...ORIGINAL_ENV };
+    vi.unstubAllGlobals();
   });
 
-  it("returns 503 when the OpenAI STT key is missing", async () => {
-    delete process.env.OPENAI_STT_API_KEY;
+  it("returns 503 when the Deepgram STT key is missing", async () => {
+    delete process.env.DEEPGRAM_STT_API_KEY;
     const { POST } = await import("./route");
     const res = await POST();
     expect(res.status).toBe(503);
   });
 
-  it("returns only the ephemeral value", async () => {
-    process.env.OPENAI_STT_API_KEY = "sk-server-only";
+  it("returns only the ephemeral access token", async () => {
+    process.env.DEEPGRAM_STT_API_KEY = "dg-server-only";
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ value: "ek_live" }),
+        json: async () => ({ access_token: "dg-live" }),
       }),
     );
     const { POST } = await import("./route");
     const res = await POST();
-    const body = (await res.json()) as { value?: string };
+    const body = (await res.json()) as { accessToken?: string };
     expect(res.status).toBe(200);
-    expect(body.value).toBe("ek_live");
-    expect(JSON.stringify(body)).not.toContain("sk-server-only");
-    vi.unstubAllGlobals();
+    expect(body.accessToken).toBe("dg-live");
+    expect(JSON.stringify(body)).not.toContain("dg-server-only");
   });
 });

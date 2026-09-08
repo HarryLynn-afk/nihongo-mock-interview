@@ -91,12 +91,12 @@ describe("lib/server/env/* per-purpose modules", () => {
     expect(getWisprKey()).toBeUndefined();
   });
 
-  it("OpenAI STT key is optional — missing var does not throw", async () => {
+  it("Deepgram STT key is optional — missing var does not throw", async () => {
     setAllRequiredEnv();
-    delete process.env.OPENAI_STT_API_KEY;
+    delete process.env.DEEPGRAM_STT_API_KEY;
 
-    const { getOpenAISttKey } = await import("./openaiStt");
-    expect(getOpenAISttKey()).toBeUndefined();
+    const { getDeepgramSttKey } = await import("./deepgramStt");
+    expect(getDeepgramSttKey()).toBeUndefined();
   });
 
   it("Supabase env is optional — missing vars do not throw", async () => {

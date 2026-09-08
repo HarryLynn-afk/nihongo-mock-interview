@@ -1,3 +1,25 @@
+export const DEEPGRAM_LISTEN_PATH = "wss://api.deepgram.com/v1/listen";
+
+export function deepgramListenQuery(): URLSearchParams {
+  return new URLSearchParams({
+    model: "nova-3",
+    language: "ja",
+    interim_results: "true",
+    smart_format: "true",
+    encoding: "linear16",
+    sample_rate: "16000",
+    channels: "1",
+    endpointing: "300",
+    utterance_end_ms: "1000",
+  });
+}
+
+export function deepgramListenUrl(accessToken: string): string {
+  const query = deepgramListenQuery();
+  query.set("token", accessToken);
+  return `${DEEPGRAM_LISTEN_PATH}?${query.toString()}`;
+}
+
 export type TranscriptionDelta = {
   kind: "delta";
   itemId: string;
@@ -14,27 +36,33 @@ export type ParsedTranscriptionEvent =
   | TranscriptionDelta
   | TranscriptionCompleted;
 
-export function parseTranscriptionEvent(
+export function parseDeepgramMessage(
   event: unknown,
 ): ParsedTranscriptionEvent | null {
   if (typeof event !== "object" || event === null) return null;
   const row = event as Record<string, unknown>;
-  if (typeof row.item_id !== "string") return null;
-  if (row.type === "conversation.item.input_audio_transcription.delta") {
-    if (typeof row.delta !== "string") return null;
-    return { kind: "delta", itemId: row.item_id, delta: row.delta };
+  if (row.type !== "Results") return null;
+  const channel = row.channel;
+  if (typeof channel !== "object" || channel === null) return null;
+  const alternatives = (channel as { alternatives?: unknown }).alternatives;
+  if (!Array.isArray(alternatives) || alternatives.length === 0) return null;
+  const first = alternatives[0];
+  if (typeof first !== "object" || first === null) return null;
+  const transcript = (first as { transcript?: unknown }).transcript;
+  if (typeof transcript !== "string" || transcript === "") return null;
+  const itemId = typeof row.start === "number" ? String(row.start) : "0";
+  if (row.is_final === true) {
+    return { kind: "completed", itemId, transcript };
   }
-  if (row.type === "conversation.item.input_audio_transcription.completed") {
-    if (typeof row.transcript !== "string") return null;
-    return {
-      kind: "completed",
-      itemId: row.item_id,
-      transcript: row.transcript,
-    };
-  }
-  return null;
+  return { kind: "delta", itemId, delta: transcript };
 }
 
-export function commitAudioBufferMessage(): string {
-  return JSON.stringify({ type: "input_audio_buffer.commit" });
+export function closeStreamMessage(): string {
+  return JSON.stringify({ type: "CloseStream" });
+}
+
+export function joinJapanese(base: string, next: string): string {
+  if (!base) return next;
+  if (!next) return base;
+  return `${base}${next}`;
 }

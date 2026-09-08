@@ -68,11 +68,11 @@ describe("scripts/check-env.mjs", () => {
     expect(result.stderr).not.toMatch(/ELEVENLABS_SCRIBE_API_KEY/);
   });
 
-  it("does not require OPENAI_STT_API_KEY or Supabase", () => {
+  it("does not require DEEPGRAM_STT_API_KEY or Supabase", () => {
     const result = runCheckEnv(ALL_REQUIRED_ENV);
 
     expect(result.status).toBe(0);
-    expect(result.stderr).not.toMatch(/OPENAI_STT_API_KEY/);
+    expect(result.stderr).not.toMatch(/DEEPGRAM_STT_API_KEY/);
     expect(result.stderr).not.toMatch(/SUPABASE/);
   });
 });
