@@ -1081,7 +1081,7 @@ describe("Call screen", () => {
     await waitFor(() => {
       expect(screen.getByTestId("interview-report")).toBeInTheDocument();
     });
-    expect(screen.getByText("Practice Interview Readiness")).toBeInTheDocument();
+    expect(screen.getByText("AI Interview Practice Feedback")).toBeInTheDocument();
     expect(screen.getByText("準備OK")).toBeInTheDocument();
     expect(screen.getByText("90/100")).toBeInTheDocument();
     expect(

@@ -66,7 +66,7 @@ describe("runGroqGrade", () => {
       expect.objectContaining({
         headline: "Ready",
         stamp: "準備OK",
-        total: 92,
+        total: 90,
         gatesFired: [],
         source: "grade",
         banner: null,

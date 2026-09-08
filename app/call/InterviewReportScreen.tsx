@@ -268,6 +268,10 @@ export function InterviewReportScreen({
         <header className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="text-xl font-medium">{view.title}</h1>
+            <p className="mt-1 text-sm font-medium text-paper/80">
+              {view.answerQualityTitle}
+            </p>
+            <p className="mt-1 text-xs text-paper/50">{view.answerQualityNote}</p>
             {view.banner ? (
               <p className="mt-1 text-sm text-paper/80">{view.banner}</p>
             ) : null}
@@ -366,6 +370,24 @@ export function InterviewReportScreen({
             </p>
           ))}
         </div>
+
+        {view.delivery ? (
+          <div
+            data-testid="speech-delivery-signals"
+            className="rounded-2xl border border-paper/10 bg-paper/5 p-4"
+          >
+            <p className="text-xs font-medium tracking-wide text-paper/50">
+              {view.deliveryTitle}
+            </p>
+            <p className="mt-1 text-lg font-medium">{view.delivery.headline}</p>
+            <p className="mt-1 text-sm text-paper/70">{view.delivery.note}</p>
+            {view.delivery.answers[0]?.observations.slice(0, 4).map((line) => (
+              <p key={line} className="mt-1 text-xs text-paper/60">
+                {line}
+              </p>
+            ))}
+          </div>
+        ) : null}
 
         <div
           data-testid="report-critiques"

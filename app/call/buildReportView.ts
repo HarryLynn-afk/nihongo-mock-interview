@@ -14,23 +14,20 @@ import {
   isAffirmingCritique,
   type FormattedCritique,
 } from "@/lib/content/critiqueCopy";
-
-const TYPED_LINE =
-  "This answer was typed, so pronunciation was not checked.";
-
-const SPEAKING_GAP_LINE =
-  "The life-plan story is fine — the gap is Japanese ability, not the life plan.";
+import {
+  ANSWER_QUALITY_NOTE,
+  ANSWER_QUALITY_TITLE,
+  DELIVERY_SECTION_TITLE,
+  type SessionDelivery,
+} from "@/lib/content/deliverySignals";
 
 const DISCLAIMER =
-  "This is an AI-generated practice estimate based on this session. It is not an official Japanese language-school admission decision.";
+  "NihonGo provides AI-assisted mock interview practice. It evaluates interview-answer quality from the confirmed transcript. It is not an official language-proficiency score or admission decision.";
 
 const LISTENING_OMITTED =
   "Listening comprehension is not scored — this session has no listening task. Answer relevance is whether each answer matched the Question.";
 
-const VOICE_NOTE =
-  "Voice-feedback note: Audio quality, microphone quality, accent, and speech-recognition limitations may affect this estimate.";
-
-const NOT_ASSESSED = "Not assessed — typed response";
+const NOT_ASSESSED = "Not assessed";
 
 const SCORE_ORDER: RubricCategoryKey[] = [
   "listening",
@@ -38,11 +35,10 @@ const SCORE_ORDER: RubricCategoryKey[] = [
   "motivation",
   "studyPlan",
   "consistency",
-  "speaking",
 ];
 
 const SCORE_LABELS: Record<RubricCategoryKey, string> = {
-  speaking: "Pronunciation & fluency",
+  speaking: "Answer wording",
   listening: "Answer relevance",
   grammarPoliteness: "Grammar & naturalness",
   motivation: "Motivation for studying in Japan",
@@ -51,7 +47,7 @@ const SCORE_LABELS: Record<RubricCategoryKey, string> = {
 };
 
 const RADAR_LABELS: Record<RubricCategoryKey, string> = {
-  speaking: "Pronunciation",
+  speaking: "Wording",
   listening: "Relevance",
   grammarPoliteness: "Grammar",
   motivation: "Motivation",
@@ -109,6 +105,8 @@ export type ReportQuestionCard = {
 
 export type ReportView = {
   title: string;
+  answerQualityTitle: string;
+  answerQualityNote: string;
   headlineLabel: string;
   stamp: InterviewReport["stamp"];
   stampColorClass: string;
@@ -121,6 +119,8 @@ export type ReportView = {
   questions: ReportQuestionCard[];
   critiques: FormattedCritique[];
   notes: string[];
+  delivery: SessionDelivery | null;
+  deliveryTitle: string;
 };
 
 export type ReportAnswerInput = {
@@ -133,38 +133,30 @@ export function buildReportView({
   report,
   answers,
   sessionQuestions = questions,
+  delivery = null,
 }: {
   report: InterviewReport;
   answers: readonly ReportAnswerInput[];
   sessionQuestions?: readonly InterviewQuestion[];
+  delivery?: SessionDelivery | null;
 }): ReportView {
   const hasVoice = answers.some((answer) => answer.inputMode === "voice");
-  const hasTyped = answers.some((answer) => answer.inputMode === "typed");
   const notes: string[] = [];
-  if (hasTyped && hasVoice) {
-    notes.push(TYPED_LINE);
-  }
-  const speakingGated = report.gatesFired.includes("speaking");
-  const planGated =
-    report.gatesFired.includes("motivation") ||
-    report.gatesFired.includes("studyPlan");
-  if (speakingGated && !planGated && hasVoice) {
-    notes.push(SPEAKING_GAP_LINE);
-  }
 
   return {
-    title: "Practice Interview Readiness",
+    title: "AI Interview Practice Feedback",
+    answerQualityTitle: ANSWER_QUALITY_TITLE,
+    answerQualityNote: ANSWER_QUALITY_NOTE,
     headlineLabel: HEADLINE_LABEL[report.headline],
     stamp: report.stamp,
     stampColorClass: STAMP_COLOR_CLASS[report.headline],
-    total: normalizePracticeTotal(report.scores, hasVoice),
+    total: normalizePracticeTotal(report.scores, false),
     disclaimer: DISCLAIMER,
     listeningNote: LISTENING_OMITTED,
-    voiceNote: hasVoice ? VOICE_NOTE : null,
+    voiceNote: null,
     banner: report.banner,
     scores: SCORE_ORDER.map((key) => {
       const row = report.scores[key];
-      const assessed = key === "speaking" ? hasVoice : true;
       return {
         key,
         label: SCORE_LABELS[key],
@@ -173,9 +165,11 @@ export function buildReportView({
         ratingLabel: RAW_RATING_LABEL[row.raw as 1 | 2 | 3 | 4 | 5],
         points: row.points,
         weight: row.weight,
-        assessed,
+        assessed: true,
       };
     }),
+    delivery: hasVoice ? delivery : null,
+    deliveryTitle: DELIVERY_SECTION_TITLE,
     questions: sessionQuestions.map((question, index) => {
       const critique = report.critiques.find(
         (item) => item.questionIndex === index,
@@ -197,6 +191,7 @@ export function buildReportView({
             rewrite: formatted.rewrite,
           })
         : null;
+      const showScore = Boolean(category && category !== "speaking" && scored);
       const quote = formatted?.quote ?? "";
       const bank = getBankQuestionById(question.id);
       const navLabel =
@@ -208,8 +203,8 @@ export function buildReportView({
         categoryLabel: category ? SCORE_LABELS[category] : navLabel,
         japanese: question.japanese,
         transcript,
-        scoreText: scored ? `${scored.points}/${scored.weight}` : "—",
-        ratingLabel: scored
+        scoreText: showScore && scored ? `${scored.points}/${scored.weight}` : "—",
+        ratingLabel: showScore && scored
           ? RAW_RATING_LABEL[scored.raw as 1 | 2 | 3 | 4 | 5]
           : "",
         quote,

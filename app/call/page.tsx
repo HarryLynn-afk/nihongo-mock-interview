@@ -12,6 +12,7 @@ import { buildReportView } from "./buildReportView";
 import { playQuestionAudio } from "./playQuestionAudio";
 import { useAnswerCapture } from "./useAnswerCapture";
 import { useBackgroundScribe } from "./useBackgroundScribe";
+import { useDeliverySignals } from "./useDeliverySignals";
 import { useCameraStream } from "./useCameraStream";
 import { useInterviewScore } from "./useInterviewScore";
 import { useMicToggle } from "./useMicToggle";
@@ -74,6 +75,7 @@ export default function CallPage() {
   const { phase, currentQuestion, questionIndex, answers, sessionQuestions: flowQuestions, endSenseiTurn, submitAnswer } =
     useQuestionFlow(sessionQuestions, { enableFollowUps: !isPitchMode && sessionQuestions !== null });
   const scribe = useBackgroundScribe({ answers, phase });
+  const delivery = useDeliverySignals({ answers, phase });
   const { report } = useInterviewScore(scribe);
 
   useEffect(() => {
@@ -216,6 +218,8 @@ export default function CallPage() {
                     transcript,
                   }),
                 ),
+                delivery:
+                  delivery.status === "ready" ? delivery.delivery : null,
               })}
               sessionId={sessionId ?? undefined}
               onRevealComplete={() => setRevealDone(true)}

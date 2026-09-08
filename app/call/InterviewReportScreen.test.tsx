@@ -5,6 +5,7 @@ import { InterviewReportScreen } from "./InterviewReportScreen";
 import { buildReportView } from "./buildReportView";
 import type { InterviewReport } from "@/lib/content/sampleReport";
 import { questions } from "@/lib/content/questions";
+import { summarizeDelivery } from "@/lib/content/deliverySignals";
 
 const report: InterviewReport = {
   headline: "Ready",
@@ -54,6 +55,23 @@ const voiceView = buildReportView({
     { questionIndex: 1, inputMode: "voice", transcript: "日本で勉強したいです" },
     { questionIndex: 2, inputMode: "voice", transcript: "専門学校に行きます" },
   ],
+  delivery: summarizeDelivery([
+    {
+      questionIndex: 0,
+      inputMode: "voice",
+      signal: {
+        recordingQuality: "pass",
+        durationSec: 2,
+        speechRateCps: 4,
+        longPauseCount: 0,
+        fillerCount: 0,
+        observations: [
+          "Answer lasted 2 seconds.",
+          "Audio was clear enough for basic timing analysis.",
+        ],
+      },
+    },
+  ]),
 });
 
 const typedView = buildReportView({
@@ -70,13 +88,14 @@ describe("InterviewReportScreen", () => {
     vi.useRealTimers();
   });
 
-  it("shows Practice Interview Readiness, the stamp in its locked color, criterion scores as points/weight, and the /100 total", () => {
+  it("shows AI Interview Practice Feedback, the stamp in its locked color, criterion scores as points/weight, and the /100 total", () => {
     render(<InterviewReportScreen view={voiceView} />);
 
-    expect(screen.getByText("Practice Interview Readiness")).toBeInTheDocument();
+    expect(screen.getByText("AI Interview Practice Feedback")).toBeInTheDocument();
+    expect(screen.getByText("Interview Answer Quality")).toBeInTheDocument();
     const stamp = screen.getByText(/準備OK/);
     expect(stamp).toHaveClass("text-stamp-ready");
-    expect(screen.getByText("92/100")).toBeInTheDocument();
+    expect(screen.getByText("90/100")).toBeInTheDocument();
     expect(screen.getAllByText("12/15").length).toBeGreaterThan(0);
     expect(screen.getAllByText("20/20").length).toBeGreaterThan(0);
     expect(screen.getByText("8/10")).toBeInTheDocument();
@@ -96,10 +115,10 @@ describe("InterviewReportScreen", () => {
     expect(screen.getByText(/Listening comprehension is not scored/i)).toBeInTheDocument();
   });
 
-  it("shows Pronunciation as not assessed when every answer was typed", () => {
+  it("hides Speech Delivery Signals when every answer was typed", () => {
     render(<InterviewReportScreen view={typedView} />);
 
-    expect(screen.getByText("Not assessed — typed response")).toBeInTheDocument();
+    expect(screen.queryByTestId("speech-delivery-signals")).not.toBeInTheDocument();
     const radar = within(screen.getByTestId("readiness-radar"));
     expect(radar.queryByText("Pronunciation")).not.toBeInTheDocument();
   });
@@ -171,13 +190,22 @@ describe("InterviewReportScreen", () => {
     render(<InterviewReportScreen view={voiceView} />);
 
     const radar = within(screen.getByTestId("readiness-radar"));
-    expect(radar.getByText("Pronunciation")).toBeInTheDocument();
+    expect(radar.queryByText("Pronunciation")).not.toBeInTheDocument();
     expect(radar.getByText("Grammar")).toBeInTheDocument();
     expect(radar.getByText("Motivation")).toBeInTheDocument();
     expect(radar.getByText("Study plan")).toBeInTheDocument();
     expect(radar.getByText("Consistency")).toBeInTheDocument();
     expect(radar.getByText("Relevance")).toBeInTheDocument();
     expect(radar.queryByText("Listening")).not.toBeInTheDocument();
+  });
+
+  it("shows Speech Delivery Signals without a speaking score", () => {
+    render(<InterviewReportScreen view={voiceView} />);
+
+    const delivery = within(screen.getByTestId("speech-delivery-signals"));
+    expect(delivery.getByText("Speech Delivery Signals")).toBeInTheDocument();
+    expect(delivery.getByText("Clear enough")).toBeInTheDocument();
+    expect(screen.getByText(/timing signals, not a Japanese proficiency score/i)).toBeInTheDocument();
   });
 
   it("reveals radar, then stamp, then critiques — never all at once", async () => {

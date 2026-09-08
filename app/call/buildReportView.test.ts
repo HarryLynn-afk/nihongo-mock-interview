@@ -2,15 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { InterviewReport } from "@/lib/content/sampleReport";
 import { formatQuotedCritique } from "@/lib/content/critiqueCopy";
 import { questions } from "@/lib/content/questions";
+import { summarizeDelivery } from "@/lib/content/deliverySignals";
 import { buildReportView } from "./buildReportView";
-
-const TYPED_LINE =
-  "This answer was typed, so pronunciation was not checked.";
 
 const report: InterviewReport = {
   headline: "Ready",
   stamp: "準備OK",
-  total: 92,
+  total: 90,
   scores: {
     speaking: { raw: 5, weight: 20, points: 20 },
     listening: { raw: 4, weight: 15, points: 12 },
@@ -40,8 +38,23 @@ const voiceAnswers = [
   { questionIndex: 2, inputMode: "voice" as const, transcript: "専門学校に行きます" },
 ];
 
+const clearDelivery = summarizeDelivery([
+  {
+    questionIndex: 0,
+    inputMode: "voice",
+    signal: {
+      recordingQuality: "pass",
+      durationSec: 2,
+      speechRateCps: 4,
+      longPauseCount: 0,
+      fillerCount: 0,
+      observations: ["Answer lasted 2 seconds."],
+    },
+  },
+]);
+
 describe("buildReportView", () => {
-  it("adds the typed-answer coaching line when some answers were typed and some were spoken", () => {
+  it("does not add a pronunciation coaching line for mixed typed and spoken answers", () => {
     const view = buildReportView({
       report,
       answers: [
@@ -51,11 +64,10 @@ describe("buildReportView", () => {
       ],
     });
 
-    expect(view.notes).toContain(TYPED_LINE);
-    expect(view.notes[0]).toBe(TYPED_LINE);
+    expect(view.notes.some((line) => /pronunciation/i.test(line))).toBe(false);
   });
 
-  it("does not repeat the typed-answer line when every answer was typed", () => {
+  it("omits Speech Delivery Signals when every answer was typed", () => {
     const view = buildReportView({
       report,
       answers: [
@@ -65,68 +77,45 @@ describe("buildReportView", () => {
       ],
     });
 
-    expect(view.notes).not.toContain(TYPED_LINE);
-    expect(view.scores.find((score) => score.key === "speaking")?.assessed).toBe(
-      false,
-    );
+    expect(view.delivery).toBeNull();
+    expect(view.scores.some((score) => score.key === "speaking")).toBe(false);
   });
 
-  it("adds Speaking-gap coaching when Speaking gated but motivation and study plan did not", () => {
+  it("does not treat a speaking Gate as Japanese-ability coaching", () => {
     const view = buildReportView({
       report: { ...report, headline: "KeepPracticing", stamp: "要練習", gatesFired: ["speaking"] },
-      answers: voiceAnswers,
-    });
-
-    expect(view.notes.some((line) => /life plan/i.test(line))).toBe(true);
-    expect(view.notes.some((line) => /Japanese/i.test(line))).toBe(true);
-  });
-
-  it("does not add Speaking-gap coaching when a motivation or study-plan gate also fired", () => {
-    const view = buildReportView({
-      report: {
-        ...report,
-        headline: "KeepPracticing",
-        stamp: "要練習",
-        gatesFired: ["speaking", "motivation"],
-      },
       answers: voiceAnswers,
     });
 
     expect(view.notes.some((line) => /life plan/i.test(line))).toBe(false);
   });
 
-  it("exposes Practice Interview Readiness, stamp color, assessed criterion scores, and the /100 total", () => {
+  it("exposes AI Interview Practice Feedback, stamp color, content scores, and the transcript /100 total", () => {
     const view = buildReportView({
       report,
       answers: voiceAnswers,
+      delivery: clearDelivery,
     });
 
-    expect(view.title).toBe("Practice Interview Readiness");
+    expect(view.title).toBe("AI Interview Practice Feedback");
+    expect(view.answerQualityTitle).toBe("Interview Answer Quality");
+    expect(view.answerQualityNote).toMatch(/confirmed response transcript/i);
     expect(view.headlineLabel).toBe("Strong");
     expect(view.stamp).toBe("準備OK");
     expect(view.stampColorClass).toBe("text-stamp-ready");
-    expect(view.total).toBe(92);
+    expect(view.total).toBe(90);
     expect(view.banner).toBeNull();
-    expect(view.disclaimer).toMatch(/not an official/i);
+    expect(view.disclaimer).toMatch(/not an official language-proficiency/i);
     expect(view.scores.map((score) => score.key)).toEqual([
       "listening",
       "grammarPoliteness",
       "motivation",
       "studyPlan",
       "consistency",
-      "speaking",
     ]);
-    expect(view.scores.find((score) => score.key === "speaking")).toEqual({
-      key: "speaking",
-      label: "Pronunciation & fluency",
-      radarLabel: "Pronunciation",
-      raw: 5,
-      ratingLabel: "Strong",
-      points: 20,
-      weight: 20,
-      assessed: true,
-    });
-    expect(view.voiceNote).toMatch(/speech-recognition/i);
+    expect(view.delivery?.status).toBe("clearEnough");
+    expect(view.deliveryTitle).toBe("Speech Delivery Signals");
+    expect(view.voiceNote).toBeNull();
   });
 
   it("shows Answer relevance instead of a listening-comprehension score", () => {
@@ -141,8 +130,8 @@ describe("buildReportView", () => {
     expect(view.listeningNote).toMatch(/listening comprehension is not scored/i);
   });
 
-  it("normalizes the typed total to /100 without pronunciation", () => {
-    const view = buildReportView({
+  it("uses the same content /100 for typed and voice Interviews", () => {
+    const typed = buildReportView({
       report,
       answers: [
         { questionIndex: 0, inputMode: "typed" },
@@ -150,11 +139,13 @@ describe("buildReportView", () => {
         { questionIndex: 2, inputMode: "typed" },
       ],
     });
+    const voice = buildReportView({
+      report,
+      answers: voiceAnswers,
+    });
 
-    expect(view.total).toBe(90);
-    expect(view.scores.find((score) => score.key === "speaking")?.assessed).toBe(
-      false,
-    );
+    expect(typed.total).toBe(90);
+    expect(voice.total).toBe(90);
   });
 
   it("builds one question card per Interview Question", () => {
@@ -170,7 +161,7 @@ describe("buildReportView", () => {
       "Use です/ます all the way through.",
     ]);
     expect(view.questions[0].rewrite).toBe("はじめまして。");
-    expect(view.questions[0].scoreText).toBe("20/20");
+    expect(view.questions[0].scoreText).toBe("—");
     expect(view.questions[0].affirming).toBe(false);
   });
 

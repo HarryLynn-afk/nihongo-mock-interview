@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { scoreReport } from "./rubric";
 
 describe("scoreReport", () => {
-  it("returns Ready/準備OK when no gates fire and total >= 75 with Speaking/Motivation/StudyPlan all >= 4", () => {
+  it("returns Ready/準備OK when no gates fire and total >= 75 with Motivation/StudyPlan >= 4", () => {
     const result = scoreReport({
       speaking: 5,
       listening: 4,
@@ -14,11 +14,11 @@ describe("scoreReport", () => {
 
     expect(result.headline).toBe("Ready");
     expect(result.stamp).toBe("準備OK");
-    expect(result.total).toBe(92);
+    expect(result.total).toBe(90);
     expect(result.gatesFired).toEqual([]);
   });
 
-  it("returns KeepPracticing/要練習 when Speaking <= 2, even if every other score is strong", () => {
+  it("does not Gate speaking from a transcript, even when the speaking integer is 2", () => {
     const result = scoreReport({
       speaking: 2,
       listening: 5,
@@ -28,9 +28,9 @@ describe("scoreReport", () => {
       consistency: 5,
     });
 
-    expect(result.headline).toBe("KeepPracticing");
-    expect(result.stamp).toBe("要練習");
-    expect(result.gatesFired).toContain("speaking");
+    expect(result.headline).toBe("Ready");
+    expect(result.total).toBe(100);
+    expect(result.gatesFired).not.toContain("speaking");
   });
 
   it("returns KeepPracticing/要練習 when Motivation <= 2, even if Japanese is strong", () => {
@@ -76,7 +76,7 @@ describe("scoreReport", () => {
     expect(result.gatesFired).toEqual([]);
   });
 
-  it("returns AlmostReady even with a high total, if Speaking is only 3 (below the Ready bar)", () => {
+  it("does not let a low speaking integer block Ready", () => {
     const result = scoreReport({
       speaking: 3,
       listening: 5,
@@ -86,8 +86,8 @@ describe("scoreReport", () => {
       consistency: 5,
     });
 
-    expect(result.total).toBeGreaterThanOrEqual(75);
-    expect(result.headline).toBe("AlmostReady");
+    expect(result.total).toBe(100);
+    expect(result.headline).toBe("Ready");
   });
 
   it("does not Gate speaking or require speaking >= 4 when assessSpeaking is false", () => {

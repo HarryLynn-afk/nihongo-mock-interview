@@ -30,11 +30,11 @@ describe("getRubricPrompt", () => {
     }
   });
 
-  it("tells the grader not to score pronunciation on typed answers", () => {
+  it("tells the grader never to score pronunciation from a transcript", () => {
     const prompt = getRubricPrompt();
 
-    expect(prompt).toMatch(/typed/i);
     expect(prompt).toMatch(/pronunciation/i);
+    expect(prompt).toMatch(/ignored/i);
     expect(prompt).toMatch(/です\/ます/);
   });
 
