@@ -30,7 +30,15 @@ export default function ConsentPage() {
       const res = await fetch("/api/study/consent", { method: "POST" });
       const data = (await res.json()) as { participantId?: string; error?: string };
       if (!res.ok || !data.participantId) {
-        setError("This email is not in the invited-tester list.");
+        if (res.status === 401) {
+          setError(
+            "You are not signed in. Open the sign-in link from your email inbox, then agree.",
+          );
+        } else if (data.error === "not_invited" || res.status === 403) {
+          setError("This email is not in the invited-tester list.");
+        } else {
+          setError("Consent could not be saved. Try the email link again.");
+        }
         return;
       }
       setParticipantId(data.participantId);

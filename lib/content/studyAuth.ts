@@ -3,6 +3,59 @@ export const CONSENT_VERSION = "2026-09-08";
 export const MAGIC_LINK_COPY =
   "If this email is eligible, a sign-in link has been sent.";
 
+export const MAGIC_LINK_EXPIRED_COPY =
+  "This sign-in link was already opened or has expired. Mail scanners can open it before you do. Request a new one and click it once.";
+
+export const MAGIC_LINK_MISSING_COPY =
+  "No sign-in token was in this link. Request a new one from Participant login.";
+
+export type AuthCallbackIntent =
+  | { kind: "code"; code: string }
+  | { kind: "otp"; tokenHash: string; type: string }
+  | { kind: "hash" }
+  | { kind: "error"; message: string }
+  | { kind: "none" };
+
+const OTP_TYPES = new Set([
+  "invite",
+  "magiclink",
+  "email",
+  "signup",
+  "recovery",
+  "email_change",
+]);
+
+/**
+ * Supabase returns the outcome in the query string (PKCE / token_hash) or in the
+ * URL fragment (implicit grant, plus `error_code` when the token was already used).
+ */
+export function readAuthCallback(search: string, hash: string): AuthCallbackIntent {
+  const query = new URLSearchParams(search.replace(/^\?/, ""));
+  const fragment = new URLSearchParams(hash.replace(/^#/, ""));
+
+  const errorCode =
+    fragment.get("error_code") ??
+    query.get("error_code") ??
+    fragment.get("error") ??
+    query.get("error");
+  if (errorCode) {
+    return { kind: "error", message: MAGIC_LINK_EXPIRED_COPY };
+  }
+
+  const code = query.get("code");
+  if (code) return { kind: "code", code };
+
+  const tokenHash = query.get("token_hash");
+  const type = query.get("type");
+  if (tokenHash && type && OTP_TYPES.has(type)) {
+    return { kind: "otp", tokenHash, type };
+  }
+
+  if (fragment.get("access_token")) return { kind: "hash" };
+
+  return { kind: "none" };
+}
+
 export const GUEST_BANNER =
   "Guest practice is not saved and is not part of the study.";
 
@@ -12,6 +65,14 @@ export function normalizeEmail(email: string): string {
 
 export function isPlausibleEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(email));
+}
+
+/** Hash tokens never reach the server. Rewrite so the URL (and #access_token) stay. */
+export function shouldRewriteAuthCallback(pathname: string, search: string): boolean {
+  if (pathname !== "/auth/callback") return false;
+  const query = search.startsWith("?") ? search.slice(1) : search;
+  const params = new URLSearchParams(query);
+  return !params.get("code") && !params.get("token_hash");
 }
 
 export function nextParticipantId(existing: readonly string[]): string {
