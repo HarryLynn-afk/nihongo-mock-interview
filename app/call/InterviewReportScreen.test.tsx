@@ -82,6 +82,15 @@ const noDeliveryView = buildReportView({
   ],
 });
 
+const skippedQ2View = buildReportView({
+  report,
+  answers: [
+    { questionIndex: 0, status: "answered", transcript: "はじめまして" },
+    { questionIndex: 1, status: "skipped" },
+    { questionIndex: 2, status: "answered", transcript: "専門学校に行きます" },
+  ],
+});
+
 describe("InterviewReportScreen", () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -175,6 +184,22 @@ describe("InterviewReportScreen", () => {
     expect(critiques.getByText("Add a personal future goal.")).toBeInTheDocument();
     expect(critiques.getByText("Improve next")).toBeInTheDocument();
     expect(critiques.getByText("日本のIT業界で働きたいので、日本で勉強したいです。")).toBeInTheDocument();
+  });
+
+  it("shows a no-answer card when the selected Question was skipped", async () => {
+    const user = userEvent.setup();
+    render(<InterviewReportScreen view={skippedQ2View} />);
+
+    await user.click(screen.getByRole("button", { name: /q2 motivation/i }));
+
+    const critiques = within(screen.getByTestId("report-critiques"));
+    expect(
+      critiques.getByText("No answer was captured for this Question."),
+    ).toBeInTheDocument();
+    expect(
+      critiques.getByText("Try this Question again next practice"),
+    ).toBeInTheDocument();
+    expect(critiques.getByText(/check your microphone/i)).toBeInTheDocument();
   });
 
   it("renders a radar of the assessed scores", () => {

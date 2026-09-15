@@ -242,6 +242,10 @@ describe("Call screen", () => {
     expect(
       screen.queryByRole("button", { name: /submit answer/i }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /type answer/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(screen.queryByText("Interview complete")).not.toBeInTheDocument();
   });
 
@@ -350,6 +354,10 @@ describe("Call screen", () => {
     expect(
       screen.getByRole("button", { name: /speak answer/i }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /type answer/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 
   it("keeps the Question Japanese and shows the try-again lines after empty Speak Submit", async () => {
@@ -1210,6 +1218,62 @@ describe("Call screen", () => {
     expect(
       fetchMock.mock.calls.some((call) => String(call[0]) === "/api/score"),
     ).toBe(false);
+  });
+
+  it("still shows the report and POSTs /api/score when at least one Question was answered", async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      if (String(input).includes("/api/score")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              report: getSampleReport(null),
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      return Promise.resolve(new Response(null, { status: 202 }));
+    });
+
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+    });
+    await act(async () => {
+      endedHandlers.splice(0).forEach((handler) => handler());
+    });
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await user.click(screen.getByRole("button", { name: /speak answer/i }));
+      act(() => {
+        const spoken = Object.assign([{ transcript: "hello" }], {
+          isFinal: true,
+        });
+        recognitionInstances[recognitionInstances.length - 1]?.onresult?.({
+          results: [spoken],
+        });
+      });
+      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+    }
+
+    for (const question of questions.slice(1)) {
+      await waitFor(() => {
+        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+      });
+      await act(async () => {
+        endedHandlers.splice(0).forEach((handler) => handler());
+      });
+      await speakAndSubmit(user, `答え${question.id}`);
+    }
+
+    await waitFor(() => {
+      expect(screen.getByTestId("interview-report")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("mic-trouble-screen")).not.toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some((call) => String(call[0]) === "/api/score"),
+    ).toBe(true);
   });
 
   it("shows the Usefulness step and session id after the report reveal when the form is enabled", async () => {

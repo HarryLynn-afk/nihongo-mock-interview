@@ -53,4 +53,28 @@ describe("parseAnswers", () => {
       },
     ]);
   });
+
+  it("rejects an empty answers array", () => {
+    expect(parseAnswers([])).toBeNull();
+  });
+
+  it("keeps a valid row even when leftover inputMode and forced fields are present", () => {
+    expect(
+      parseAnswers([
+        {
+          questionIndex: 0,
+          transcript: "はい。",
+          pushbackCount: 0,
+          inputMode: "typed",
+          forced: true,
+        },
+      ]),
+    ).toEqual([
+      {
+        questionIndex: 0,
+        transcript: "はい。",
+        pushbackCount: 0,
+      },
+    ]);
+  });
 });

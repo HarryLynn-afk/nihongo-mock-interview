@@ -154,4 +154,31 @@ describe("parseQuotedCritiques", () => {
       ),
     ).toBeNull();
   });
+
+  it("accepts one critique per stored answer when a Question was skipped", () => {
+    expect(
+      parseQuotedCritiques(
+        [
+          {
+            questionIndex: 0,
+            quote: "はじめまして",
+            explanation: "Clear self-introduction.",
+            rewrite: "はじめまして。",
+            category: "speaking",
+          },
+          {
+            questionIndex: 2,
+            quote: "専門学校",
+            explanation: "Name a next step.",
+            rewrite: "専門学校でウェブを勉強します。",
+            category: "studyPlan",
+          },
+        ],
+        [
+          { questionIndex: 0, transcript: "はじめまして。" },
+          { questionIndex: 2, transcript: "専門学校に行きます。" },
+        ],
+      ),
+    ).toHaveLength(2);
+  });
 });

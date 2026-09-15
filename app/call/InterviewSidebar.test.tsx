@@ -18,9 +18,9 @@ describe("InterviewSidebar", () => {
       <InterviewSidebar
         phase="done"
         answers={[
-          { questionIndex: 0, transcript: "はじめまして。" },
-          { questionIndex: 1, transcript: "日本で日本語を勉強したいです。" },
-          { questionIndex: 2, transcript: "卒業後は大学院に進学したいです。" },
+          { questionIndex: 0, status: "answered", transcript: "はじめまして。" },
+          { questionIndex: 1, status: "answered", transcript: "日本で日本語を勉強したいです。" },
+          { questionIndex: 2, status: "answered", transcript: "卒業後は大学院に進学したいです。" },
         ]}
       />,
     );
@@ -28,6 +28,7 @@ describe("InterviewSidebar", () => {
     const sidebar = within(screen.getByTestId("interview-sidebar"));
     expect(sidebar.getAllByText("Tanaka-sensei")).toHaveLength(3);
     expect(sidebar.getAllByText("You")).toHaveLength(3);
+    expect(sidebar.getByText("はじめまして。")).toBeInTheDocument();
   });
 
   it("shows the current Turn as Sensei speaking or Student answering", () => {
@@ -45,12 +46,24 @@ describe("InterviewSidebar", () => {
 
   it("keeps the transcript rail compact and scrollable", () => {
     render(<InterviewSidebar phase="done" answers={[
-      { questionIndex: 0, transcript: "はじめまして。" },
-      { questionIndex: 1, transcript: "日本で日本語を勉強したいです。" },
-      { questionIndex: 2, transcript: "卒業後は大学院に進学したいです。" },
+      { questionIndex: 0, status: "answered", transcript: "はじめまして。" },
+      { questionIndex: 1, status: "answered", transcript: "日本で日本語を勉強したいです。" },
+      { questionIndex: 2, status: "answered", transcript: "卒業後は大学院に進学したいです。" },
     ]} />);
 
     expect(screen.getByTestId("interview-sidebar")).toHaveClass("md:max-w-56");
     expect(screen.getByRole("list")).toHaveClass("max-h-72", "overflow-y-auto");
+  });
+
+  it("shows a no-answer placeholder for a skipped turn", () => {
+    render(
+      <InterviewSidebar
+        phase="senseiSpeaking"
+        answers={[{ questionIndex: 0, status: "skipped" }]}
+      />,
+    );
+
+    const sidebar = within(screen.getByTestId("interview-sidebar"));
+    expect(sidebar.getByText("(No answer captured)")).toBeInTheDocument();
   });
 });
