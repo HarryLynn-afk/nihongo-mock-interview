@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import PitchLanding from "./page";
+import { PitchLanding } from "./PitchLanding";
 
 const { pushMock } = vi.hoisted(() => ({ pushMock: vi.fn() }));
 
