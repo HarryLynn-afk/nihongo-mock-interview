@@ -8,11 +8,13 @@ import { useInterviewLobby } from "../call/useInterviewLobby";
 import { useLobbyDevices } from "../call/useLobbyDevices";
 import { saveDevicePrefs } from "./devicePrefs";
 
+/**
+ * Practice-mode Join: device check → 15s reminder → `/call`.
+ * Pitch mode has its own entry point at `/pitch` and never goes through
+ * this lobby (see `app/pitch/page.tsx`).
+ */
 export function JoinInterview() {
   const router = useRouter();
-  const isPitchMode =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("pitch") === "1";
 
   const {
     devicesVisible,
@@ -36,22 +38,14 @@ export function JoinInterview() {
   useEffect(() => {
     if (!interviewStarted) return;
     saveDevicePrefs({ cameraOn, micOn });
-    router.push(isPitchMode ? "/call?pitch=1" : "/call");
-  }, [interviewStarted, cameraOn, micOn, isPitchMode, router]);
-
-  function handleJoin() {
-    if (isPitchMode) {
-      router.push("/call?pitch=1");
-      return;
-    }
-    openDevices();
-  }
+    router.push("/call");
+  }, [interviewStarted, cameraOn, micOn, router]);
 
   return (
     <>
       <button
         type="button"
-        onClick={handleJoin}
+        onClick={openDevices}
         className="w-full rounded-full bg-indigo px-5 py-3 text-center font-medium text-paper transition-colors hover:bg-indigo/90"
       >
         Join interview
