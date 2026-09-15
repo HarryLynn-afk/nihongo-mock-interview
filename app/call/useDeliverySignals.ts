@@ -30,7 +30,7 @@ export function useDeliverySignals({
 
   useEffect(() => {
     for (const answer of answers) {
-      if (answer.inputMode !== "voice") continue;
+      if (answer.status !== "answered") continue;
       if (started.current.has(answer.questionIndex)) continue;
       started.current.add(answer.questionIndex);
 
@@ -69,30 +69,30 @@ export function useDeliverySignals({
     return () => clearTimeout(id);
   }, [phase, finishWaitMs]);
 
-  const voicePending =
+  const answeredPending =
     !dropped &&
     answers.some(
       (answer) =>
-        answer.inputMode === "voice" &&
+        answer.status === "answered" &&
         answer.audioClip.size > 0 &&
         signals[answer.questionIndex] === undefined,
     );
 
-  if (phase !== "done" || voicePending) {
+  if (phase !== "done" || answeredPending) {
     return { status: "collecting" };
   }
 
   return {
     status: "ready",
     delivery: summarizeDelivery(
-      answers.map((answer) => ({
-        questionIndex: answer.questionIndex,
-        inputMode: answer.inputMode,
-        signal:
-          answer.inputMode === "voice"
-            ? (signals[answer.questionIndex] ?? notAssessedClip())
-            : null,
-      })),
+      answers
+        .filter((answer): answer is StoredAnswer & { status: "answered" } =>
+          answer.status === "answered",
+        )
+        .map((answer) => ({
+          questionIndex: answer.questionIndex,
+          signal: signals[answer.questionIndex] ?? notAssessedClip(),
+        })),
     ),
   };
 }

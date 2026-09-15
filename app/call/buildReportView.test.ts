@@ -33,15 +33,14 @@ const report: InterviewReport = {
 };
 
 const voiceAnswers = [
-  { questionIndex: 0, inputMode: "voice" as const, transcript: "はじめまして" },
-  { questionIndex: 1, inputMode: "voice" as const, transcript: "日本で勉強したいです" },
-  { questionIndex: 2, inputMode: "voice" as const, transcript: "専門学校に行きます" },
+  { questionIndex: 0, status: "answered" as const, transcript: "はじめまして" },
+  { questionIndex: 1, status: "answered" as const, transcript: "日本で勉強したいです" },
+  { questionIndex: 2, status: "answered" as const, transcript: "専門学校に行きます" },
 ];
 
 const clearDelivery = summarizeDelivery([
   {
     questionIndex: 0,
-    inputMode: "voice",
     signal: {
       recordingQuality: "pass",
       durationSec: 2,
@@ -54,33 +53,6 @@ const clearDelivery = summarizeDelivery([
 ]);
 
 describe("buildReportView", () => {
-  it("does not add a pronunciation coaching line for mixed typed and spoken answers", () => {
-    const view = buildReportView({
-      report,
-      answers: [
-        { questionIndex: 0, inputMode: "typed", transcript: "はじめまして" },
-        { questionIndex: 1, inputMode: "voice" },
-        { questionIndex: 2, inputMode: "voice" },
-      ],
-    });
-
-    expect(view.notes.some((line) => /pronunciation/i.test(line))).toBe(false);
-  });
-
-  it("omits Speech Delivery Signals when every answer was typed", () => {
-    const view = buildReportView({
-      report,
-      answers: [
-        { questionIndex: 0, inputMode: "typed" },
-        { questionIndex: 1, inputMode: "typed" },
-        { questionIndex: 2, inputMode: "typed" },
-      ],
-    });
-
-    expect(view.delivery).toBeNull();
-    expect(view.scores.some((score) => score.key === "speaking")).toBe(false);
-  });
-
   it("does not treat a speaking Gate as Japanese-ability coaching", () => {
     const view = buildReportView({
       report: { ...report, headline: "KeepPracticing", stamp: "要練習", gatesFired: ["speaking"] },
@@ -130,24 +102,6 @@ describe("buildReportView", () => {
     expect(view.listeningNote).toMatch(/listening comprehension is not scored/i);
   });
 
-  it("uses the same content /100 for typed and voice Interviews", () => {
-    const typed = buildReportView({
-      report,
-      answers: [
-        { questionIndex: 0, inputMode: "typed" },
-        { questionIndex: 1, inputMode: "typed" },
-        { questionIndex: 2, inputMode: "typed" },
-      ],
-    });
-    const voice = buildReportView({
-      report,
-      answers: voiceAnswers,
-    });
-
-    expect(typed.total).toBe(90);
-    expect(voice.total).toBe(90);
-  });
-
   it("builds one question card per Interview Question", () => {
     const view = buildReportView({
       report,
@@ -163,6 +117,29 @@ describe("buildReportView", () => {
     expect(view.questions[0].rewrite).toBe("はじめまして。");
     expect(view.questions[0].scoreText).toBe("—");
     expect(view.questions[0].affirming).toBe(false);
+  });
+
+  it("builds a no-answer card for a skipped Question, keeping the nav complete", () => {
+    const view = buildReportView({
+      report,
+      answers: [
+        { questionIndex: 0, status: "answered", transcript: "はじめまして" },
+        { questionIndex: 1, status: "skipped" },
+        { questionIndex: 2, status: "answered", transcript: "専門学校に行きます" },
+      ],
+    });
+
+    expect(view.questions).toHaveLength(3);
+    expect(view.questions[1].transcript).toBe(
+      "No answer was captured for this Question.",
+    );
+    expect(view.questions[1].scoreText).toBe("—");
+    expect(view.questions[1].strengths).toEqual([]);
+    expect(view.questions[1].improvements[0]).toMatch(/microphone/i);
+    expect(view.questions[1].rewrite).toBe("");
+    expect(view.questions[1].affirming).toBe(false);
+    expect(view.questions[0].transcript).toBe("はじめまして");
+    expect(view.questions[2].transcript).toBe("専門学校に行きます");
   });
 
   it("exposes formatted critiques instead of freeform coaching notes", () => {
@@ -201,9 +178,9 @@ describe("buildReportView", () => {
     const view = buildReportView({
       report: three,
       answers: [
-        { questionIndex: 0, inputMode: "voice", transcript: "この学校" },
-        { questionIndex: 1, inputMode: "voice", transcript: "この学校" },
-        { questionIndex: 2, inputMode: "voice", transcript: "専門学校" },
+        { questionIndex: 0, status: "answered" as const, transcript: "この学校" },
+        { questionIndex: 1, status: "answered" as const, transcript: "この学校" },
+        { questionIndex: 2, status: "answered" as const, transcript: "専門学校" },
       ],
     });
 

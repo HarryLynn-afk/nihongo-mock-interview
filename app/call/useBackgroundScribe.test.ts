@@ -9,12 +9,12 @@ describe("useBackgroundScribe", () => {
     vi.useRealTimers();
   });
 
-  it("does not call /api/scribe for typed answers", () => {
+  it("does not call /api/scribe for a skipped Question", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
     const answers: StoredAnswer[] = [
-      { questionIndex: 0, inputMode: "typed", transcript: "はい。", pushbackCount: 0, forced: false },
+      { questionIndex: 0, status: "skipped" },
     ];
 
     renderHook(() =>
@@ -36,11 +36,10 @@ describe("useBackgroundScribe", () => {
     const answers: StoredAnswer[] = [
       {
         questionIndex: 0,
-        inputMode: "voice",
+        status: "answered",
         transcript: "こんにちは",
         audioClip: clip,
         pushbackCount: 0,
-        forced: false,
       },
     ];
 
@@ -62,28 +61,36 @@ describe("useBackgroundScribe", () => {
     expect((init.body as FormData).get("audio")).toBeInstanceOf(Blob);
   });
 
-  it("becomes ready immediately after Q3 when every answer was typed", () => {
+  it("becomes ready immediately after Q3 when every Question was skipped", () => {
+    const answers: StoredAnswer[] = [
+      { questionIndex: 0, status: "skipped" },
+      { questionIndex: 1, status: "skipped" },
+      { questionIndex: 2, status: "skipped" },
+    ];
+
+    const { result } = renderHook(() =>
+      useBackgroundScribe({ answers, phase: "done" }),
+    );
+
+    expect(result.current).toEqual({ status: "ready", answers: [] });
+  });
+
+  it("excludes a skipped Question from the ready answers alongside answered ones", () => {
     const answers: StoredAnswer[] = [
       {
         questionIndex: 0,
-        inputMode: "typed",
+        status: "answered",
         transcript: "a",
+        audioClip: new Blob(),
         pushbackCount: 0,
-        forced: false,
       },
-      {
-        questionIndex: 1,
-        inputMode: "typed",
-        transcript: "b",
-        pushbackCount: 1,
-        forced: false,
-      },
+      { questionIndex: 1, status: "skipped" },
       {
         questionIndex: 2,
-        inputMode: "typed",
+        status: "answered",
         transcript: "c",
+        audioClip: new Blob(),
         pushbackCount: 2,
-        forced: true,
       },
     ];
 
@@ -96,27 +103,15 @@ describe("useBackgroundScribe", () => {
       answers: [
         {
           questionIndex: 0,
-          inputMode: "typed",
           transcript: "a",
           useSubmittedTranscript: true,
           pushbackCount: 0,
-          forced: false,
-        },
-        {
-          questionIndex: 1,
-          inputMode: "typed",
-          transcript: "b",
-          useSubmittedTranscript: true,
-          pushbackCount: 1,
-          forced: false,
         },
         {
           questionIndex: 2,
-          inputMode: "typed",
           transcript: "c",
           useSubmittedTranscript: true,
           pushbackCount: 2,
-          forced: true,
         },
       ],
     });
@@ -135,11 +130,10 @@ describe("useBackgroundScribe", () => {
     const answers: StoredAnswer[] = [
       {
         questionIndex: 0,
-        inputMode: "voice",
+        status: "answered",
         transcript: "WISPR",
         audioClip: new Blob([new Uint8Array([1])], { type: "audio/webm" }),
         pushbackCount: 0,
-        forced: false,
       },
     ];
 
@@ -163,11 +157,9 @@ describe("useBackgroundScribe", () => {
         answers: [
           {
             questionIndex: 0,
-            inputMode: "voice",
             transcript: "SCRIBE",
             useSubmittedTranscript: false,
             pushbackCount: 0,
-            forced: false,
           },
         ],
       });
@@ -184,11 +176,10 @@ describe("useBackgroundScribe", () => {
     const answers: StoredAnswer[] = [
       {
         questionIndex: 0,
-        inputMode: "voice",
+        status: "answered",
         transcript: "WISPR",
         audioClip: new Blob([new Uint8Array([1])], { type: "audio/webm" }),
         pushbackCount: 0,
-        forced: false,
       },
     ];
 
@@ -216,11 +207,9 @@ describe("useBackgroundScribe", () => {
       answers: [
         {
           questionIndex: 0,
-          inputMode: "voice",
           transcript: "WISPR",
           useSubmittedTranscript: true,
           pushbackCount: 0,
-          forced: false,
         },
       ],
     });
@@ -233,11 +222,10 @@ describe("useBackgroundScribe", () => {
     const answers: StoredAnswer[] = [
       {
         questionIndex: 0,
-        inputMode: "voice",
+        status: "answered",
         transcript: "WISPR",
         audioClip: new Blob(),
         pushbackCount: 0,
-        forced: false,
       },
     ];
 
@@ -251,11 +239,9 @@ describe("useBackgroundScribe", () => {
       answers: [
         {
           questionIndex: 0,
-          inputMode: "voice",
           transcript: "WISPR",
           useSubmittedTranscript: true,
           pushbackCount: 0,
-          forced: false,
         },
       ],
     });
@@ -277,11 +263,10 @@ describe("useBackgroundScribe", () => {
     const answers: StoredAnswer[] = [
       {
         questionIndex: 0,
-        inputMode: "voice",
+        status: "answered",
         transcript: "WISPR",
         audioClip: new Blob([new Uint8Array([1])], { type: "audio/webm" }),
         pushbackCount: 0,
-        forced: false,
       },
     ];
 
@@ -301,11 +286,9 @@ describe("useBackgroundScribe", () => {
       answers: [
         {
           questionIndex: 0,
-          inputMode: "voice",
           transcript: "WISPR",
           useSubmittedTranscript: true,
           pushbackCount: 0,
-          forced: false,
         },
       ],
     });
@@ -321,11 +304,9 @@ describe("useBackgroundScribe", () => {
       answers: [
         {
           questionIndex: 0,
-          inputMode: "voice",
           transcript: "WISPR",
           useSubmittedTranscript: true,
           pushbackCount: 0,
-          forced: false,
         },
       ],
     });

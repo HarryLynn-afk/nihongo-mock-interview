@@ -33,7 +33,13 @@ describe("buildSidebarView", () => {
   it("after Q1 is submitted, shows Q2 of 3 with the Q1 pair and the Q2 sensei Question", () => {
     const view = buildSidebarView({
       phase: "senseiSpeaking",
-      answers: [{ questionIndex: 0, transcript: "はじめまして。アウンミンハントです。" }],
+      answers: [
+        {
+          questionIndex: 0,
+          status: "answered",
+          transcript: "はじめまして。アウンミンハントです。",
+        },
+      ],
     });
 
     expect(view.questionNumber).toBe(2);
@@ -49,9 +55,9 @@ describe("buildSidebarView", () => {
     const view = buildSidebarView({
       phase: "done",
       answers: [
-        { questionIndex: 0, transcript: "a" },
-        { questionIndex: 1, transcript: "b" },
-        { questionIndex: 2, transcript: "c" },
+        { questionIndex: 0, status: "answered", transcript: "a" },
+        { questionIndex: 1, status: "answered", transcript: "b" },
+        { questionIndex: 2, status: "answered", transcript: "c" },
       ],
     });
 
@@ -65,6 +71,19 @@ describe("buildSidebarView", () => {
       { speaker: "student", text: "b" },
       { speaker: "sensei", text: questions[2].japanese },
       { speaker: "student", text: "c" },
+    ]);
+  });
+
+  it("shows a no-answer placeholder for a skipped turn", () => {
+    const view = buildSidebarView({
+      phase: "senseiSpeaking",
+      answers: [{ questionIndex: 0, status: "skipped" }],
+    });
+
+    expect(view.entries).toEqual([
+      { speaker: "sensei", text: questions[0].japanese },
+      { speaker: "student", text: "(No answer captured)" },
+      { speaker: "sensei", text: questions[1].japanese },
     ]);
   });
 });

@@ -3,11 +3,9 @@ import type { QuestionPhase, StoredAnswer } from "./useQuestionFlow";
 
 export type AnswerForScoring = {
   questionIndex: number;
-  inputMode: "voice" | "typed";
   transcript: string;
   useSubmittedTranscript: boolean;
   pushbackCount: 0 | 1 | 2;
-  forced: boolean;
 };
 
 export type ScribeCollection =
@@ -32,7 +30,7 @@ export function useBackgroundScribe({
 
   useEffect(() => {
     for (const answer of answers) {
-      if (answer.inputMode !== "voice") continue;
+      if (answer.status !== "answered") continue;
       if (started.current.has(answer.questionIndex)) continue;
       started.current.add(answer.questionIndex);
 
@@ -75,52 +73,41 @@ export function useBackgroundScribe({
     return () => clearTimeout(id);
   }, [phase, finishWaitMs]);
 
-  const voicePending =
+  const answeredPending =
     !dropped &&
     answers.some(
       (answer) =>
-        answer.inputMode === "voice" &&
+        answer.status === "answered" &&
         answer.audioClip.size > 0 &&
         outcomes[answer.questionIndex] === undefined,
     );
 
-  if (phase !== "done" || voicePending) {
+  if (phase !== "done" || answeredPending) {
     return { status: "collecting" };
   }
 
   return {
     status: "ready",
-    answers: answers.map((answer) => {
-      const pushback = {
-        pushbackCount: answer.pushbackCount,
-        forced: answer.forced,
-      };
-      if (answer.inputMode === "typed") {
+    answers: answers
+      .filter((answer): answer is StoredAnswer & { status: "answered" } =>
+        answer.status === "answered",
+      )
+      .map((answer) => {
+        const outcome = outcomes[answer.questionIndex];
+        if (outcome?.kind === "scribe") {
+          return {
+            questionIndex: answer.questionIndex,
+            transcript: outcome.text,
+            useSubmittedTranscript: false,
+            pushbackCount: answer.pushbackCount,
+          };
+        }
         return {
           questionIndex: answer.questionIndex,
-          inputMode: "typed" as const,
           transcript: answer.transcript,
           useSubmittedTranscript: true,
-          ...pushback,
+          pushbackCount: answer.pushbackCount,
         };
-      }
-      const outcome = outcomes[answer.questionIndex];
-      if (outcome?.kind === "scribe") {
-        return {
-          questionIndex: answer.questionIndex,
-          inputMode: "voice" as const,
-          transcript: outcome.text,
-          useSubmittedTranscript: false,
-          ...pushback,
-        };
-      }
-      return {
-        questionIndex: answer.questionIndex,
-        inputMode: "voice" as const,
-        transcript: answer.transcript,
-        useSubmittedTranscript: true,
-        ...pushback,
-      };
-    }),
+      }),
   };
 }

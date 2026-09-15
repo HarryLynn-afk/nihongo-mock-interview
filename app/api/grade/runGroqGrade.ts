@@ -14,10 +14,8 @@ const GROQ_GRADE_MODEL = "qwen/qwen3.6-27b";
 
 export type GradeAnswer = {
   questionIndex: number;
-  inputMode: "voice" | "typed";
   transcript: string;
   pushbackCount: 0 | 1 | 2;
-  forced: boolean;
 };
 
 function parseGroqGradeJson(text: string): {

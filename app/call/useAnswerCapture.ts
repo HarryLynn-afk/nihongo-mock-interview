@@ -5,7 +5,9 @@ import { startLiveTranscriptionSession } from "./startLiveTranscription";
 import type { LiveTranscriptionSession } from "./startLiveTranscription";
 import { joinJapanese } from "./transcriptionEvents";
 
-type AnswerMode = "speak" | "type" | null;
+export const MAX_SPEAK_ATTEMPTS = 3;
+
+type AnswerMode = "speak" | null;
 
 type UseAnswerCaptureArgs = {
   active: boolean;
@@ -57,7 +59,6 @@ export function useAnswerCapture({
   onSubmit,
 }: UseAnswerCaptureArgs) {
   const [answerMode, setAnswerMode] = useState<AnswerMode>(null);
-  const [draft, setDraft] = useState("");
   const [spokenCaption, setSpokenCaption] = useState<string | null>(null);
   const [speakPaused, setSpeakPaused] = useState(false);
   const [pushbackVisible, setPushbackVisible] = useState(false);
@@ -71,7 +72,6 @@ export function useAnswerCapture({
   if (!active) {
     autoSpeakUsedRef.current = false;
     if (answerMode !== null) setAnswerMode(null);
-    if (draft !== "") setDraft("");
     if (spokenCaption !== null) setSpokenCaption(null);
     if (speakPaused) setSpeakPaused(false);
     if (pushbackVisible) setPushbackVisible(false);
@@ -89,9 +89,7 @@ export function useAnswerCapture({
     ? "none"
     : answerMode === "speak"
       ? "speak"
-      : answerMode === "type"
-        ? "type"
-        : "choose";
+      : "idle";
 
   useEffect(() => {
     if (!listening) return;
@@ -193,48 +191,46 @@ export function useAnswerCapture({
     setSpokenCaption(null);
   }
 
-  function resolvePushback(transcript: string): {
+  function resolveAttempt(transcript: string): {
     store: boolean;
+    skip: boolean;
     pushbackCount: 0 | 1 | 2;
-    forced: boolean;
   } {
     attemptCountRef.current += 1;
     const attempts = attemptCountRef.current;
     const passed = transcriptPassesPushbackCheck(transcript);
-    const forced = !passed && attempts >= 3;
-    return {
-      store: passed || forced,
-      pushbackCount: (passed ? attempts - 1 : 2) as 0 | 1 | 2,
-      forced,
-    };
+    if (passed) {
+      return {
+        store: true,
+        skip: false,
+        pushbackCount: (attempts - 1) as 0 | 1 | 2,
+      };
+    }
+    if (attempts >= MAX_SPEAK_ATTEMPTS) {
+      return { store: false, skip: true, pushbackCount: 2 };
+    }
+    return { store: false, skip: false, pushbackCount: 2 };
   }
 
   const onSubmitClick = useCallback(() => {
-    if (answerMode === "type") {
-      const result = resolvePushback(draft);
-      if (result.store) {
-        onSubmit({
-          inputMode: "typed",
-          transcript: draft,
-          pushbackCount: result.pushbackCount,
-          forced: result.forced,
-        });
-        return;
-      }
-      setPushbackVisible(true);
-      return;
-    }
     if (answerMode !== "speak") return;
 
     const submitVoice = (transcript: string) => {
-      const result = resolvePushback(transcript);
+      const result = resolveAttempt(transcript);
+      if (result.skip) {
+        resetSpeakSession();
+        setAnswerMode(null);
+        onSubmit({ status: "skipped" });
+        return;
+      }
       if (!result.store) {
         setPushbackVisible(true);
-        if (!transcript) setAnswerMode("type");
+        resetSpeakSession();
+        setAnswerMode(null);
         return;
       }
       onSubmit({
-        inputMode: "voice",
+        status: "answered",
         transcript,
         audioClip: new Blob(
           audioChunksRef.current.length > 0
@@ -243,7 +239,6 @@ export function useAnswerCapture({
           { type: "audio/webm" },
         ),
         pushbackCount: result.pushbackCount,
-        forced: result.forced,
       });
     };
 
@@ -274,27 +269,16 @@ export function useAnswerCapture({
     }
 
     finishSpeak(spokenCaption ?? "");
-  }, [answerMode, onSubmit, draft, spokenCaption]);
+  }, [answerMode, onSubmit, spokenCaption]);
 
   return {
     liveCaption: answerMode === "speak" ? spokenCaption : null,
     speakPaused,
-    draft,
-    onDraftChange: (value: string) => {
-      if (pushbackVisible) setPushbackVisible(false);
-      setDraft(value);
-    },
     onSpeakAnswer: () => {
       resetSpeakSession();
       setAnswerMode("speak");
     },
     onToggleSpeakPause: () => setSpeakPaused((current) => !current),
-    onTypeAnswer: () => setAnswerMode("type"),
-    onSpeakOrType: () => {
-      resetSpeakSession();
-      setAnswerMode(null);
-      setDraft("");
-    },
     onSubmitClick,
     studentTurn,
     pushbackVisible,

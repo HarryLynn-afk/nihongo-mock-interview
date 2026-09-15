@@ -14,13 +14,19 @@ export type SidebarView = {
   entries: SidebarEntry[];
 };
 
+type SidebarAnswer =
+  | { questionIndex: number; status: "answered"; transcript: string }
+  | { questionIndex: number; status: "skipped" };
+
+const NO_ANSWER_SIDEBAR_TEXT = "(No answer captured)";
+
 export function buildSidebarView({
   phase,
   answers,
   sessionQuestions = questions,
 }: {
   phase: QuestionPhase;
-  answers: readonly { questionIndex: number; transcript: string }[];
+  answers: readonly SidebarAnswer[];
   sessionQuestions?: readonly InterviewQuestion[];
 }): SidebarView {
   const list = sessionQuestions.length > 0 ? sessionQuestions : questions;
@@ -34,7 +40,13 @@ export function buildSidebarView({
     }
     const answer = answers.find((item) => item.questionIndex === index);
     if (answer) {
-      entries.push({ speaker: "student", text: answer.transcript });
+      entries.push({
+        speaker: "student",
+        text:
+          answer.status === "answered"
+            ? answer.transcript
+            : NO_ANSWER_SIDEBAR_TEXT,
+      });
     }
   }
 

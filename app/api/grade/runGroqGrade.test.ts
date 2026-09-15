@@ -25,10 +25,8 @@ const critiques = [
 const answers = [
   {
     questionIndex: 0,
-    inputMode: "voice" as const,
     transcript: "はじめまして。アウンミンハントです。",
     pushbackCount: 0 as const,
-    forced: false,
   },
 ];
 
@@ -205,7 +203,6 @@ describe("runGroqGrade", () => {
     expect(body.messages?.[1]?.role).toBe("user");
     expect(userText).not.toContain("Aung Min Khant");
     expect(userText).toContain("はじめまして。アウンミンハントです。");
-    expect(userText).toContain("voice");
   });
 
   it("returns null on Groq 429 and skips the next Groq grade call", async () => {

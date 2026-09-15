@@ -12,17 +12,13 @@ export type QuestionPhase = "senseiSpeaking" | "studentAnswering" | "done";
 
 export type AnswerSubmission =
   | {
-      inputMode: "typed";
-      transcript: string;
-      pushbackCount: 0 | 1 | 2;
-      forced: boolean;
-    }
-  | {
-      inputMode: "voice";
+      status: "answered";
       transcript: string;
       audioClip: Blob;
       pushbackCount: 0 | 1 | 2;
-      forced: boolean;
+    }
+  | {
+      status: "skipped";
     };
 
 export type StoredAnswer = AnswerSubmission & {
@@ -91,7 +87,7 @@ export function useQuestionFlow(
         },
       ]);
 
-      if (enableFollowUps && !isFollowUp) {
+      if (enableFollowUps && !isFollowUp && submission.status === "answered") {
         const topic = bank?.topic ?? null;
         if (
           shouldOfferFollowUp({

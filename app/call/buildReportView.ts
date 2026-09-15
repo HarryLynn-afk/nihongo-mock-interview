@@ -29,6 +29,11 @@ const LISTENING_OMITTED =
 
 const NOT_ASSESSED = "Not assessed";
 
+const NO_ANSWER_TRANSCRIPT = "No answer was captured for this Question.";
+const NO_ANSWER_NEXT_HEADING = "Try this Question again next practice";
+const NO_ANSWER_NEXT_STEP =
+  "Check your microphone and try this Question again in your next practice session.";
+
 const SCORE_ORDER: RubricCategoryKey[] = [
   "listening",
   "grammarPoliteness",
@@ -123,11 +128,9 @@ export type ReportView = {
   deliveryTitle: string;
 };
 
-export type ReportAnswerInput = {
-  questionIndex: number;
-  inputMode: "voice" | "typed";
-  transcript?: string;
-};
+export type ReportAnswerInput =
+  | { questionIndex: number; status: "answered"; transcript: string }
+  | { questionIndex: number; status: "skipped" };
 
 export function buildReportView({
   report,
@@ -140,7 +143,6 @@ export function buildReportView({
   sessionQuestions?: readonly InterviewQuestion[];
   delivery?: SessionDelivery | null;
 }): ReportView {
-  const hasVoice = answers.some((answer) => answer.inputMode === "voice");
   const notes: string[] = [];
 
   return {
@@ -168,18 +170,44 @@ export function buildReportView({
         assessed: true,
       };
     }),
-    delivery: hasVoice ? delivery : null,
+    delivery,
     deliveryTitle: DELIVERY_SECTION_TITLE,
     questions: sessionQuestions.map((question, index) => {
+      const answer = answers.find((item) => item.questionIndex === index);
+      const bank = getBankQuestionById(question.id);
+      const navLabel =
+        (bank ? TOPIC_NAV_LABEL[bank.topic] : QUESTION_NAV_LABELS[index]) ??
+        `Question ${index + 1}`;
+
+      if (!answer || answer.status === "skipped") {
+        return {
+          questionIndex: index,
+          navLabel,
+          categoryLabel: navLabel,
+          japanese: question.japanese,
+          transcript: NO_ANSWER_TRANSCRIPT,
+          scoreText: "—",
+          ratingLabel: "",
+          quote: "",
+          strengths: [],
+          nextHeading: NO_ANSWER_NEXT_HEADING,
+          improvements: [NO_ANSWER_NEXT_STEP],
+          rewriteHeading: "Suggested improved Japanese answer",
+          rewrite: "",
+          burmese: "",
+          evidence: "",
+          affirming: false,
+        };
+      }
+
       const critique = report.critiques.find(
         (item) => item.questionIndex === index,
       );
-      const answer = answers.find((item) => item.questionIndex === index);
       const formatted = critique ? formatQuotedCritique(critique) : null;
       const affirming = Boolean(formatted && isAffirmingCritique(formatted));
       const category = critique?.category;
       const scored = category ? report.scores[category] : null;
-      const transcript = answer?.transcript?.trim() || "（無言）";
+      const transcript = answer.transcript.trim() || "（無言）";
       const next = formatted && category && scored
         ? buildNextStep({
             affirming,
@@ -193,10 +221,6 @@ export function buildReportView({
         : null;
       const showScore = Boolean(category && category !== "speaking" && scored);
       const quote = formatted?.quote ?? "";
-      const bank = getBankQuestionById(question.id);
-      const navLabel =
-        (bank ? TOPIC_NAV_LABEL[bank.topic] : QUESTION_NAV_LABELS[index]) ??
-        `Question ${index + 1}`;
       return {
         questionIndex: index,
         navLabel,

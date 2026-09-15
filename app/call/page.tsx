@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { InterviewSidebar } from "./InterviewSidebar";
 import { InterviewReportScreen } from "./InterviewReportScreen";
 import { LanguageHud } from "./LanguageHud";
+import { MicTroubleScreen } from "./MicTroubleScreen";
 import { SpeakAnswerButton } from "./SpeakAnswerButton";
 import { SenseiTile } from "./SenseiTile";
 import { StudentTile } from "./StudentTile";
@@ -105,26 +106,18 @@ export default function CallPage() {
         headline: report.headline,
         total: report.total,
         source: report.source,
-        answers: answers.map(
-          ({
-            questionIndex: index,
-            inputMode,
-            transcript,
-            pushbackCount,
-            forced,
-            isFollowUp,
-          }) => ({
-            questionIndex: index,
-            inputMode,
-            transcript,
-            pushbackCount,
-            forced,
-            isFollowUp,
-          }),
-        ),
+        answers: answers.map((answer) => ({
+          questionIndex: answer.questionIndex,
+          status: answer.status,
+          transcript: answer.status === "answered" ? answer.transcript : "",
+          pushbackCount:
+            answer.status === "answered" ? answer.pushbackCount : 2,
+          isFollowUp: answer.isFollowUp,
+        })),
         scores: report.scores,
         pushbackCount: answers.reduce(
-          (sum, answer) => sum + answer.pushbackCount,
+          (sum, answer) =>
+            sum + (answer.status === "answered" ? answer.pushbackCount : 0),
           0,
         ),
         followUpCount: answers.filter((answer) => answer.isFollowUp).length,
@@ -135,12 +128,8 @@ export default function CallPage() {
   const {
     liveCaption,
     speakPaused,
-    draft,
-    onDraftChange,
     onSpeakAnswer,
     onToggleSpeakPause,
-    onTypeAnswer,
-    onSpeakOrType,
     onSubmitClick,
     studentTurn,
     pushbackVisible,
@@ -177,6 +166,10 @@ export default function CallPage() {
     isPitchMode && phase === "studentAnswering" && questionIndex !== null
       ? getPitchCaptions(questionIndex)
       : null;
+  const allSkipped =
+    phase === "done" &&
+    answers.length > 0 &&
+    answers.every((answer) => answer.status === "skipped");
   const usefulnessView =
     sessionId === null
       ? null
@@ -206,17 +199,24 @@ export default function CallPage() {
           data-testid="call-stage"
           className="flex w-full flex-col items-stretch gap-4 md:flex-row md:items-start md:gap-5"
         >
-          {phase === "done" && report ? (
+          {phase === "done" && allSkipped ? (
+            <MicTroubleScreen />
+          ) : phase === "done" && report ? (
             <InterviewReportScreen
               view={buildReportView({
                 report,
                 sessionQuestions: flowQuestions,
-                answers: answers.map(
-                  ({ questionIndex: index, inputMode, transcript }) => ({
-                    questionIndex: index,
-                    inputMode,
-                    transcript,
-                  }),
+                answers: answers.map((answer) =>
+                  answer.status === "answered"
+                    ? {
+                        questionIndex: answer.questionIndex,
+                        status: "answered" as const,
+                        transcript: answer.transcript,
+                      }
+                    : {
+                        questionIndex: answer.questionIndex,
+                        status: "skipped" as const,
+                      },
                 ),
                 delivery:
                   delivery.status === "ready" ? delivery.delivery : null,
@@ -250,17 +250,16 @@ export default function CallPage() {
           )}
         </div>
 
-        {usefulnessView && report ? (
+        {usefulnessView && report && !allSkipped ? (
           <UsefulnessStep
             view={usefulnessView}
             report={report}
-            answers={answers.map(
-              ({ questionIndex: index, pushbackCount, forced }) => ({
-                questionIndex: index,
-                pushbackCount,
-                forced,
-              }),
-            )}
+            answers={answers.map((answer) => ({
+              questionIndex: answer.questionIndex,
+              pushbackCount:
+                answer.status === "answered" ? answer.pushbackCount : 2,
+              forced: false,
+            }))}
           />
         ) : null}
 
@@ -283,19 +282,11 @@ export default function CallPage() {
           />
         ) : null}
 
-        {phase === "done" && report ? null : (
+        {phase === "done" ? null : (
           <div
             data-testid="answer-dock"
             className="flex w-full max-w-xl flex-col items-center gap-4 rounded-2xl border border-paper/10 bg-ink/90 px-5 py-4"
           >
-          {phase === "studentAnswering" && studentTurn === "type" ? (
-            <textarea
-              aria-label="Answer"
-              value={draft}
-              onChange={(event) => onDraftChange(event.target.value)}
-              className="h-24 w-full rounded-xl border border-indigo/30 bg-ink px-4 py-3 text-paper"
-            />
-          ) : null}
           {studentTurn === "speak" ? (
             <div
               data-testid="live-transcript"
@@ -311,20 +302,11 @@ export default function CallPage() {
             </div>
           ) : null}
           <div className="flex flex-col items-center gap-4">
-            {studentTurn === "choose" ? (
-              <div className="flex items-center gap-3">
-                <SpeakAnswerButton
-                  listening={false}
-                  onClick={handleSpeakAnswer}
-                />
-                <button
-                  type="button"
-                  onClick={onTypeAnswer}
-                  className="rounded-full bg-paper/10 px-5 py-3 font-medium text-paper"
-                >
-                  Type answer
-                </button>
-              </div>
+            {studentTurn === "idle" ? (
+              <SpeakAnswerButton
+                listening={false}
+                onClick={handleSpeakAnswer}
+              />
             ) : null}
             {studentTurn === "speak" ? (
               <SpeakAnswerButton
@@ -333,16 +315,7 @@ export default function CallPage() {
                 onClick={onToggleSpeakPause}
               />
             ) : null}
-            {studentTurn === "speak" || studentTurn === "type" ? (
-              <button
-                type="button"
-                onClick={onSpeakOrType}
-                className="rounded-full bg-paper/10 px-5 py-3 font-medium text-paper"
-              >
-                Speak or type
-              </button>
-            ) : null}
-            {studentTurn === "speak" || studentTurn === "type" ? (
+            {studentTurn === "speak" ? (
               <button
                 type="button"
                 onClick={onSubmitClick}
@@ -350,10 +323,6 @@ export default function CallPage() {
               >
                 Submit answer
               </button>
-            ) : phase === "done" && !report ? (
-              <p className="rounded-full bg-paper/10 px-6 py-3 font-medium text-paper">
-                Interview complete
-              </p>
             ) : null}
           </div>
         </div>

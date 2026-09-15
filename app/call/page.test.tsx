@@ -27,12 +27,20 @@ vi.mock("@/lib/content/followUpCheck", () => ({
   shouldOfferFollowUp: () => false,
 }));
 
+type FakeRecognitionInstance = {
+  lang: string;
+  onresult: ((event: { results: unknown[] }) => void) | null;
+  start: ReturnType<typeof vi.fn>;
+  stop: ReturnType<typeof vi.fn>;
+};
+
 describe("Call screen", () => {
   const getUserMedia = vi.fn();
   const fetchMock = vi.fn();
   const audioPlay = vi.fn();
   let capturedAudioSrcs: string[] = [];
   let endedHandlers: Array<() => void> = [];
+  let recognitionInstances: FakeRecognitionInstance[] = [];
 
   beforeEach(() => {
     getUserMedia.mockResolvedValue({
@@ -42,6 +50,7 @@ describe("Call screen", () => {
     audioPlay.mockResolvedValue(undefined);
     capturedAudioSrcs = [];
     endedHandlers = [];
+    recognitionInstances = [];
 
     class FakeAudio {
       src: string;
@@ -55,9 +64,23 @@ describe("Call screen", () => {
       };
     }
 
+    class DefaultFakeSpeechRecognition implements FakeRecognitionInstance {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        recognitionInstances.push(this);
+      }
+    }
+
     vi.stubGlobal("navigator", { mediaDevices: { getUserMedia } });
     vi.stubGlobal("fetch", fetchMock);
     vi.stubGlobal("Audio", FakeAudio);
+    vi.stubGlobal("SpeechRecognition", DefaultFakeSpeechRecognition);
+    vi.stubGlobal("webkitSpeechRecognition", DefaultFakeSpeechRecognition);
   });
 
   afterEach(() => {
@@ -79,12 +102,41 @@ describe("Call screen", () => {
     return user;
   }
 
-  async function openTypeAnswer(user: ReturnType<typeof userEvent.setup>) {
-    const typeButton = screen.queryByRole("button", { name: /type answer/i });
-    if (typeButton) {
-      await user.click(typeButton);
-      return;
-    }
+  /** Presses Speak answer, delivers a passing transcript, then submits. */
+  async function speakAndSubmit(
+    user: ReturnType<typeof userEvent.setup>,
+    transcript = "はい、そうです。",
+  ) {
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    await waitFor(() => {
+      expect(recognitionInstances.length).toBeGreaterThan(0);
+    });
+    act(() => {
+      const spoken = Object.assign([{ transcript }], { isFinal: true });
+      recognitionInstances[recognitionInstances.length - 1]?.onresult?.({
+        results: [spoken],
+      });
+    });
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+  }
+
+  /**
+   * Pitch mode auto-enters Speak for every student turn, so there is no
+   * idle Speak answer button to press — just deliver a transcript and submit.
+   */
+  async function pitchSpeakAndSubmit(
+    user: ReturnType<typeof userEvent.setup>,
+    transcript: string,
+  ) {
+    await waitFor(() => {
+      expect(recognitionInstances.length).toBeGreaterThan(0);
+    });
+    act(() => {
+      const spoken = Object.assign([{ transcript }], { isFinal: true });
+      recognitionInstances[recognitionInstances.length - 1]?.onresult?.({
+        results: [spoken],
+      });
+    });
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
   }
 
@@ -181,14 +233,11 @@ describe("Call screen", () => {
     expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
   });
 
-  it("during the student turn, Speak and Type are shown and Submit is not until a choice is made", async () => {
+  it("during the student turn, Speak answer is shown and Submit is not until Speak is chosen", async () => {
     await startStudentTurn();
 
     expect(
       screen.getByRole("button", { name: /speak answer/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /type answer/i }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /submit answer/i }),
@@ -208,14 +257,11 @@ describe("Call screen", () => {
     expect(screen.queryByTestId("speak-answer-glow")).not.toBeInTheDocument();
   });
 
-  it("hides Type answer after Speak answer is chosen", async () => {
+  it("shows a Submit answer button once Speak answer is chosen", async () => {
     const user = await startStudentTurn();
 
     await user.click(screen.getByRole("button", { name: /speak answer/i }));
 
-    expect(
-      screen.queryByRole("button", { name: /type answer/i }),
-    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /submit answer/i }),
     ).toBeInTheDocument();
@@ -239,121 +285,23 @@ describe("Call screen", () => {
     expect(screen.getByTestId("live-transcript")).toHaveTextContent("Paused");
   });
 
-  it("Type answer reveals the answer box and Submit on the same call screen", async () => {
-    const user = await startStudentTurn();
-
-    await openTypeAnswer(user);
-
-    expect(screen.getByRole("textbox", { name: /answer/i })).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /submit answer/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /type answer/i }),
-    ).not.toBeInTheDocument();
-  });
-
-  it("shows Speak or type on the Type screen", async () => {
-    const user = await startStudentTurn();
-
-    await openTypeAnswer(user);
-
-    const restore = screen.getByRole("button", { name: /^speak or type$/i });
-    expect(restore).toHaveClass("bg-paper/10");
-    expect(restore).not.toHaveClass("bg-indigo");
-  });
-
-  it("Speak or type restores Speak answer and Type answer without submitting", async () => {
-    const user = await startStudentTurn();
-
-    await openTypeAnswer(user);
-    await user.type(screen.getByRole("textbox", { name: /answer/i }), "途中");
-    await user.click(screen.getByRole("button", { name: /^speak or type$/i }));
-
-    expect(
-      screen.queryByRole("textbox", { name: /answer/i }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /submit answer/i }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /speak answer/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /type answer/i }),
-    ).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /type answer/i }));
-    expect(screen.getByRole("textbox", { name: /answer/i })).toHaveValue("");
-  });
-
-  it("shows Speak or type after empty Speak submit", async () => {
-    const user = await startStudentTurn();
-
-    await user.click(screen.getByRole("button", { name: /speak answer/i }));
-    await user.click(screen.getByRole("button", { name: /submit answer/i }));
-
-    expect(
-      screen.getByRole("button", { name: /^speak or type$/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("shows Speak or type while listening and paused", async () => {
-    const user = await startStudentTurn();
-
-    await user.click(screen.getByRole("button", { name: /speak answer/i }));
-
-    expect(
-      screen.getByRole("button", { name: /^speak or type$/i }),
-    ).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /pause listening/i }));
-
-    expect(
-      screen.getByRole("button", { name: /^speak or type$/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("Speak or type from Speak restores Speak answer and Type answer without submitting", async () => {
-    const user = await startStudentTurn();
-
-    await user.click(screen.getByRole("button", { name: /speak answer/i }));
-    await user.click(screen.getByRole("button", { name: /^speak or type$/i }));
-
-    expect(screen.queryByTestId("live-transcript")).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /submit answer/i }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /speak answer/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /type answer/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("does not show the answer box just because the mic is off", async () => {
+  it("does not show a recording control just because the mic is off", async () => {
     const user = await startStudentTurn();
 
     await user.click(screen.getByRole("button", { name: /mic on/i }));
 
     expect(
-      screen.queryByRole("textbox", { name: /answer/i }),
+      screen.queryByTestId("speak-answer-recording"),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /type answer/i }),
+      screen.getByRole("button", { name: /speak answer/i }),
     ).toBeInTheDocument();
   });
 
-  it("typed submit advances to the next Question's Japanese HUD caption", async () => {
+  it("a passing Speak submit advances to the next Question's Japanese HUD caption", async () => {
     const user = await startStudentTurn();
 
-    await openTypeAnswer(user);
-    await user.type(
-      screen.getByRole("textbox", { name: /answer/i }),
-      "はじめまして",
-    );
-    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+    await speakAndSubmit(user, "はじめまして");
 
     await waitFor(() => {
       expect(hud().getByText(questions[1].japanese)).toBeInTheDocument();
@@ -363,12 +311,7 @@ describe("Call screen", () => {
   it("sidebar lists each submitted turn in order and shows Question 2 of 3", async () => {
     const user = await startStudentTurn();
 
-    await openTypeAnswer(user);
-    await user.type(
-      screen.getByRole("textbox", { name: /answer/i }),
-      "はじめまして",
-    );
-    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+    await speakAndSubmit(user, "はじめまして");
 
     const sidebar = within(screen.getByTestId("interview-sidebar"));
     await waitFor(() => {
@@ -381,11 +324,14 @@ describe("Call screen", () => {
     expect(sidebar.getByText("Sensei speaking")).toBeInTheDocument();
   });
 
-  it("sidebar does not list a rejected typed attempt 1", async () => {
+  it("sidebar does not list a rejected Speak attempt 1", async () => {
     const user = await startStudentTurn();
 
-    await openTypeAnswer(user);
-    await user.type(screen.getByRole("textbox", { name: /answer/i }), "hello");
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    act(() => {
+      const spoken = Object.assign([{ transcript: "hello" }], { isFinal: true });
+      recognitionInstances[0]?.onresult?.({ results: [spoken] });
+    });
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
 
     expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
@@ -400,8 +346,10 @@ describe("Call screen", () => {
     await user.click(screen.getByRole("button", { name: /speak answer/i }));
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
 
-    expect(screen.getByRole("textbox", { name: /answer/i })).toBeInTheDocument();
     expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /speak answer/i }),
+    ).toBeInTheDocument();
   });
 
   it("keeps the Question Japanese and shows the try-again lines after empty Speak Submit", async () => {
@@ -421,12 +369,7 @@ describe("Call screen", () => {
   it("does not keep the try-again line after the Interview advances", async () => {
     const user = await startStudentTurn();
 
-    await openTypeAnswer(user);
-    await user.type(
-      screen.getByRole("textbox", { name: /answer/i }),
-      "はじめまして",
-    );
-    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+    await speakAndSubmit(user, "はじめまして");
 
     await waitFor(() => {
       expect(hud().getByText(questions[1].japanese)).toBeInTheDocument();
@@ -436,37 +379,55 @@ describe("Call screen", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows a live Japanese HUD caption from browser speech after Speak answer", async () => {
-    const created: Array<{
-      onresult: ((event: { results: unknown[] }) => void) | null;
-      start: ReturnType<typeof vi.fn>;
-    }> = [];
-    class FakeSpeechRecognition {
-      lang = "";
-      interimResults = false;
-      continuous = false;
-      onresult: ((event: { results: unknown[] }) => void) | null = null;
-      start = vi.fn();
-      stop = vi.fn();
-      constructor() {
-        created.push(this);
-      }
-    }
-    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
-    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
+  it("skips the Question after 3 failing Speak attempts and still advances", async () => {
+    const user = await startStudentTurn();
 
+    // Attempt 1: empty
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+
+    // Attempt 2: fails the kana check
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    act(() => {
+      const spoken = Object.assign([{ transcript: "hello" }], { isFinal: true });
+      recognitionInstances[recognitionInstances.length - 1]?.onresult?.({
+        results: [spoken],
+      });
+    });
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+
+    // Attempt 3: fails again — the Question is skipped, not force-stored
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    act(() => {
+      const spoken = Object.assign([{ transcript: "still hello" }], {
+        isFinal: true,
+      });
+      recognitionInstances[recognitionInstances.length - 1]?.onresult?.({
+        results: [spoken],
+      });
+    });
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+
+    await waitFor(() => {
+      expect(hud().getByText(questions[1].japanese)).toBeInTheDocument();
+    });
+    const sidebar = within(screen.getByTestId("interview-sidebar"));
+    expect(sidebar.getByText("(No answer captured)")).toBeInTheDocument();
+  });
+
+  it("shows a live Japanese HUD caption from browser speech after Speak answer", async () => {
     const user = await startStudentTurn();
     await user.click(screen.getByRole("button", { name: /speak answer/i }));
 
     await waitFor(() => {
-      expect(created[0]?.start).toHaveBeenCalled();
+      expect(recognitionInstances[0]?.start).toHaveBeenCalled();
     });
 
     act(() => {
       const spoken = Object.assign([{ transcript: "こんにちは" }], {
         isFinal: false,
       });
-      created[0]?.onresult?.({ results: [spoken] });
+      recognitionInstances[0]?.onresult?.({ results: [spoken] });
     });
 
     expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
@@ -474,36 +435,18 @@ describe("Call screen", () => {
   });
 
   it("shows a live student transcript without calling /api/translate", async () => {
-    const created: Array<{
-      onresult: ((event: { results: unknown[] }) => void) | null;
-      start: ReturnType<typeof vi.fn>;
-    }> = [];
-    class FakeSpeechRecognition {
-      lang = "";
-      interimResults = false;
-      continuous = false;
-      onresult: ((event: { results: unknown[] }) => void) | null = null;
-      start = vi.fn();
-      stop = vi.fn();
-      constructor() {
-        created.push(this);
-      }
-    }
-    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
-    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
-
     const user = await startStudentTurn();
     await user.click(screen.getByRole("button", { name: /speak answer/i }));
 
     await waitFor(() => {
-      expect(created[0]?.start).toHaveBeenCalled();
+      expect(recognitionInstances[0]?.start).toHaveBeenCalled();
     });
 
     act(() => {
       const spoken = Object.assign([{ transcript: "こんにちは" }], {
         isFinal: false,
       });
-      created[0]?.onresult?.({ results: [spoken] });
+      recognitionInstances[0]?.onresult?.({ results: [spoken] });
     });
 
     expect(screen.getByTestId("live-transcript")).toHaveTextContent("こんにちは");
@@ -512,14 +455,9 @@ describe("Call screen", () => {
     ).toBe(false);
   });
 
-  it("does not call /api/translate after a typed answer is submitted", async () => {
+  it("does not call /api/translate after a Speak answer is submitted", async () => {
     const user = await startStudentTurn();
-    await openTypeAnswer(user);
-    await user.type(
-      screen.getByRole("textbox", { name: /answer/i }),
-      "はじめまして",
-    );
-    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+    await speakAndSubmit(user, "はじめまして");
 
     expect(
       fetchMock.mock.calls.some((call) => String(call[0]).includes("/api/translate")),
@@ -544,11 +482,18 @@ describe("Call screen", () => {
       endedHandlers.splice(0).forEach((handler) => handler());
     });
 
-    await openTypeAnswer(user);
-    await user.type(
-      screen.getByRole("textbox", { name: /answer/i }),
-      "はじめまして",
-    );
+    // Pitch mode auto-enters Speak; deliver a transcript and submit.
+    await waitFor(() => {
+      expect(recognitionInstances.length).toBeGreaterThan(0);
+    });
+    act(() => {
+      const spoken = Object.assign([{ transcript: "はじめまして" }], {
+        isFinal: true,
+      });
+      recognitionInstances[recognitionInstances.length - 1]?.onresult?.({
+        results: [spoken],
+      });
+    });
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
 
     expect(
@@ -556,64 +501,9 @@ describe("Call screen", () => {
     ).toBe(false);
   });
 
-  it("with ?pitch=1 Speak or type stays on Speak or Type after Type", async () => {
+  it("with ?pitch=1 shows locked EN/MY for the current question index, not the live transcript", async () => {
     window.history.pushState({}, "", "/call?pitch=1");
 
-    const user = userEvent.setup();
-    render(<CallPage />);
-
-    await waitFor(() => {
-      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
-    });
-    await act(async () => {
-      endedHandlers.splice(0).forEach((handler) => handler());
-    });
-
-    await openTypeAnswer(user);
-    await user.click(screen.getByRole("button", { name: /^speak or type$/i }));
-
-    expect(
-      screen.getByRole("button", { name: /speak answer/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /type answer/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByTestId("speak-answer-recording"),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByTestId("live-transcript")).not.toBeInTheDocument();
-  });
-
-  it("with ?pitch=1 Speak or type from Speak stays on Speak or Type", async () => {
-    window.history.pushState({}, "", "/call?pitch=1");
-
-    const user = userEvent.setup();
-    render(<CallPage />);
-
-    await waitFor(() => {
-      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
-    });
-    await act(async () => {
-      endedHandlers.splice(0).forEach((handler) => handler());
-    });
-
-    await user.click(screen.getByRole("button", { name: /^speak or type$/i }));
-
-    expect(
-      screen.getByRole("button", { name: /speak answer/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /type answer/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByTestId("speak-answer-recording"),
-    ).not.toBeInTheDocument();
-  });
-
-  it("with ?pitch=1 shows locked EN/MY for the current question index, not the typed transcript", async () => {
-    window.history.pushState({}, "", "/call?pitch=1");
-
-    const user = userEvent.setup();
     render(<CallPage />);
 
     await waitFor(() => {
@@ -626,11 +516,18 @@ describe("Call screen", () => {
     expect(hud().getByText(pitchAnswers[0].english)).toBeInTheDocument();
     expect(hud().getByText(pitchAnswers[0].burmese)).toBeInTheDocument();
 
-    await openTypeAnswer(user);
-    await user.type(
-      screen.getByRole("textbox", { name: /answer/i }),
-      "garbage transcript that must not be matched",
-    );
+    await waitFor(() => {
+      expect(recognitionInstances.length).toBeGreaterThan(0);
+    });
+    act(() => {
+      const spoken = Object.assign(
+        [{ transcript: "garbage transcript that must not be matched" }],
+        { isFinal: false },
+      );
+      recognitionInstances[recognitionInstances.length - 1]?.onresult?.({
+        results: [spoken],
+      });
+    });
 
     expect(hud().getByText(pitchAnswers[0].english)).toBeInTheDocument();
     expect(hud().getByText(pitchAnswers[0].burmese)).toBeInTheDocument();
@@ -651,8 +548,16 @@ describe("Call screen", () => {
     await act(async () => {
       endedHandlers.splice(0).forEach((handler) => handler());
     });
-    await openTypeAnswer(user);
-    await user.type(screen.getByRole("textbox", { name: /answer/i }), "答え1");
+
+    await waitFor(() => {
+      expect(recognitionInstances.length).toBeGreaterThan(0);
+    });
+    act(() => {
+      const spoken = Object.assign([{ transcript: "答え1" }], { isFinal: true });
+      recognitionInstances[recognitionInstances.length - 1]?.onresult?.({
+        results: [spoken],
+      });
+    });
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
 
     await waitFor(() => {
@@ -681,24 +586,6 @@ describe("Call screen", () => {
     }
     vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
 
-    const created: Array<{
-      onresult: ((event: { results: unknown[] }) => void) | null;
-      start: ReturnType<typeof vi.fn>;
-    }> = [];
-    class FakeSpeechRecognition {
-      lang = "";
-      interimResults = false;
-      continuous = false;
-      onresult: ((event: { results: unknown[] }) => void) | null = null;
-      start = vi.fn();
-      stop = vi.fn();
-      constructor() {
-        created.push(this);
-      }
-    }
-    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
-    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
-
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/api/scribe")) {
@@ -724,14 +611,14 @@ describe("Call screen", () => {
     await user.click(screen.getByRole("button", { name: /speak answer/i }));
 
     await waitFor(() => {
-      expect(created[0]?.start).toHaveBeenCalled();
+      expect(recognitionInstances[0]?.start).toHaveBeenCalled();
     });
 
     act(() => {
       const spoken = Object.assign([{ transcript: "こんにちは" }], {
         isFinal: true,
       });
-      created[0]?.onresult?.({ results: [spoken] });
+      recognitionInstances[0]?.onresult?.({ results: [spoken] });
     });
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
 
@@ -763,36 +650,18 @@ describe("Call screen", () => {
     }
     vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
 
-    const created: Array<{
-      onresult: ((event: { results: unknown[] }) => void) | null;
-      start: ReturnType<typeof vi.fn>;
-    }> = [];
-    class FakeSpeechRecognition {
-      lang = "";
-      interimResults = false;
-      continuous = false;
-      onresult: ((event: { results: unknown[] }) => void) | null = null;
-      start = vi.fn();
-      stop = vi.fn();
-      constructor() {
-        created.push(this);
-      }
-    }
-    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
-    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
-
     const user = await startStudentTurn();
     await user.click(screen.getByRole("button", { name: /speak answer/i }));
 
     await waitFor(() => {
-      expect(created[0]?.start).toHaveBeenCalled();
+      expect(recognitionInstances[0]?.start).toHaveBeenCalled();
     });
 
     act(() => {
       const spoken = Object.assign([{ transcript: "hello" }], {
         isFinal: true,
       });
-      created[0]?.onresult?.({ results: [spoken] });
+      recognitionInstances[0]?.onresult?.({ results: [spoken] });
     });
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
 
@@ -815,12 +684,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await openTypeAnswer(user);
-      await user.type(
-        screen.getByRole("textbox", { name: /answer/i }),
-        `答え${question.id}`,
-      );
-      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+      await speakAndSubmit(user, `答え${question.id}`);
     }
 
     await waitFor(() => {
@@ -830,27 +694,9 @@ describe("Call screen", () => {
           method: "POST",
           body: JSON.stringify({
             answers: [
-              {
-                questionIndex: 0,
-                inputMode: "typed",
-                transcript: "答え1",
-                pushbackCount: 0,
-                forced: false,
-              },
-              {
-                questionIndex: 1,
-                inputMode: "typed",
-                transcript: "答え2",
-                pushbackCount: 0,
-                forced: false,
-              },
-              {
-                questionIndex: 2,
-                inputMode: "typed",
-                transcript: "答え3",
-                pushbackCount: 0,
-                forced: false,
-              },
+              { questionIndex: 0, transcript: "答え1", pushbackCount: 0 },
+              { questionIndex: 1, transcript: "答え2", pushbackCount: 0 },
+              { questionIndex: 2, transcript: "答え3", pushbackCount: 0 },
             ],
           }),
         }),
@@ -889,12 +735,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await openTypeAnswer(user);
-      await user.type(
-        screen.getByRole("textbox", { name: /answer/i }),
-        `答え${question.id}`,
-      );
-      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+      await speakAndSubmit(user, `答え${question.id}`);
     }
 
     await waitFor(() => {
@@ -933,12 +774,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await openTypeAnswer(user);
-      await user.type(
-        screen.getByRole("textbox", { name: /answer/i }),
-        `答え${question.id}`,
-      );
-      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+      await pitchSpeakAndSubmit(user, `答え${question.id}`);
     }
 
     await waitFor(() => {
@@ -1001,12 +837,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await openTypeAnswer(user);
-      await user.type(
-        screen.getByRole("textbox", { name: /answer/i }),
-        `答え${question.id}`,
-      );
-      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+      await speakAndSubmit(user, `答え${question.id}`);
     }
 
     await waitFor(() => {
@@ -1070,12 +901,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await openTypeAnswer(user);
-      await user.type(
-        screen.getByRole("textbox", { name: /answer/i }),
-        `答え${question.id}`,
-      );
-      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+      await speakAndSubmit(user, `答え${question.id}`);
     }
 
     await waitFor(() => {
@@ -1140,12 +966,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await openTypeAnswer(user);
-      await user.type(
-        screen.getByRole("textbox", { name: /answer/i }),
-        `答え${question.id}`,
-      );
-      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+      await pitchSpeakAndSubmit(user, `答え${question.id}`);
     }
 
     await waitFor(() => {
@@ -1215,12 +1036,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await openTypeAnswer(user);
-      await user.type(
-        screen.getByRole("textbox", { name: /answer/i }),
-        `答え${question.id}`,
-      );
-      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+      await pitchSpeakAndSubmit(user, `答え${question.id}`);
     }
 
     await waitFor(() => {
@@ -1288,12 +1104,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await openTypeAnswer(user);
-      await user.type(
-        screen.getByRole("textbox", { name: /answer/i }),
-        `答え${question.id}`,
-      );
-      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+      await pitchSpeakAndSubmit(user, `答え${question.id}`);
     }
 
     await waitFor(() => {
@@ -1354,12 +1165,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await openTypeAnswer(user);
-      await user.type(
-        screen.getByRole("textbox", { name: /answer/i }),
-        `答え${question.id}`,
-      );
-      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+      await speakAndSubmit(user, `答え${question.id}`);
     }
 
     await waitFor(() => {
@@ -1368,6 +1174,42 @@ describe("Call screen", () => {
     expect(screen.getByText("もう少し")).toBeInTheDocument();
     expect(screen.getByText("73/100")).toBeInTheDocument();
     expect(screen.queryByText("90/100")).not.toBeInTheDocument();
+  });
+
+  it("shows the mic-trouble screen instead of a report when every Question was skipped", async () => {
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    for (const question of questions) {
+      await waitFor(() => {
+        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+      });
+      await act(async () => {
+        endedHandlers.splice(0).forEach((handler) => handler());
+      });
+      // Every attempt fails the kana check, so all 3 attempts are used and
+      // the Question is skipped rather than force-stored.
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        await user.click(screen.getByRole("button", { name: /speak answer/i }));
+        act(() => {
+          const spoken = Object.assign([{ transcript: "hello" }], {
+            isFinal: true,
+          });
+          recognitionInstances[recognitionInstances.length - 1]?.onresult?.({
+            results: [spoken],
+          });
+        });
+        await user.click(screen.getByRole("button", { name: /submit answer/i }));
+      }
+    }
+
+    await waitFor(() => {
+      expect(screen.getByTestId("mic-trouble-screen")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("interview-report")).not.toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some((call) => String(call[0]) === "/api/score"),
+    ).toBe(false);
   });
 
   it("shows the Usefulness step and session id after the report reveal when the form is enabled", async () => {
@@ -1428,12 +1270,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await openTypeAnswer(user);
-      await user.type(
-        screen.getByRole("textbox", { name: /answer/i }),
-        `答え${question.id}`,
-      );
-      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+      await speakAndSubmit(user, `答え${question.id}`);
     }
 
     await waitFor(() => {
@@ -1510,12 +1347,7 @@ describe("Call screen", () => {
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
       });
-      await openTypeAnswer(user);
-      await user.type(
-        screen.getByRole("textbox", { name: /answer/i }),
-        `答え${question.id}`,
-      );
-      await user.click(screen.getByRole("button", { name: /submit answer/i }));
+      await pitchSpeakAndSubmit(user, `答え${question.id}`);
     }
 
     await waitFor(() => {

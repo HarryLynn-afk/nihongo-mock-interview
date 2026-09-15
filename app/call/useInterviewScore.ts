@@ -12,6 +12,7 @@ export function useInterviewScore(collection: ScribeCollection) {
 
   useEffect(() => {
     if (collection.status !== "ready" || posted.current) return;
+    if (collection.answers.length === 0) return;
     posted.current = true;
     void fetch("/api/score", {
       method: "POST",

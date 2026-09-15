@@ -9,16 +9,8 @@ describe("useDeliverySignals", () => {
     vi.useRealTimers();
   });
 
-  it("is ready immediately after done when every answer was typed", () => {
-    const answers: StoredAnswer[] = [
-      {
-        questionIndex: 0,
-        inputMode: "typed",
-        transcript: "はい。",
-        pushbackCount: 0,
-        forced: false,
-      },
-    ];
+  it("is ready immediately after done when every Question was skipped", () => {
+    const answers: StoredAnswer[] = [{ questionIndex: 0, status: "skipped" }];
 
     const { result } = renderHook(() =>
       useDeliverySignals({ answers, phase: "done" }),
@@ -26,7 +18,7 @@ describe("useDeliverySignals", () => {
 
     expect(result.current.status).toBe("ready");
     if (result.current.status === "ready") {
-      expect(result.current.delivery.status).toBe("typed");
+      expect(result.current.delivery.status).toBe("unavailable");
     }
   });
 
@@ -35,11 +27,10 @@ describe("useDeliverySignals", () => {
     const answers: StoredAnswer[] = [
       {
         questionIndex: 0,
-        inputMode: "voice",
+        status: "answered",
         transcript: "はい",
         audioClip: new Blob(),
         pushbackCount: 0,
-        forced: false,
       },
     ];
 
@@ -69,11 +60,10 @@ describe("useDeliverySignals", () => {
     const answers: StoredAnswer[] = [
       {
         questionIndex: 0,
-        inputMode: "voice",
+        status: "answered",
         transcript: "はじめまして",
         audioClip: clip,
         pushbackCount: 0,
-        forced: false,
       },
     ];
 
@@ -96,11 +86,10 @@ describe("useDeliverySignals", () => {
     const answers: StoredAnswer[] = [
       {
         questionIndex: 0,
-        inputMode: "voice",
+        status: "answered",
         transcript: "はい",
         audioClip: new Blob([new Uint8Array([1])], { type: "audio/webm" }),
         pushbackCount: 0,
-        forced: false,
       },
     ];
 

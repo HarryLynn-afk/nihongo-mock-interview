@@ -82,10 +82,8 @@ describe("POST /api/score", () => {
           answers: [
             {
               questionIndex: 0,
-              inputMode: "typed",
               transcript: "はじめまして。",
               pushbackCount: 0,
-              forced: false,
             },
           ],
         }),
@@ -121,10 +119,8 @@ describe("POST /api/score", () => {
           answers: [
             {
               questionIndex: 0,
-              inputMode: "typed",
               transcript: "はじめまして。",
               pushbackCount: 0,
-              forced: false,
             },
           ],
         }),
@@ -148,10 +144,8 @@ describe("POST /api/score", () => {
           answers: [
             {
               questionIndex: 0,
-              inputMode: "typed",
               transcript: "はじめまして。",
               pushbackCount: 0,
-              forced: false,
             },
           ],
         }),
@@ -182,10 +176,8 @@ describe("POST /api/score", () => {
           answers: [
             {
               questionIndex: 0,
-              inputMode: "typed",
               transcript: "はじめまして。",
               pushbackCount: 0,
-              forced: false,
             },
           ],
         }),
@@ -217,10 +209,8 @@ describe("POST /api/score", () => {
         answers: [
           {
             questionIndex: 0,
-            inputMode: "typed",
             transcript: "はじめまして。",
             pushbackCount: 0,
-            forced: false,
           },
         ],
       }),

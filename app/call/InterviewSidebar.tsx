@@ -14,7 +14,10 @@ export function InterviewSidebar({
   sessionQuestions,
 }: {
   phase: QuestionPhase;
-  answers: readonly { questionIndex: number; transcript: string }[];
+  answers: readonly (
+    | { questionIndex: number; status: "answered"; transcript: string }
+    | { questionIndex: number; status: "skipped" }
+  )[];
   sessionQuestions?: readonly InterviewQuestion[];
 }) {
   const view = buildSidebarView({ phase, answers, sessionQuestions });

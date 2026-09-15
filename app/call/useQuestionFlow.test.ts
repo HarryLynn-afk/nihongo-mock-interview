@@ -5,12 +5,14 @@ import { pickSessionQuestions } from "@/lib/content/questionBank";
 import { useQuestionFlow } from "./useQuestionFlow";
 import type { AnswerSubmission } from "./useQuestionFlow";
 
-const typed = (transcript = "ok"): AnswerSubmission => ({
-  inputMode: "typed",
+const answered = (transcript = "ok"): AnswerSubmission => ({
+  status: "answered",
   transcript,
+  audioClip: new Blob(),
   pushbackCount: 0,
-  forced: false,
 });
+
+const skipped = (): AnswerSubmission => ({ status: "skipped" });
 
 describe("useQuestionFlow", () => {
   it("advances Q1 → Q2 → Q3 → done in order without repeating or skipping", () => {
@@ -20,16 +22,16 @@ describe("useQuestionFlow", () => {
     expect(result.current.currentQuestion).toBe(questions[0]);
 
     act(() => result.current.endSenseiTurn());
-    act(() => result.current.submitAnswer(typed()));
+    act(() => result.current.submitAnswer(answered()));
     expect(result.current.currentQuestion).toBe(questions[1]);
     expect(result.current.phase).toBe("senseiSpeaking");
 
     act(() => result.current.endSenseiTurn());
-    act(() => result.current.submitAnswer(typed()));
+    act(() => result.current.submitAnswer(answered()));
     expect(result.current.currentQuestion).toBe(questions[2]);
 
     act(() => result.current.endSenseiTurn());
-    act(() => result.current.submitAnswer(typed()));
+    act(() => result.current.submitAnswer(answered()));
     expect(result.current.phase).toBe("done");
     expect(result.current.currentQuestion).toBeNull();
   });
@@ -47,22 +49,22 @@ describe("useQuestionFlow", () => {
     const { result } = renderHook(() => useQuestionFlow());
 
     act(() => result.current.endSenseiTurn());
-    act(() => result.current.submitAnswer(typed()));
+    act(() => result.current.submitAnswer(answered()));
 
     expect(result.current.phase).toBe("senseiSpeaking");
     expect(result.current.currentQuestion).toBe(questions[1]);
   });
 
-  it("submitAnswer stores a typed AnswerSubmission for the current Question and advances", () => {
+  it("submitAnswer stores an answered AnswerSubmission for the current Question and advances", () => {
     const { result } = renderHook(() => useQuestionFlow());
 
     act(() => result.current.endSenseiTurn());
     act(() =>
       result.current.submitAnswer({
-        inputMode: "typed",
+        status: "answered",
         transcript: "はじめまして。アウンミンハントです。",
+        audioClip: new Blob(),
         pushbackCount: 0,
-        forced: false,
       }),
     );
 
@@ -71,10 +73,28 @@ describe("useQuestionFlow", () => {
         questionIndex: 0,
         questionId: 1,
         isFollowUp: false,
-        inputMode: "typed",
+        status: "answered",
         transcript: "はじめまして。アウンミンハントです。",
+        audioClip: expect.any(Blob),
         pushbackCount: 0,
-        forced: false,
+      },
+    ]);
+    expect(result.current.currentQuestion).toBe(questions[1]);
+    expect(result.current.phase).toBe("senseiSpeaking");
+  });
+
+  it("submitAnswer stores a skipped AnswerSubmission and advances without a transcript", () => {
+    const { result } = renderHook(() => useQuestionFlow());
+
+    act(() => result.current.endSenseiTurn());
+    act(() => result.current.submitAnswer(skipped()));
+
+    expect(result.current.answers).toEqual([
+      {
+        questionIndex: 0,
+        questionId: 1,
+        isFollowUp: false,
+        status: "skipped",
       },
     ]);
     expect(result.current.currentQuestion).toBe(questions[1]);
@@ -85,13 +105,13 @@ describe("useQuestionFlow", () => {
     const { result } = renderHook(() => useQuestionFlow());
 
     act(() => result.current.endSenseiTurn());
-    act(() => result.current.submitAnswer(typed()));
+    act(() => result.current.submitAnswer(answered()));
     act(() => result.current.endSenseiTurn());
-    act(() => result.current.submitAnswer(typed()));
+    act(() => result.current.submitAnswer(answered()));
     act(() => result.current.endSenseiTurn());
-    act(() => result.current.submitAnswer(typed()));
+    act(() => result.current.submitAnswer(answered()));
     // Extra call after done — should be a no-op, never advance beyond done.
-    act(() => result.current.submitAnswer(typed()));
+    act(() => result.current.submitAnswer(answered()));
 
     expect(result.current.phase).toBe("done");
     expect(result.current.currentQuestion).toBeNull();
@@ -100,7 +120,7 @@ describe("useQuestionFlow", () => {
   it("submitAnswer during senseiSpeaking is a no-op", () => {
     const { result } = renderHook(() => useQuestionFlow());
 
-    act(() => result.current.submitAnswer(typed()));
+    act(() => result.current.submitAnswer(answered()));
 
     expect(result.current.phase).toBe("senseiSpeaking");
     expect(result.current.currentQuestion).toBe(questions[0]);
@@ -113,10 +133,22 @@ describe("useQuestionFlow", () => {
     );
 
     act(() => result.current.endSenseiTurn());
-    act(() => result.current.submitAnswer(typed("はい、そうです。")));
+    act(() => result.current.submitAnswer(answered("はい、そうです。")));
 
     expect(result.current.sessionQuestions.length).toBeGreaterThan(session.length);
     expect(result.current.currentQuestion?.id).toBeGreaterThanOrEqual(200);
+  });
+
+  it("does not insert a follow-up after a skipped Question", () => {
+    const session = pickSessionQuestions(() => 0);
+    const { result } = renderHook(() =>
+      useQuestionFlow(session, { enableFollowUps: true }),
+    );
+
+    act(() => result.current.endSenseiTurn());
+    act(() => result.current.submitAnswer(skipped()));
+
+    expect(result.current.sessionQuestions.length).toBe(session.length);
   });
 
   it("exposes questionIndex 0/1/2 then null when done", () => {
@@ -125,15 +157,15 @@ describe("useQuestionFlow", () => {
     expect(result.current.questionIndex).toBe(0);
 
     act(() => result.current.endSenseiTurn());
-    act(() => result.current.submitAnswer(typed()));
+    act(() => result.current.submitAnswer(answered()));
     expect(result.current.questionIndex).toBe(1);
 
     act(() => result.current.endSenseiTurn());
-    act(() => result.current.submitAnswer(typed()));
+    act(() => result.current.submitAnswer(answered()));
     expect(result.current.questionIndex).toBe(2);
 
     act(() => result.current.endSenseiTurn());
-    act(() => result.current.submitAnswer(typed()));
+    act(() => result.current.submitAnswer(answered()));
     expect(result.current.questionIndex).toBeNull();
   });
 });

@@ -18,6 +18,16 @@ describe("useInterviewScore", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("does not POST /api/score when every Question was skipped", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const collection: ScribeCollection = { status: "ready", answers: [] };
+    renderHook(() => useInterviewScore(collection));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("POSTs /api/score once when Scribe becomes ready, with GradeAnswer fields only", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ report: { headline: "Ready" } }), {
@@ -32,19 +42,15 @@ describe("useInterviewScore", () => {
       answers: [
         {
           questionIndex: 0,
-          inputMode: "voice",
           transcript: "SCRIBE_TEXT",
           useSubmittedTranscript: false,
           pushbackCount: 0,
-          forced: false,
         },
         {
           questionIndex: 1,
-          inputMode: "typed",
           transcript: "はい。",
           useSubmittedTranscript: true,
           pushbackCount: 1,
-          forced: false,
         },
       ],
     };
@@ -68,17 +74,13 @@ describe("useInterviewScore", () => {
           answers: [
             {
               questionIndex: 0,
-              inputMode: "voice",
               transcript: "SCRIBE_TEXT",
               pushbackCount: 0,
-              forced: false,
             },
             {
               questionIndex: 1,
-              inputMode: "typed",
               transcript: "はい。",
               pushbackCount: 1,
-              forced: false,
             },
           ],
         }),
@@ -105,11 +107,9 @@ describe("useInterviewScore", () => {
       answers: [
         {
           questionIndex: 0,
-          inputMode: "typed",
           transcript: "はい。",
           useSubmittedTranscript: true,
           pushbackCount: 0,
-          forced: false,
         },
       ],
     };
@@ -132,11 +132,9 @@ describe("useInterviewScore", () => {
       answers: [
         {
           questionIndex: 0,
-          inputMode: "typed",
           transcript: "はい。",
           useSubmittedTranscript: true,
           pushbackCount: 0,
-          forced: false,
         },
       ],
     };
@@ -170,11 +168,9 @@ describe("useInterviewScore", () => {
       answers: [
         {
           questionIndex: 0,
-          inputMode: "typed",
           transcript: "はい。",
           useSubmittedTranscript: true,
           pushbackCount: 0,
-          forced: false,
         },
       ],
     };

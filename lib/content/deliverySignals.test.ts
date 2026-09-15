@@ -80,12 +80,10 @@ describe("countFillers", () => {
 });
 
 describe("summarizeDelivery", () => {
-  it("returns typed when every answer was typed", () => {
-    const session = summarizeDelivery([
-      { questionIndex: 0, inputMode: "typed", signal: null },
-    ]);
+  it("returns unavailable when there are no spoken answers", () => {
+    const session = summarizeDelivery([]);
 
-    expect(session.status).toBe("typed");
+    expect(session.status).toBe("unavailable");
     expect(session.headline).toBe("Not assessed");
     expect(session.answers).toEqual([]);
   });
@@ -94,7 +92,6 @@ describe("summarizeDelivery", () => {
     const session = summarizeDelivery([
       {
         questionIndex: 0,
-        inputMode: "voice",
         signal: analyzePcm({
           samples: silence(2),
           sampleRate: 16_000,
@@ -113,9 +110,7 @@ describe("summarizeDelivery", () => {
       sampleRate: 16_000,
       transcript: "はじめまして。アウンミンハントです。",
     });
-    const session = summarizeDelivery([
-      { questionIndex: 0, inputMode: "voice", signal },
-    ]);
+    const session = summarizeDelivery([{ questionIndex: 0, signal }]);
 
     expect(session.status).toBe("needsPractice");
     expect(session.headline).toBe("Needs practice");

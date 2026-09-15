@@ -1,7 +1,7 @@
 export type RecordingQuality = "pass" | "warning" | "notAssessed";
 
 export type DeliveryStatus =
-  | "typed"
+  | "unavailable"
   | "notAssessed"
   | "needsPractice"
   | "clearEnough";
@@ -23,7 +23,7 @@ export type SessionDelivery = {
   status: DeliveryStatus;
   headline: string;
   note: string;
-  recordingQuality: RecordingQuality | "typed";
+  recordingQuality: RecordingQuality | "unavailable";
   answers: DeliveryAnswer[];
 };
 
@@ -47,14 +47,14 @@ const NOT_ASSESSED_OBS = [
 ];
 
 export const DELIVERY_HEADLINE: Record<DeliveryStatus, string> = {
-  typed: "Not assessed",
+  unavailable: "Not assessed",
   notAssessed: "Not assessed",
   needsPractice: "Needs practice",
   clearEnough: "Clear enough",
 };
 
 export const DELIVERY_NOTE: Record<DeliveryStatus, string> = {
-  typed: "This session was typed, so speech delivery was not checked.",
+  unavailable: "No spoken answer was captured to analyze.",
   notAssessed:
     "Recording was too quiet or too short for basic timing analysis.",
   needsPractice:
@@ -200,22 +200,20 @@ export function analyzePcm({
 export function summarizeDelivery(
   items: readonly {
     questionIndex: number;
-    inputMode: "voice" | "typed";
     signal: AnalyzedClip | null;
   }[],
 ): SessionDelivery {
-  const voice = items.filter((item) => item.inputMode === "voice");
-  if (voice.length === 0) {
+  if (items.length === 0) {
     return {
-      status: "typed",
-      headline: DELIVERY_HEADLINE.typed,
-      note: DELIVERY_NOTE.typed,
-      recordingQuality: "typed",
+      status: "unavailable",
+      headline: DELIVERY_HEADLINE.unavailable,
+      note: DELIVERY_NOTE.unavailable,
+      recordingQuality: "unavailable",
       answers: [],
     };
   }
 
-  const answers: DeliveryAnswer[] = voice.map((item) => ({
+  const answers: DeliveryAnswer[] = items.map((item) => ({
     questionIndex: item.questionIndex,
     ...(item.signal ?? notAssessedClip()),
   }));

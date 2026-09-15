@@ -5,7 +5,7 @@ describe("parseQuotedCritiques", () => {
   it("rejects old coaching-only JSON as a miss", () => {
     expect(
       parseQuotedCritiques(undefined, [
-        { questionIndex: 0, transcript: "はじめまして。", forced: false },
+        { questionIndex: 0, transcript: "はじめまして。" },
       ]),
     ).toBeNull();
   });
@@ -22,7 +22,7 @@ describe("parseQuotedCritiques", () => {
             category: "speaking",
           },
         ],
-        [{ questionIndex: 0, transcript: "はじめまして。", forced: false }],
+        [{ questionIndex: 0, transcript: "はじめまして。" }],
       ),
     ).toEqual([
       {
@@ -47,7 +47,7 @@ describe("parseQuotedCritiques", () => {
             category: "listening",
           },
         ],
-        [{ questionIndex: 0, transcript: "はじめまして。", forced: false }],
+        [{ questionIndex: 0, transcript: "はじめまして。" }],
       ),
     ).toBeNull();
   });
@@ -64,7 +64,7 @@ describe("parseQuotedCritiques", () => {
             category: "speaking",
           },
         ],
-        [{ questionIndex: 0, transcript: "  ", forced: true }],
+        [{ questionIndex: 0, transcript: "  " }],
       ),
     ).toEqual([
       {
@@ -75,48 +75,6 @@ describe("parseQuotedCritiques", () => {
         category: "speaking",
       },
     ]);
-  });
-
-  it("allows an affirming critique when forced is true if rewrite equals quote", () => {
-    expect(
-      parseQuotedCritiques(
-        [
-          {
-            questionIndex: 0,
-            quote: "はじめまして",
-            explanation: "Clear self-introduction.",
-            rewrite: "はじめまして",
-            category: "speaking",
-          },
-        ],
-        [{ questionIndex: 0, transcript: "はじめまして", forced: true }],
-      ),
-    ).toEqual([
-      {
-        questionIndex: 0,
-        quote: "はじめまして",
-        explanation: "Clear self-introduction.",
-        rewrite: "はじめまして",
-        category: "speaking",
-      },
-    ]);
-  });
-
-  it("rejects forced true when rewrite has no Hiragana or Katakana", () => {
-    expect(
-      parseQuotedCritiques(
-        [
-          {
-            questionIndex: 0,
-            quote: "hello",
-            explanation: "Forced through.",
-            rewrite: "HELLO",
-            category: "speaking",
-          },
-        ],
-        [{ questionIndex: 0, transcript: "hello", forced: true }],
-      ),
-    ).toBeNull();
   });
 
   it("rejects a category that is not a RubricCategoryKey", () => {
@@ -131,7 +89,7 @@ describe("parseQuotedCritiques", () => {
             category: "fluency",
           },
         ],
-        [{ questionIndex: 0, transcript: "はじめまして。", forced: false }],
+        [{ questionIndex: 0, transcript: "はじめまして。" }],
       ),
     ).toBeNull();
   });
@@ -148,7 +106,7 @@ describe("parseQuotedCritiques", () => {
             category: "speaking",
           },
         ],
-        [{ questionIndex: 0, transcript: "はじめまして。", forced: false }],
+        [{ questionIndex: 0, transcript: "はじめまして。" }],
       ),
     ).toBeNull();
   });
@@ -173,8 +131,8 @@ describe("parseQuotedCritiques", () => {
           },
         ],
         [
-          { questionIndex: 0, transcript: "はい。", forced: false },
-          { questionIndex: 1, transcript: "ええ。", forced: false },
+          { questionIndex: 0, transcript: "はい。" },
+          { questionIndex: 1, transcript: "ええ。" },
         ],
       ),
     ).toBeNull();
@@ -192,7 +150,7 @@ describe("parseQuotedCritiques", () => {
             category: "speaking",
           },
         ],
-        [{ questionIndex: 0, transcript: "はじめまして。", forced: false }],
+        [{ questionIndex: 0, transcript: "はじめまして。" }],
       ),
     ).toBeNull();
   });

@@ -14,7 +14,6 @@ const CATEGORY_KEYS: RubricCategoryKey[] = [
 export type CritiqueAnswer = {
   questionIndex: number;
   transcript: string;
-  forced: boolean;
 };
 
 export type QuotedCritique = {
@@ -58,11 +57,6 @@ export function parseQuotedCritiques(
       return null;
     }
     if (row.rewrite === SILENT_QUOTE) return null;
-    if (answer.forced && row.rewrite !== row.quote) {
-      if (!/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(row.rewrite)) {
-        return null;
-      }
-    }
 
     critiques.push({
       questionIndex: row.questionIndex,

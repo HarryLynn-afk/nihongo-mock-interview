@@ -7,7 +7,7 @@ describe("useAnswerCapture", () => {
     vi.unstubAllGlobals();
   });
 
-  it("waits for Speak answer or Type answer before showing Submit or the answer box", () => {
+  it("shows Speak answer while idle, before any choice is made", () => {
     const { result } = renderHook(() =>
       useAnswerCapture({
         active: true,
@@ -16,379 +16,7 @@ describe("useAnswerCapture", () => {
       }),
     );
 
-    expect(result.current.studentTurn).toBe("choose");
-  });
-
-  it("Type answer reveals the answer box and Submit", () => {
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit: vi.fn(),
-      }),
-    );
-
-    act(() => result.current.onTypeAnswer());
-
-    expect(result.current.studentTurn).toBe("type");
-  });
-
-  it("Speak or type from Type returns to choose and clears the draft", () => {
-    const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit,
-      }),
-    );
-
-    act(() => result.current.onTypeAnswer());
-    act(() => result.current.onDraftChange("途中の答え"));
-    act(() => result.current.onSpeakOrType());
-
-    expect(result.current.studentTurn).toBe("choose");
-    expect(result.current.draft).toBe("");
-    expect(onSubmit).not.toHaveBeenCalled();
-  });
-
-  it("Speak or type from paused Speak returns to choose and clears pause", () => {
-    const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit,
-      }),
-    );
-
-    act(() => result.current.onSpeakAnswer());
-    act(() => result.current.onToggleSpeakPause());
-    act(() => result.current.onSpeakOrType());
-
-    expect(result.current.studentTurn).toBe("choose");
-    expect(result.current.speakPaused).toBe(false);
-    expect(result.current.liveCaption).toBeNull();
-    expect(onSubmit).not.toHaveBeenCalled();
-  });
-
-  it("submits a typed AnswerSubmission from the answer box", () => {
-    const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit,
-      }),
-    );
-
-    act(() => result.current.onTypeAnswer());
-    act(() => result.current.onDraftChange("東京で日本語を勉強したいです。"));
-    act(() => result.current.onSubmitClick());
-
-    expect(onSubmit).toHaveBeenCalledWith({
-      inputMode: "typed",
-      transcript: "東京で日本語を勉強したいです。",
-      pushbackCount: 0,
-      forced: false,
-    });
-  });
-
-  it("empty Speak answer submit opens the answer box instead of advancing", () => {
-    const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit,
-      }),
-    );
-
-    act(() => result.current.onSpeakAnswer());
-    act(() => result.current.onSubmitClick());
-
-    expect(onSubmit).not.toHaveBeenCalled();
-    expect(result.current.studentTurn).toBe("type");
-  });
-
-  it("empty Speak Submit is Pushback attempt 1 and does not store an answer", () => {
-    const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit,
-      }),
-    );
-
-    act(() => result.current.onSpeakAnswer());
-    act(() => result.current.onSubmitClick());
-
-    expect(onSubmit).not.toHaveBeenCalled();
-    expect(result.current.studentTurn).toBe("type");
-    expect(result.current.pushbackVisible).toBe(true);
-  });
-
-  it("hides Pushback on the first Type keystroke", () => {
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit: vi.fn(),
-      }),
-    );
-
-    act(() => result.current.onSpeakAnswer());
-    act(() => result.current.onSubmitClick());
-    expect(result.current.pushbackVisible).toBe(true);
-
-    act(() => result.current.onDraftChange("は"));
-
-    expect(result.current.pushbackVisible).toBe(false);
-    expect(result.current.draft).toBe("は");
-  });
-
-  it("hides Pushback on the first live Speak caption character, not on clicking Speak", () => {
-    const created: Array<{
-      onresult: ((event: { results: unknown[] }) => void) | null;
-    }> = [];
-    class FakeSpeechRecognition {
-      lang = "";
-      interimResults = false;
-      continuous = false;
-      onresult: ((event: { results: unknown[] }) => void) | null = null;
-      start = vi.fn();
-      stop = vi.fn();
-      constructor() {
-        created.push(this);
-      }
-    }
-    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
-
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit: vi.fn(),
-      }),
-    );
-
-    act(() => result.current.onSpeakAnswer());
-    act(() => result.current.onSubmitClick());
-    act(() => result.current.onSpeakOrType());
-    act(() => result.current.onSpeakAnswer());
-    expect(result.current.pushbackVisible).toBe(true);
-
-    act(() => {
-      const spoken = Object.assign([{ transcript: "こ" }], { isFinal: true });
-      created[created.length - 1]?.onresult?.({ results: [spoken] });
-    });
-
-    expect(result.current.pushbackVisible).toBe(false);
-  });
-
-  it("shows Pushback again after a later failing Submit", () => {
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit: vi.fn(),
-      }),
-    );
-
-    act(() => result.current.onSpeakAnswer());
-    act(() => result.current.onSubmitClick());
-    act(() => result.current.onDraftChange("は"));
-    expect(result.current.pushbackVisible).toBe(false);
-    act(() => result.current.onDraftChange("hello"));
-    act(() => result.current.onSubmitClick());
-
-    expect(result.current.pushbackVisible).toBe(true);
-  });
-
-  it("stores empty Speak Submit on attempt 3 instead of opening Type again", () => {
-    const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit,
-      }),
-    );
-
-    act(() => result.current.onSpeakAnswer());
-    act(() => result.current.onSubmitClick());
-    act(() => result.current.onSpeakOrType());
-    act(() => result.current.onSpeakAnswer());
-    act(() => result.current.onSubmitClick());
-    act(() => result.current.onSpeakOrType());
-    act(() => result.current.onSpeakAnswer());
-    act(() => result.current.onSubmitClick());
-
-    expect(onSubmit).toHaveBeenCalledTimes(1);
-    expect(onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({
-        inputMode: "voice",
-        transcript: "",
-        pushbackCount: 2,
-        forced: true,
-      }),
-    );
-    expect(result.current.studentTurn).not.toBe("type");
-  });
-
-  it("does not store a typed transcript that fails the Pushback check", () => {
-    const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit,
-      }),
-    );
-
-    act(() => result.current.onTypeAnswer());
-    act(() => result.current.onDraftChange("hello"));
-    act(() => result.current.onSubmitClick());
-
-    expect(onSubmit).not.toHaveBeenCalled();
-    expect(result.current.studentTurn).toBe("type");
-    expect(result.current.pushbackVisible).toBe(true);
-  });
-
-  it("stores the third failing typed Submit as a forced answer", () => {
-    const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit,
-      }),
-    );
-
-    act(() => result.current.onSpeakAnswer());
-    act(() => result.current.onSubmitClick());
-    act(() => result.current.onDraftChange("hello"));
-    act(() => result.current.onSubmitClick());
-    act(() => result.current.onSubmitClick());
-
-    expect(onSubmit).toHaveBeenCalledTimes(1);
-    expect(onSubmit).toHaveBeenCalledWith({
-      inputMode: "typed",
-      transcript: "hello",
-      pushbackCount: 2,
-      forced: true,
-    });
-  });
-
-  it("stores a passing typed answer after one Pushback with count 1", () => {
-    const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit,
-      }),
-    );
-
-    act(() => result.current.onTypeAnswer());
-    act(() => result.current.onDraftChange("hello"));
-    act(() => result.current.onSubmitClick());
-    act(() => result.current.onDraftChange("はい"));
-    act(() => result.current.onSubmitClick());
-
-    expect(onSubmit).toHaveBeenCalledTimes(1);
-    expect(onSubmit).toHaveBeenCalledWith({
-      inputMode: "typed",
-      transcript: "はい",
-      pushbackCount: 1,
-      forced: false,
-    });
-  });
-
-  it("does not store a spoken transcript that fails the Pushback check", () => {
-    const created: Array<{
-      onresult: ((event: { results: unknown[] }) => void) | null;
-    }> = [];
-    class FakeSpeechRecognition {
-      lang = "";
-      interimResults = false;
-      continuous = false;
-      onresult: ((event: { results: unknown[] }) => void) | null = null;
-      start = vi.fn();
-      stop = vi.fn();
-      constructor() {
-        created.push(this);
-      }
-    }
-    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
-
-    const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit,
-      }),
-    );
-
-    act(() => result.current.onSpeakAnswer());
-    act(() => {
-      const spoken = Object.assign([{ transcript: "hello" }], {
-        isFinal: true,
-      });
-      created[0]?.onresult?.({ results: [spoken] });
-    });
-    act(() => result.current.onSubmitClick());
-
-    expect(onSubmit).not.toHaveBeenCalled();
-    expect(result.current.pushbackVisible).toBe(true);
-    expect(result.current.studentTurn).toBe("speak");
-  });
-
-  it("resets the Pushback attempt cap when the student turn ends", () => {
-    const onSubmit = vi.fn();
-    const { result, rerender } = renderHook(
-      ({ active }) =>
-        useAnswerCapture({
-          active,
-          micOn: true,
-          onSubmit,
-        }),
-      { initialProps: { active: true } },
-    );
-
-    act(() => result.current.onTypeAnswer());
-    act(() => result.current.onDraftChange("hello"));
-    act(() => result.current.onSubmitClick());
-    rerender({ active: false });
-    rerender({ active: true });
-    act(() => result.current.onTypeAnswer());
-    act(() => result.current.onDraftChange("はい"));
-    act(() => result.current.onSubmitClick());
-
-    expect(onSubmit).toHaveBeenCalledWith({
-      inputMode: "typed",
-      transcript: "はい",
-      pushbackCount: 0,
-      forced: false,
-    });
-  });
-
-  it("Speak or type from empty-Speak Type also returns to choose", () => {
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        onSubmit: vi.fn(),
-      }),
-    );
-
-    act(() => result.current.onSpeakAnswer());
-    act(() => result.current.onSubmitClick());
-    act(() => result.current.onSpeakOrType());
-
-    expect(result.current.studentTurn).toBe("choose");
+    expect(result.current.studentTurn).toBe("idle");
   });
 
   it("does not start browser speech until Speak answer is chosen", () => {
@@ -543,7 +171,7 @@ describe("useAnswerCapture", () => {
     expect(created[1]?.start).toHaveBeenCalled();
   });
 
-  it("submits a voice AnswerSubmission from the live caption", () => {
+  it("submits an answered AnswerSubmission from the live caption", () => {
     const created: Array<{
       onresult: ((event: { results: unknown[] }) => void) | null;
     }> = [];
@@ -580,14 +208,289 @@ describe("useAnswerCapture", () => {
 
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
-        inputMode: "voice",
+        status: "answered",
         transcript: "こんにちは",
         audioClip: expect.any(Blob),
+        pushbackCount: 0,
       }),
     );
   });
 
-  it("resets Speak/Type choice when a new student turn becomes active", () => {
+  it("empty Speak answer submit does not advance and shows Pushback (attempt 1 of 3)", () => {
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit,
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => result.current.onSubmitClick());
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(result.current.pushbackVisible).toBe(true);
+    expect(result.current.studentTurn).toBe("idle");
+  });
+
+  it("returns to idle for a retry after a failing Speak attempt", () => {
+    const created: Array<{
+      onresult: ((event: { results: unknown[] }) => void) | null;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit,
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => {
+      const spoken = Object.assign([{ transcript: "hello" }], {
+        isFinal: true,
+      });
+      created[0]?.onresult?.({ results: [spoken] });
+    });
+    act(() => result.current.onSubmitClick());
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(result.current.pushbackVisible).toBe(true);
+    expect(result.current.studentTurn).toBe("idle");
+  });
+
+  it("hides Pushback once the student presses Speak answer again", () => {
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit: vi.fn(),
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => result.current.onSubmitClick());
+    expect(result.current.pushbackVisible).toBe(true);
+
+    act(() => result.current.onSpeakAnswer());
+
+    expect(result.current.studentTurn).toBe("speak");
+  });
+
+  it("skips the Question after 3 failing attempts instead of forcing a store", () => {
+    const created: Array<{
+      onresult: ((event: { results: unknown[] }) => void) | null;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit,
+      }),
+    );
+
+    // Attempt 1: empty
+    act(() => result.current.onSpeakAnswer());
+    act(() => result.current.onSubmitClick());
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    // Attempt 2: fails kana check
+    act(() => result.current.onSpeakAnswer());
+    act(() => {
+      const spoken = Object.assign([{ transcript: "hello" }], { isFinal: true });
+      created[created.length - 1]?.onresult?.({ results: [spoken] });
+    });
+    act(() => result.current.onSubmitClick());
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    // Attempt 3: fails again — should skip instead of forcing a store
+    act(() => result.current.onSpeakAnswer());
+    act(() => {
+      const spoken = Object.assign([{ transcript: "still hello" }], {
+        isFinal: true,
+      });
+      created[created.length - 1]?.onresult?.({ results: [spoken] });
+    });
+    act(() => result.current.onSubmitClick());
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit).toHaveBeenCalledWith({ status: "skipped" });
+    expect(result.current.studentTurn).toBe("idle");
+  });
+
+  it("does not store a spoken transcript that fails the Pushback check", () => {
+    const created: Array<{
+      onresult: ((event: { results: unknown[] }) => void) | null;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit,
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => {
+      const spoken = Object.assign([{ transcript: "hello" }], {
+        isFinal: true,
+      });
+      created[0]?.onresult?.({ results: [spoken] });
+    });
+    act(() => result.current.onSubmitClick());
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(result.current.pushbackVisible).toBe(true);
+  });
+
+  it("stores a passing Speak answer after one Pushback with count 1", () => {
+    const created: Array<{
+      onresult: ((event: { results: unknown[] }) => void) | null;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit,
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => {
+      const spoken = Object.assign([{ transcript: "hello" }], { isFinal: true });
+      created[0]?.onresult?.({ results: [spoken] });
+    });
+    act(() => result.current.onSubmitClick());
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => {
+      const spoken = Object.assign([{ transcript: "はい" }], { isFinal: true });
+      created[1]?.onresult?.({ results: [spoken] });
+    });
+    act(() => result.current.onSubmitClick());
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "answered",
+        transcript: "はい",
+        pushbackCount: 1,
+      }),
+    );
+  });
+
+  it("resets the Pushback attempt cap when the student turn ends", () => {
+    const created: Array<{
+      onresult: ((event: { results: unknown[] }) => void) | null;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+
+    const onSubmit = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ active }) =>
+        useAnswerCapture({
+          active,
+          micOn: true,
+          onSubmit,
+        }),
+      { initialProps: { active: true } },
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => {
+      const spoken = Object.assign([{ transcript: "hello" }], { isFinal: true });
+      created[0]?.onresult?.({ results: [spoken] });
+    });
+    act(() => result.current.onSubmitClick());
+
+    rerender({ active: false });
+    rerender({ active: true });
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => {
+      const spoken = Object.assign([{ transcript: "はい" }], { isFinal: true });
+      created[1]?.onresult?.({ results: [spoken] });
+    });
+    act(() => result.current.onSubmitClick());
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "answered",
+        transcript: "はい",
+        pushbackCount: 0,
+      }),
+    );
+  });
+
+  it("resets Speak choice when a new student turn becomes active", () => {
     const { result, rerender } = renderHook(
       ({ active }) =>
         useAnswerCapture({
@@ -598,15 +501,13 @@ describe("useAnswerCapture", () => {
       { initialProps: { active: true } },
     );
 
-    act(() => result.current.onTypeAnswer());
-    act(() => result.current.onDraftChange("途中の答え"));
-    expect(result.current.studentTurn).toBe("type");
+    act(() => result.current.onSpeakAnswer());
+    expect(result.current.studentTurn).toBe("speak");
 
     rerender({ active: false });
     rerender({ active: true });
 
-    expect(result.current.studentTurn).toBe("choose");
-    expect(result.current.draft).toBe("");
+    expect(result.current.studentTurn).toBe("idle");
   });
 
   it("autoSpeak starts in Speak answer mode for pitch mode", () => {
@@ -620,26 +521,6 @@ describe("useAnswerCapture", () => {
     );
 
     expect(result.current.studentTurn).toBe("speak");
-  });
-
-  it("autoSpeak does not re-enter Speak after Speak or type", () => {
-    const { result } = renderHook(() =>
-      useAnswerCapture({
-        active: true,
-        micOn: true,
-        autoSpeak: true,
-        onSubmit: vi.fn(),
-      }),
-    );
-
-    expect(result.current.studentTurn).toBe("speak");
-
-    act(() => result.current.onSubmitClick());
-    expect(result.current.studentTurn).toBe("type");
-
-    act(() => result.current.onSpeakOrType());
-
-    expect(result.current.studentTurn).toBe("choose");
   });
 
   it("autoSpeak starts Speak again on the next student turn", () => {
@@ -726,7 +607,7 @@ describe("useAnswerCapture", () => {
     expect(onSubmit).toHaveBeenCalledOnce();
     expect(onSubmit.mock.calls[0][0]).toEqual(
       expect.objectContaining({
-        inputMode: "voice",
+        status: "answered",
         transcript: "こんにちは",
       }),
     );

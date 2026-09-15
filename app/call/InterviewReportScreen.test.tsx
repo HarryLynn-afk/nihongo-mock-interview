@@ -51,14 +51,13 @@ const report: InterviewReport = {
 const voiceView = buildReportView({
   report,
   answers: [
-    { questionIndex: 0, inputMode: "voice", transcript: "はじめまして" },
-    { questionIndex: 1, inputMode: "voice", transcript: "日本で勉強したいです" },
-    { questionIndex: 2, inputMode: "voice", transcript: "専門学校に行きます" },
+    { questionIndex: 0, status: "answered", transcript: "はじめまして" },
+    { questionIndex: 1, status: "answered", transcript: "日本で勉強したいです" },
+    { questionIndex: 2, status: "answered", transcript: "専門学校に行きます" },
   ],
   delivery: summarizeDelivery([
     {
       questionIndex: 0,
-      inputMode: "voice",
       signal: {
         recordingQuality: "pass",
         durationSec: 2,
@@ -74,12 +73,12 @@ const voiceView = buildReportView({
   ]),
 });
 
-const typedView = buildReportView({
+const noDeliveryView = buildReportView({
   report,
   answers: [
-    { questionIndex: 0, inputMode: "typed", transcript: "はじめまして" },
-    { questionIndex: 1, inputMode: "typed", transcript: "日本で勉強したいです" },
-    { questionIndex: 2, inputMode: "typed", transcript: "専門学校に行きます" },
+    { questionIndex: 0, status: "answered", transcript: "はじめまして" },
+    { questionIndex: 1, status: "answered", transcript: "日本で勉強したいです" },
+    { questionIndex: 2, status: "answered", transcript: "専門学校に行きます" },
   ],
 });
 
@@ -115,8 +114,8 @@ describe("InterviewReportScreen", () => {
     expect(screen.getByText(/Listening comprehension is not scored/i)).toBeInTheDocument();
   });
 
-  it("hides Speech Delivery Signals when every answer was typed", () => {
-    render(<InterviewReportScreen view={typedView} />);
+  it("hides Speech Delivery Signals when no delivery data was collected", () => {
+    render(<InterviewReportScreen view={noDeliveryView} />);
 
     expect(screen.queryByTestId("speech-delivery-signals")).not.toBeInTheDocument();
     const radar = within(screen.getByTestId("readiness-radar"));
@@ -175,9 +174,7 @@ describe("InterviewReportScreen", () => {
     expect(critiques.getByText(questions[1].japanese)).toBeInTheDocument();
     expect(critiques.getByText("Add a personal future goal.")).toBeInTheDocument();
     expect(critiques.getByText("Improve next")).toBeInTheDocument();
-    expect(
-      critiques.getByText("日本のIT業界で働きたいので、日本で勉強したいです。"),
-    ).toBeInTheDocument();
+    expect(critiques.getByText("日本のIT業界で働きたいので、日本で勉強したいです。")).toBeInTheDocument();
   });
 
   it("renders a radar of the assessed scores", () => {
