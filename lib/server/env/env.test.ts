@@ -43,7 +43,7 @@ describe("lib/server/env/* per-purpose modules", () => {
   });
 
   // The whole reason we split env.ts into per-purpose modules: a missing
-  // Scribe key must not break /api/tts, /api/translate,
+  // Scribe key must not break TTS generate-time env, /api/translate,
   // etc. Each module's fail-fast must be scoped to only itself.
   it.each([
     {

@@ -1,7 +1,6 @@
 /**
- * Plays the given question's audio via /api/tts. The client never knows
- * or cares whether the server served live ElevenLabs TTS or the local
- * fallback — playback contract is identical either way.
+ * Plays the committed public/question-N.mp3 clip. Sensei audio is
+ * pre-rendered; the client never hits live ElevenLabs at runtime.
  *
  * Returns ended (resolves when playback finishes or is stopped) plus stop()
  * so effect cleanup can halt a player (React Strict Mode remount).
@@ -20,7 +19,7 @@ export function playQuestionAudio(
       resolve();
     };
 
-    const audio = new AudioImpl(`/api/tts?questionId=${questionId}`);
+    const audio = new AudioImpl(`/question-${questionId}.mp3`);
     audio.addEventListener("ended", finish);
     audio.addEventListener("error", finish);
     audio.play().catch(finish);

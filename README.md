@@ -39,7 +39,6 @@ Fill `.env.local`. Each key is one purpose — do not reuse a Groq or ElevenLabs
 
 | Variable | Purpose |
 | --- | --- |
-| `ELEVENLABS_TTS_API_KEY` | Tanaka-sensei TTS (`/api/tts`) |
 | `GROQ_TRANSLATE_API_KEY` | Tester English (`/api/translate`; `/call` does not POST this) |
 | `GROQ_GRADE_API_KEY` | Interview grading (`/api/score`) |
 | `GROQ_STT_API_KEY` | Background Japanese transcription (`/api/scribe`) |
@@ -48,6 +47,7 @@ Fill `.env.local`. Each key is one purpose — do not reuse a Groq or ElevenLabs
 
 | Variable | Purpose |
 | --- | --- |
+| `ELEVENLABS_TTS_API_KEY` | Generate-time only (`scripts/generate-fallback-audio.ts`). Sensei plays committed `public/question-{id}.mp3` |
 | `DEEPGRAM_STT_API_KEY` | Live Japanese captions |
 | `WISPR_API_KEY` | Alternate live captions |
 | `ELEVENLABS_SCRIBE_API_KEY` | Unused after Groq Whisper; safe to leave blank |

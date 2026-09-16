@@ -1,14 +1,27 @@
 /**
  * One-off dev script — NOT part of the app runtime.
- * Generates the 3 local .mp3 fallback clips for Issue 5 (used when the
- * live ElevenLabs TTS stream exceeds 1.5s latency). Run once, commit the
- * resulting files, re-run only if lib/content/questions.ts changes.
+ * Pre-renders public/question-{id}.mp3 for every playable Question
+ * (Pitch 1–3, question bank, follow-ups). The call page plays those
+ * files directly; live ElevenLabs is generate-time only.
+ *
+ * Skips ids that already have a clip. Re-run after Japanese copy
+ * changes (delete the old file first to regenerate).
  *
  * Usage: node --env-file=.env.local scripts/generate-fallback-audio.ts
  */
-import { writeFile } from "node:fs/promises";
+import { access, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { questions } from "../lib/content/questions.ts";
+import { followUpBank, questionBank } from "../lib/content/questionBank.ts";
+import type { InterviewQuestion } from "../lib/content/questions.ts";
+
+function allPlayableQuestions(): InterviewQuestion[] {
+  const byId = new Map<number, InterviewQuestion>();
+  for (const question of [...questions, ...questionBank, ...followUpBank]) {
+    byId.set(question.id, question);
+  }
+  return [...byId.values()].sort((a, b) => a.id - b.id);
+}
 
 const API_KEY = process.env.ELEVENLABS_TTS_API_KEY;
 if (!API_KEY) {
@@ -16,61 +29,66 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-type Voice = { voice_id: string; name: string; labels?: Record<string, string> };
+// Sarah — same voice as the committed Pitch clips.
+const SENSEI_VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
 
-async function pickVoiceId(): Promise<string> {
-  const override = process.env.ELEVENLABS_VOICE_ID;
-  if (override) return override;
-
-  const res = await fetch("https://api.elevenlabs.io/v1/voices", {
-    headers: { "xi-api-key": API_KEY! },
-  });
-  if (!res.ok) {
-    throw new Error(`Failed to list voices: ${res.status} ${await res.text()}`);
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
   }
-  const data = (await res.json()) as { voices: Voice[] };
-  if (!data.voices?.length) {
-    throw new Error("No voices available on this ElevenLabs account.");
-  }
-
-  const preferred =
-    data.voices.find((v) => v.labels?.gender === "female") ?? data.voices[0];
-  console.log(`Using voice: ${preferred.name} (${preferred.voice_id})`);
-  return preferred.voice_id;
 }
 
-async function generateClip(voiceId: string, text: string, outPath: string) {
-  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-    method: "POST",
-    headers: {
-      "xi-api-key": API_KEY!,
-      "Content-Type": "application/json",
-      accept: "audio/mpeg",
+async function generateClip(text: string, outPath: string) {
+  const res = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${SENSEI_VOICE_ID}`,
+    {
+      method: "POST",
+      headers: {
+        "xi-api-key": API_KEY!,
+        "Content-Type": "application/json",
+        accept: "audio/mpeg",
+      },
+      body: JSON.stringify({
+        text,
+        model_id: "eleven_multilingual_v2",
+      }),
     },
-    body: JSON.stringify({
-      text,
-      model_id: "eleven_multilingual_v2",
-    }),
-  });
+  );
   if (!res.ok) {
-    throw new Error(`TTS failed (${res.status}): ${await res.text()}`);
+    throw new Error(`TTS failed (${res.status}) for ${path.basename(outPath)}`);
   }
   const buffer = Buffer.from(await res.arrayBuffer());
   await writeFile(outPath, buffer);
-  console.log(`Saved ${outPath} (${buffer.length} bytes)`);
+  console.log(`Saved ${path.basename(outPath)} (${buffer.length} bytes)`);
 }
 
 async function main() {
-  const voiceId = await pickVoiceId();
-  for (const question of questions) {
+  const playable = allPlayableQuestions();
+  console.log(`Playable Questions: ${playable.length}`);
+  console.log(`Using locked Sarah voice ${SENSEI_VOICE_ID}`);
+
+  let generated = 0;
+  let skipped = 0;
+  for (const question of playable) {
     const outPath = path.resolve(
       import.meta.dirname,
       "..",
       "public",
       `question-${question.id}.mp3`,
     );
-    await generateClip(voiceId, question.japanese, outPath);
+    if (await fileExists(outPath)) {
+      console.log(`Skip existing question-${question.id}.mp3`);
+      skipped += 1;
+      continue;
+    }
+    await generateClip(question.japanese, outPath);
+    generated += 1;
   }
+
+  console.log(`Done. generated=${generated} skipped=${skipped}`);
 }
 
 main().catch((err) => {

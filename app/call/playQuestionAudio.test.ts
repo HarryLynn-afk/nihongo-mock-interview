@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { playQuestionAudio } from "./playQuestionAudio";
 
 describe("playQuestionAudio", () => {
-  it("plays audio from /api/tts?questionId=N (server owns TTS vs. fallback)", () => {
+  it("plays the committed public/question-N.mp3 clip", () => {
     const play = vi.fn().mockResolvedValue(undefined);
     let capturedSrc = "";
     class FakeAudio {
@@ -18,7 +18,7 @@ describe("playQuestionAudio", () => {
 
     const playback = playQuestionAudio(2, FakeAudio as unknown as typeof Audio);
 
-    expect(capturedSrc).toBe("/api/tts?questionId=2");
+    expect(capturedSrc).toBe("/question-2.mp3");
     expect(play).toHaveBeenCalledOnce();
     playback.stop();
     expect(playback.ended).toBeInstanceOf(Promise);

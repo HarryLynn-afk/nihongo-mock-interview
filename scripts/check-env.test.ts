@@ -12,7 +12,6 @@ function runCheckEnv(env: Record<string, string | undefined>) {
 }
 
 const ALL_REQUIRED_ENV = {
-  ELEVENLABS_TTS_API_KEY: "test-key",
   GROQ_TRANSLATE_API_KEY: "test-key",
   GROQ_GRADE_API_KEY: "test-key",
   GROQ_STT_API_KEY: "test-key",
@@ -54,6 +53,18 @@ describe("scripts/check-env.mjs", () => {
 
     expect(result.status).toBe(0);
     expect(result.stderr).not.toMatch(/N8N_WEBHOOK_URL/);
+  });
+
+  it("does not require ELEVENLABS_TTS_API_KEY", () => {
+    const envWithoutTts: Record<string, string | undefined> = {
+      ...ALL_REQUIRED_ENV,
+    };
+    delete envWithoutTts.ELEVENLABS_TTS_API_KEY;
+
+    const result = runCheckEnv(envWithoutTts);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).not.toMatch(/ELEVENLABS_TTS_API_KEY/);
   });
 
   it("does not require ELEVENLABS_SCRIBE_API_KEY", () => {

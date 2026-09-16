@@ -94,7 +94,7 @@ describe("Call screen", () => {
   async function startStudentTurn(user = userEvent.setup()) {
     render(<CallPage />);
     await waitFor(() => {
-      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+      expect(capturedAudioSrcs).toContain("/question-1.mp3");
     });
     await act(async () => {
       endedHandlers.splice(0).forEach((handler) => handler());
@@ -199,7 +199,7 @@ describe("Call screen", () => {
     render(<CallPage />);
 
     await waitFor(() => {
-      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+      expect(capturedAudioSrcs).toContain("/question-1.mp3");
     });
 
     expect(
@@ -484,7 +484,7 @@ describe("Call screen", () => {
     ).not.toBeInTheDocument();
 
     await waitFor(() => {
-      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+      expect(capturedAudioSrcs).toContain("/question-1.mp3");
     });
     await act(async () => {
       endedHandlers.splice(0).forEach((handler) => handler());
@@ -515,7 +515,7 @@ describe("Call screen", () => {
     render(<CallPage />);
 
     await waitFor(() => {
-      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+      expect(capturedAudioSrcs).toContain("/question-1.mp3");
     });
     await act(async () => {
       endedHandlers.splice(0).forEach((handler) => handler());
@@ -551,7 +551,7 @@ describe("Call screen", () => {
     render(<CallPage />);
 
     await waitFor(() => {
-      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+      expect(capturedAudioSrcs).toContain("/question-1.mp3");
     });
     await act(async () => {
       endedHandlers.splice(0).forEach((handler) => handler());
@@ -569,7 +569,7 @@ describe("Call screen", () => {
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
 
     await waitFor(() => {
-      expect(capturedAudioSrcs).toContain("/api/tts?questionId=2");
+      expect(capturedAudioSrcs).toContain("/question-2.mp3");
     });
     await act(async () => {
       endedHandlers.splice(0).forEach((handler) => handler());
@@ -687,7 +687,7 @@ describe("Call screen", () => {
 
     for (const question of questions) {
       await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
       });
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
@@ -738,7 +738,7 @@ describe("Call screen", () => {
 
     for (const question of questions) {
       await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
       });
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
@@ -777,7 +777,7 @@ describe("Call screen", () => {
 
     for (const question of questions) {
       await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
       });
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
@@ -840,7 +840,7 @@ describe("Call screen", () => {
 
     for (const question of questions) {
       await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
       });
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
@@ -904,7 +904,7 @@ describe("Call screen", () => {
 
     for (const question of questions) {
       await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
       });
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
@@ -969,7 +969,7 @@ describe("Call screen", () => {
 
     for (const question of questions) {
       await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
       });
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
@@ -1039,7 +1039,7 @@ describe("Call screen", () => {
 
     for (const question of questions) {
       await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
       });
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
@@ -1107,7 +1107,7 @@ describe("Call screen", () => {
 
     for (const question of questions) {
       await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
       });
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
@@ -1168,7 +1168,7 @@ describe("Call screen", () => {
 
     for (const question of questions) {
       await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
       });
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
@@ -1190,7 +1190,7 @@ describe("Call screen", () => {
 
     for (const question of questions) {
       await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
       });
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
@@ -1239,7 +1239,7 @@ describe("Call screen", () => {
     render(<CallPage />);
 
     await waitFor(() => {
-      expect(capturedAudioSrcs).toContain("/api/tts?questionId=1");
+      expect(capturedAudioSrcs).toContain("/question-1.mp3");
     });
     await act(async () => {
       endedHandlers.splice(0).forEach((handler) => handler());
@@ -1259,7 +1259,7 @@ describe("Call screen", () => {
 
     for (const question of questions.slice(1)) {
       await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
       });
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
@@ -1329,7 +1329,7 @@ describe("Call screen", () => {
 
     for (const question of questions) {
       await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
       });
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
@@ -1406,7 +1406,7 @@ describe("Call screen", () => {
 
     for (const question of questions) {
       await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/api/tts?questionId=${question.id}`);
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
       });
       await act(async () => {
         endedHandlers.splice(0).forEach((handler) => handler());
