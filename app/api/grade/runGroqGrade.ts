@@ -10,7 +10,7 @@ import {
 export type { InterviewReport };
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_GRADE_MODEL = "qwen/qwen3.6-27b";
+const GROQ_GRADE_MODEL = "qwen/qwen3.8-27b";
 
 export type GradeAnswer = {
   questionIndex: number;

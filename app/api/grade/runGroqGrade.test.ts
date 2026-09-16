@@ -35,7 +35,7 @@ describe("runGroqGrade", () => {
     resetGroqCapacityForTests();
   });
 
-  it("scores Groq raw 1-5s with qwen/qwen3.6-27b and the grade key", async () => {
+  it("scores Groq raw 1-5s with qwen/qwen3.8-27b and the grade key", async () => {
     const groqFetch = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -88,7 +88,7 @@ describe("runGroqGrade", () => {
       reasoning_effort?: string;
       response_format?: { type?: string };
     };
-    expect(body.model).toBe("qwen/qwen3.6-27b");
+    expect(body.model).toBe("qwen/qwen3.8-27b");
     expect(body.reasoning_effort).toBe("none");
     expect(body.response_format).toEqual({ type: "json_object" });
   });

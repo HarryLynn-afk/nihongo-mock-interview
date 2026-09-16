@@ -41,7 +41,7 @@ describe("POST /api/grade", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns { report } from Groq using GROQ_GRADE_API_KEY and qwen/qwen3.6-27b", async () => {
+  it("returns { report } from Groq using GROQ_GRADE_API_KEY and qwen/qwen3.8-27b", async () => {
     const groqFetch = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -101,6 +101,6 @@ describe("POST /api/grade", () => {
     const groqBody = JSON.parse(
       String((groqFetch.mock.calls[0][1] as RequestInit).body),
     ) as { model?: string };
-    expect(groqBody.model).toBe("qwen/qwen3.6-27b");
+    expect(groqBody.model).toBe("qwen/qwen3.8-27b");
   });
 });

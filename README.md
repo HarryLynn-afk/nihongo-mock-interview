@@ -21,7 +21,7 @@ Do not print N5, JLPT, A1, Pass, or Fail on the splash, call, or report Headline
 - **API:** Next.js Route Handlers (`app/api/*/route.ts`) — keys stay off the client
 - **Tests:** Vitest + `@testing-library/react` + `jsdom` (`npm test`)
 - **Host:** Netlify (`netlify.toml`) — not deployed yet
-- **Grading:** `POST /api/score` → Groq (`qwen/qwen3.6-27b`) → sample InterviewReport if Groq misses. No n8n.
+- **Grading:** `POST /api/score` → Groq (`qwen/qwen3.8-27b`) → sample InterviewReport if Groq misses. No n8n.
 - **Database:** none for Guest or Pitch. Optional **Supabase** (Postgres) only for Participant login, consent, and saved study sessions.
 
 There is no public sign-up. Guest answers are never auto-merged after login.
