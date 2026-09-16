@@ -10,6 +10,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-pt-serif), Georgia, "Times New Roman", serif;
 
   /* NihonGo locked design tokens — docs/prd-nihongo.md "Design tokens" */
   --color-ink: #0f172a;

@@ -28,22 +28,37 @@ describe("Home (start screen)", () => {
     window.history.replaceState({}, "", "/");
   });
 
-  it("shows the NihonGo header and Join interview without a Profile card or Ready to join dialog", () => {
+  it("shows the NihonGo header and dual CTAs without a Profile card or Ready to join dialog", () => {
     render(<Home />);
 
     expect(screen.getByText("NihonGo")).toBeInTheDocument();
     expect(
-      screen.getByText("Japanese language school interview practice"),
+      screen.getByRole("heading", {
+        name: "Practice your interview with Tanaka-sensei",
+      }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Join interview" }),
+      screen.getByText(
+        "Speak real interview questions in Japanese and get a coaching report back.",
+      ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Guest practice is not saved and is not part of the study."),
+      screen.getByRole("button", { name: "Try as guest" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Guest practice isn't saved.")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Participant login" }),
     ).toHaveAttribute("href", "/login");
+    expect(screen.getByText("Camera optional")).toBeInTheDocument();
+    expect(screen.getByText("Speak in Japanese")).toBeInTheDocument();
+    expect(screen.getByText("Coaching report")).toBeInTheDocument();
+    expect(screen.getByText("10–15 min")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Japanese language school interview practice"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Check your camera and mic"),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Aung Min Khant")).not.toBeInTheDocument();
     expect(screen.queryByText("Mandalay, Myanmar")).not.toBeInTheDocument();
     expect(
@@ -51,11 +66,23 @@ describe("Home (start screen)", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("opens the device popup on the start screen after Join interview, with no timer", async () => {
+  it("places Try as guest and Participant login in an equal-width row on desktop", () => {
+    render(<Home />);
+
+    const guest = screen.getByRole("button", { name: "Try as guest" });
+    const login = screen.getByRole("link", { name: "Participant login" });
+
+    expect(guest.parentElement).toBe(login.parentElement);
+    expect(guest.parentElement).toHaveClass("md:flex-row");
+    expect(guest).toHaveClass("md:flex-1");
+    expect(login).toHaveClass("md:flex-1");
+  });
+
+  it("opens the device popup on the start screen after Try as guest, with no timer", async () => {
     const user = userEvent.setup();
     render(<Home />);
 
-    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    await user.click(screen.getByRole("button", { name: "Try as guest" }));
 
     expect(screen.getByText("NihonGo")).toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
@@ -78,7 +105,7 @@ describe("Home (start screen)", () => {
     const user = userEvent.setup();
     render(<Home />);
 
-    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    await user.click(screen.getByRole("button", { name: "Try as guest" }));
     await user.click(screen.getByRole("button", { name: /enter classroom/i }));
     expect(
       screen.getByRole("dialog", { name: /interview will start soon/i }),
@@ -95,7 +122,7 @@ describe("Home (start screen)", () => {
   it("gates Join behind a desktop viewport and shows the open-on-a-computer message on narrow viewports, via a CSS breakpoint pair", () => {
     render(<Home />);
 
-    const joinButton = screen.getByRole("button", { name: "Join interview" });
+    const joinButton = screen.getByRole("button", { name: "Try as guest" });
     const joinContainer = joinButton.parentElement;
     const desktopOnlyMessage = screen.getByText(
       "Open on a computer to join the interview.",
