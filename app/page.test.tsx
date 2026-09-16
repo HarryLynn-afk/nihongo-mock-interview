@@ -49,10 +49,10 @@ describe("Home (start screen)", () => {
     expect(
       screen.getByRole("link", { name: "Participant login" }),
     ).toHaveAttribute("href", "/login");
-    expect(screen.getByText("Camera optional")).toBeInTheDocument();
-    expect(screen.getByText("Speak in Japanese")).toBeInTheDocument();
-    expect(screen.getByText("Coaching report")).toBeInTheDocument();
-    expect(screen.getByText("10–15 min")).toBeInTheDocument();
+    expect(screen.getByText("Camera optional")).toHaveClass("rounded-full");
+    expect(screen.getByText("Speak in Japanese")).toHaveClass("rounded-full");
+    expect(screen.getByText("Coaching report")).toHaveClass("rounded-full");
+    expect(screen.getByText("10–15 min")).toHaveClass("rounded-full");
     expect(
       screen.queryByText("Japanese language school interview practice"),
     ).not.toBeInTheDocument();

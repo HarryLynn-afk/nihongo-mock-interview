@@ -1,13 +1,70 @@
+import type { ReactNode } from "react";
 import Image from "next/image";
 import { HashSessionCatcher } from "./auth/HashSessionCatcher";
 import { JoinInterview } from "./components/JoinInterview";
 
 const GLANCE_FACTS = [
-  "Camera optional",
-  "Speak in Japanese",
-  "Coaching report",
-  "10–15 min",
+  { label: "Camera optional", icon: CameraIcon },
+  { label: "Speak in Japanese", icon: SpeakIcon },
+  { label: "Coaching report", icon: ReportIcon },
+  { label: "10–15 min", icon: ClockIcon },
 ] as const;
+
+function GlanceIcon({ children }: { children: ReactNode }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-3.5 shrink-0 text-indigo"
+    >
+      {children}
+    </svg>
+  );
+}
+
+function CameraIcon() {
+  return (
+    <GlanceIcon>
+      <path d="M4 8h3.2L9 6h6l1.8 2H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" />
+      <circle cx="12" cy="13.5" r="3" />
+    </GlanceIcon>
+  );
+}
+
+function SpeakIcon() {
+  return (
+    <GlanceIcon>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M6 12a6 6 0 0 0 12 0" />
+      <path d="M12 18v3" />
+    </GlanceIcon>
+  );
+}
+
+function ReportIcon() {
+  return (
+    <GlanceIcon>
+      <path d="M7 3h7l5 5v13H7Z" />
+      <path d="M14 3v5h5" />
+      <path d="M10 13h6" />
+      <path d="M10 17h4" />
+    </GlanceIcon>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <GlanceIcon>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
+    </GlanceIcon>
+  );
+}
 
 export default function Home() {
   return (
@@ -45,13 +102,14 @@ export default function Home() {
             Open on a computer to join the interview.
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-x-[22px] gap-y-2">
+          <div className="mt-8 flex flex-wrap gap-2">
             {GLANCE_FACTS.map((fact) => (
               <span
-                key={fact}
-                className="whitespace-nowrap text-[13px] text-ink/65"
+                key={fact.label}
+                className="inline-flex items-center gap-1.5 rounded-full bg-ink/5 px-3 py-1.5 text-[13px] text-ink/65"
               >
-                {fact}
+                <fact.icon />
+                {fact.label}
               </span>
             ))}
           </div>
