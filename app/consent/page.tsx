@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CONSENT_VERSION } from "@/lib/content/studyAuth";
 import { JoinInterview } from "../components/JoinInterview";
@@ -12,18 +12,8 @@ export default function ConsentPage() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  useEffect(() => {
-    void fetch("/api/study/me")
-      .then((res) => res.json())
-      .then((data: { participantId?: string | null; consented?: boolean }) => {
-        if (data.participantId) {
-          setParticipantId(data.participantId);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
   async function handleConsent() {
+    if (!agreed || pending) return;
     setPending(true);
     setError(null);
     try {
