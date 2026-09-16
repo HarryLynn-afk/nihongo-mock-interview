@@ -40,12 +40,12 @@ export function useInterviewLobby({
   }, []);
 
   const skipReminder = useCallback(() => {
-    setStep("started");
+    setSecondsLeft(0);
   }, []);
 
   return {
     devicesVisible: step === "devices",
-    reminderVisible: reminderRunning,
+    reminderVisible: step === "reminder",
     interviewStarted,
     secondsLeft,
     openDevices,

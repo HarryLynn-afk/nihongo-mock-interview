@@ -22,7 +22,8 @@ export function InterviewStartReminder({
         <button
           type="button"
           onClick={onSkip}
-          className="mt-10 w-full rounded-full bg-indigo px-6 py-3 font-medium text-paper"
+          disabled={secondsLeft <= 0}
+          className="mt-10 w-full rounded-full bg-indigo px-6 py-3 font-medium text-paper disabled:opacity-60"
         >
           Skip
         </button>

@@ -86,6 +86,9 @@ describe("Home (start screen)", () => {
 
     await user.click(screen.getByRole("button", { name: /^skip$/i }));
 
+    expect(
+      screen.getByRole("dialog", { name: /interview will start soon/i }),
+    ).toBeInTheDocument();
     expect(pushMock).toHaveBeenCalledWith("/call");
   });
 

@@ -69,7 +69,7 @@ describe("useInterviewLobby", () => {
     act(() => {
       vi.advanceTimersByTime(1_000);
     });
-    expect(result.current.reminderVisible).toBe(false);
+    expect(result.current.reminderVisible).toBe(true);
     expect(result.current.interviewStarted).toBe(true);
   });
 
@@ -83,7 +83,7 @@ describe("useInterviewLobby", () => {
       result.current.skipReminder();
     });
 
-    expect(result.current.reminderVisible).toBe(false);
+    expect(result.current.reminderVisible).toBe(true);
     expect(result.current.interviewStarted).toBe(true);
   });
 });
