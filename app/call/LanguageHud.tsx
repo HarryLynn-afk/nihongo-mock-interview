@@ -19,7 +19,7 @@ export function LanguageHud({
     <div
       data-testid="language-hud"
       data-speaker={speaker}
-      className="flex w-full max-w-3xl flex-col items-center gap-2 rounded-xl border border-paper/10 bg-ink/80 px-6 py-4 text-paper md:px-8"
+      className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-1 bg-gradient-to-t from-ink via-ink/85 to-transparent px-4 pb-4 pt-12 text-paper"
     >
       <p className="text-xs font-medium tracking-[0.18em] text-paper/60">
         Question
@@ -27,25 +27,24 @@ export function LanguageHud({
       <div
         data-testid="waveform"
         aria-hidden="true"
-        className={`h-1.5 w-32 rounded-full ${waveformClass}`}
+        className={`h-1.5 w-24 rounded-full ${waveformClass}`}
       />
       {caption ? (
-        <p className="text-center text-4xl font-medium leading-snug text-paper">
+        <p className="text-center text-xl font-medium leading-snug text-paper md:text-2xl">
           {caption}
         </p>
       ) : null}
       {liveCaption ? (
-        <p className="text-center text-2xl font-medium leading-snug text-paper/90">
+        <p className="text-center text-base font-medium leading-snug text-paper/90">
           {liveCaption}
         </p>
       ) : null}
       {english ? (
-        <p className="text-center text-lg text-paper/80">{english}</p>
+        <p className="text-center text-sm text-paper/80">{english}</p>
       ) : null}
       {burmese ? (
-        <p className="text-center text-lg text-paper/80">{burmese}</p>
+        <p className="text-center text-sm text-paper/80">{burmese}</p>
       ) : null}
     </div>
   );
 }
-

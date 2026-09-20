@@ -14,4 +14,13 @@ describe("SenseiTile", () => {
     const image = screen.getByRole("img");
     expect(image).toHaveAttribute("src", expect.stringContaining("tanaka-sensei"));
   });
+
+  it("fills leftover classroom height instead of a tall 16:9 min-height", () => {
+    render(<SenseiTile />);
+
+    const tile = screen.getByTestId("sensei-tile");
+    expect(tile).toHaveClass("absolute", "inset-0");
+    expect(tile).not.toHaveClass("min-h-96");
+    expect(tile).not.toHaveClass("aspect-[16/9]");
+  });
 });

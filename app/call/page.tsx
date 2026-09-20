@@ -228,14 +228,25 @@ export default function CallPage() {
         });
   const { open: usefulnessOpen, openNow: openUsefulness, close: closeUsefulness } =
     useUsefulnessNudge(Boolean(usefulnessView && revealDone));
+  const classroomLocked = displayPhase !== "done";
   return (
     <div
       data-testid="call-screen"
-      className="min-h-screen overflow-y-auto bg-ink p-4 md:p-6"
+      className={
+        classroomLocked
+          ? "flex h-dvh flex-col overflow-hidden bg-ink p-3 md:p-4"
+          : "min-h-screen overflow-y-auto bg-ink p-4 md:p-6"
+      }
     >
-      <div className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-7xl flex-col items-center gap-5 md:min-h-[calc(100vh-3rem)] md:gap-6">
+      <div
+        className={
+          classroomLocked
+            ? "mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col items-center gap-3"
+            : "mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-7xl flex-col items-center gap-5 md:min-h-[calc(100vh-3rem)] md:gap-6"
+        }
+      >
         {!isPitchMode && !participantId ? (
-          <p className="w-full rounded-xl border border-paper/15 bg-paper/5 px-4 py-2 text-center text-sm text-paper/80">
+          <p className="w-full shrink-0 rounded-xl border border-paper/15 bg-paper/5 px-4 py-2 text-center text-sm text-paper/80">
             {GUEST_BANNER}
           </p>
         ) : null}
@@ -262,7 +273,11 @@ export default function CallPage() {
         ) : null}
         <div
           data-testid="call-stage"
-          className="flex w-full flex-col items-stretch gap-4 md:flex-row md:items-start md:gap-5"
+          className={
+            classroomLocked
+              ? "flex min-h-0 w-full flex-1 flex-col items-stretch gap-3 md:flex-row md:gap-4"
+              : "flex w-full flex-col items-stretch gap-4 md:flex-row md:items-start md:gap-5"
+          }
         >
           {displayPhase === "done" && allSkipped ? (
             <MicTroubleScreen />
@@ -304,11 +319,42 @@ export default function CallPage() {
                 answers={answers}
                 sessionQuestions={flowQuestions}
               />
-              <div data-testid="sensei-stage" className="relative min-w-0 flex-1">
-                <SenseiTile />
+              <div
+                data-testid="classroom-row"
+                className="flex h-full min-h-0 min-w-0 flex-1 flex-col gap-3 md:flex-row md:gap-4"
+              >
                 <div
-                  data-testid="student-inset"
-                  className="absolute bottom-3 right-3 z-10 w-36 sm:w-44 md:w-52"
+                  data-testid="sensei-stage"
+                  className="relative min-h-48 min-w-0 flex-1"
+                >
+                  <SenseiTile />
+                  {currentQuestion ? (
+                    <LanguageHud
+                      speaker={
+                        phase === "studentAnswering" ? "student" : "sensei"
+                      }
+                      caption={currentQuestion.japanese}
+                      liveCaption={
+                        studentTurn === "speak" ? null : liveCaption
+                      }
+                      english={
+                        phase === "studentAnswering"
+                          ? (pitchCaptions?.english ??
+                            currentQuestion.englishTranslation)
+                          : null
+                      }
+                      burmese={
+                        phase === "studentAnswering"
+                          ? (pitchCaptions?.burmese ??
+                            currentQuestion.burmeseTranslation)
+                          : null
+                      }
+                    />
+                  ) : null}
+                </div>
+                <div
+                  data-testid="student-stage"
+                  className="w-40 shrink-0 self-end md:w-44"
                 >
                   <StudentTile
                     cameraState={cameraState}
@@ -340,44 +386,26 @@ export default function CallPage() {
           />
         ) : null}
 
-        {displayPhase !== "done" && currentQuestion ? (
-          <LanguageHud
-            speaker={phase === "studentAnswering" ? "student" : "sensei"}
-            caption={currentQuestion.japanese}
-            liveCaption={studentTurn === "speak" ? null : liveCaption}
-            english={
-              phase === "studentAnswering"
-                ? (pitchCaptions?.english ?? currentQuestion.englishTranslation)
-                : null
-            }
-            burmese={
-              phase === "studentAnswering"
-                ? (pitchCaptions?.burmese ?? currentQuestion.burmeseTranslation)
-                : null
-            }
-          />
-        ) : null}
-
-        {displayPhase === "done" ? null : (
+        {displayPhase === "done" || studentTurn === "none" ? null : (
           <div
             data-testid="answer-dock"
-            className="flex w-full max-w-xl flex-col items-center gap-4 rounded-2xl border border-paper/10 bg-ink/90 px-5 py-4"
+            className="flex w-full max-w-xl shrink-0 flex-col items-center gap-3 rounded-2xl border border-paper/10 bg-ink/90 px-5 py-3"
           >
           {studentTurn === "speak" ? (
             <div
               data-testid="live-transcript"
-              className="w-full rounded-2xl border border-paper/10 bg-paper/5 px-4 py-4 text-center"
+              className="w-full rounded-2xl border border-paper/10 bg-paper/5 px-4 py-3 text-center"
             >
               <p className="text-xs font-medium tracking-wide text-paper/60">
                 Live transcript
               </p>
-              <p className="mt-2 text-lg leading-relaxed text-paper">
+              <p className="mt-1.5 text-base leading-relaxed text-paper">
                 {liveCaption ??
                   (speakPaused ? "Paused" : "Listening…")}
               </p>
             </div>
           ) : null}
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-3">
             {studentTurn === "idle" ? (
               <SpeakAnswerButton
                 listening={false}

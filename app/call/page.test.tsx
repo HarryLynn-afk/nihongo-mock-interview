@@ -230,17 +230,33 @@ describe("Call screen", () => {
     expect(root).toHaveClass("bg-ink");
   });
 
-  it("places Tanaka-sensei on the classroom stage and the student as an inset", () => {
+  it("places Tanaka-sensei and the student as separate classroom tiles", () => {
     render(<CallPage />);
 
     const stage = screen.getByTestId("sensei-stage");
-    const inset = screen.getByTestId("student-inset");
+    const student = screen.getByTestId("student-stage");
 
     expect(stage).toContainElement(
       screen.getByText("Tanaka-sensei · AI · Admissions"),
     );
-    expect(inset).toContainElement(screen.getByText("You"));
-    expect(stage).toContainElement(inset);
+    expect(student).toContainElement(screen.getByText("You"));
+    expect(stage).not.toContainElement(student);
+    expect(student).not.toHaveClass("absolute");
+    expect(student).toHaveClass("md:w-44");
+  });
+
+  it("locks the classroom to the viewport so the answer dock stays on screen", () => {
+    render(<CallPage />);
+
+    expect(screen.getByTestId("call-screen")).toHaveClass(
+      "h-dvh",
+      "overflow-hidden",
+    );
+    expect(screen.getByTestId("call-stage")).toHaveClass("flex-1", "min-h-0");
+    expect(screen.getByTestId("sensei-tile")).toHaveClass("absolute", "inset-0");
+    expect(screen.getByTestId("classroom-row")).toContainElement(
+      screen.getByTestId("student-stage"),
+    );
   });
 
   it("sidebar shows Question 1 of 3 and Sensei speaking with no scores", () => {

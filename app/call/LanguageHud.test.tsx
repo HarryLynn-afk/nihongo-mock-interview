@@ -29,7 +29,7 @@ describe("LanguageHud", () => {
     expect(screen.getByTestId("waveform")).toHaveClass("bg-indigo");
   });
 
-  it("renders the Japanese caption at a large display size", () => {
+  it("renders the Japanese caption at a compact display size", () => {
     render(
       <LanguageHud
         speaker="sensei"
@@ -39,7 +39,7 @@ describe("LanguageHud", () => {
 
     expect(
       screen.getByText("はじめに、簡単に自己紹介をお願いします。"),
-    ).toHaveClass("text-4xl");
+    ).toHaveClass("text-xl");
   });
 
   it("keeps the Question caption and shows a live student line underneath", () => {

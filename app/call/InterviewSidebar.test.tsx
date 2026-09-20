@@ -51,8 +51,12 @@ describe("InterviewSidebar", () => {
       { questionIndex: 2, status: "answered", transcript: "卒業後は大学院に進学したいです。" },
     ]} />);
 
-    expect(screen.getByTestId("interview-sidebar")).toHaveClass("md:max-w-56");
-    expect(screen.getByRole("list")).toHaveClass("max-h-72", "overflow-y-auto");
+    expect(screen.getByTestId("interview-sidebar")).toHaveClass("md:max-w-52");
+    expect(screen.getByRole("list")).toHaveClass(
+      "min-h-0",
+      "flex-1",
+      "overflow-y-auto",
+    );
   });
 
   it("shows a no-answer placeholder for a skipped turn", () => {
