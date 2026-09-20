@@ -4,6 +4,7 @@ import { transcriptPassesPushbackCheck } from "@/lib/content/pushbackCheck";
 import { startLiveTranscriptionSession } from "./startLiveTranscription";
 import type { LiveTranscriptionSession } from "./startLiveTranscription";
 import { joinJapanese } from "./transcriptionEvents";
+import { floatToWavBlob } from "./pcmAudio";
 
 export const MAX_SPEAK_ATTEMPTS = 3;
 
@@ -100,6 +101,7 @@ export function useAnswerCapture({
     let recognition: SpeechRecognitionLike | undefined;
     let allowRecognitionRestart = true;
     let cancelled = false;
+    let stream: MediaStream | null = null;
     function startBrowserRecognition() {
       if (!Ctor) return;
       recognition = new Ctor();
@@ -138,6 +140,27 @@ export function useAnswerCapture({
       recognition.start();
     }
 
+    function startMicRecorder() {
+      const Recorder = getMediaRecorderCtor();
+      if (!Recorder || !navigator.mediaDevices?.getUserMedia) return;
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then((micStream) => {
+          if (cancelled) {
+            micStream.getTracks().forEach((track) => track.stop());
+            return;
+          }
+          stream = micStream;
+          const recorder = new Recorder(micStream);
+          recorder.ondataavailable = (event) => {
+            if (event.data.size > 0) audioChunksRef.current.push(event.data);
+          };
+          recorder.start();
+          recorderRef.current = recorder;
+        })
+        .catch(() => {});
+    }
+
     if (liveStt) {
       void startLiveTranscriptionSession({
         onEvent: (event) => {
@@ -164,29 +187,11 @@ export function useAnswerCapture({
           return;
         }
         startBrowserRecognition();
+        startMicRecorder();
       });
     } else {
       startBrowserRecognition();
-    }
-    let stream: MediaStream | null = null;
-    const Recorder = getMediaRecorderCtor();
-    if (Recorder && navigator.mediaDevices?.getUserMedia) {
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then((micStream) => {
-          if (cancelled) {
-            micStream.getTracks().forEach((track) => track.stop());
-            return;
-          }
-          stream = micStream;
-          const recorder = new Recorder(micStream);
-          recorder.ondataavailable = (event) => {
-            if (event.data.size > 0) audioChunksRef.current.push(event.data);
-          };
-          recorder.start();
-          recorderRef.current = recorder;
-        })
-        .catch(() => {});
+      startMicRecorder();
     }
 
     return () => {
@@ -238,7 +243,7 @@ export function useAnswerCapture({
   const onSubmitClick = useCallback(() => {
     if (answerMode !== "speak") return;
 
-    const submitVoice = (transcript: string) => {
+    const submitVoice = (transcript: string, clip?: Blob) => {
       const result = resolveAttempt(transcript);
       if (result.skip) {
         resetSpeakSession();
@@ -255,12 +260,14 @@ export function useAnswerCapture({
       onSubmit({
         status: "answered",
         transcript,
-        audioClip: new Blob(
-          audioChunksRef.current.length > 0
-            ? audioChunksRef.current
-            : [new Blob()],
-          { type: "audio/webm" },
-        ),
+        audioClip:
+          clip ??
+          new Blob(
+            audioChunksRef.current.length > 0
+              ? audioChunksRef.current
+              : [new Blob()],
+            { type: "audio/webm" },
+          ),
         pushbackCount: result.pushbackCount,
       });
     };
@@ -284,9 +291,14 @@ export function useAnswerCapture({
           window.setTimeout(resolve, 800);
         });
         const committed = live.getTranscript();
+        const pcm = live.getPcm();
         live.stop();
         liveSessionRef.current = null;
-        finishSpeak(committed || spokenCaption || "");
+        const clip =
+          pcm.samples.length > 0
+            ? floatToWavBlob(pcm.samples, pcm.sampleRate)
+            : undefined;
+        submitVoice(committed || spokenCaption || "", clip);
       })();
       return;
     }

@@ -105,4 +105,23 @@ describe("whisperSpeech", () => {
     expect(file).toBeInstanceOf(Blob);
     expect((file as Blob).type).toBe("audio/mp4");
   });
+
+  it("names a WAV clip answer.wav for Groq Whisper", async () => {
+    const whisperFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ text: "はい。" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await whisperSpeech({
+      audio: new Blob([new Uint8Array([1, 2, 3])], { type: "audio/wav" }),
+      whisperFetch,
+      getSttKey: () => "test-stt-key",
+    });
+
+    const init = whisperFetch.mock.calls[0][1] as RequestInit;
+    const file = (init.body as FormData).get("file") as File;
+    expect(file.name).toBe("answer.wav");
+  });
 });

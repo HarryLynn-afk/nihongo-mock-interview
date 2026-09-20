@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { audioClipFileName } from "./pcmAudio";
 import type { QuestionPhase, StoredAnswer } from "./useQuestionFlow";
 
 export type AnswerForScoring = {
@@ -39,7 +40,11 @@ export function useBackgroundScribe({
       }
 
       const form = new FormData();
-      form.append("audio", answer.audioClip, "answer.webm");
+      form.append(
+        "audio",
+        answer.audioClip,
+        audioClipFileName(answer.audioClip.type),
+      );
       void fetch("/api/scribe", { method: "POST", body: form })
         .then(async (res) => {
           if (droppedRef.current) return;

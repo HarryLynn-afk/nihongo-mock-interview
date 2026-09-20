@@ -11,16 +11,48 @@ function tokenFetch(ok: boolean, accessToken = "dg-jwt") {
 const emptyMic = async () =>
   ({ getTracks: () => [] }) as unknown as MediaStream;
 
-function FakeAudioContext(resume?: () => Promise<void>) {
+type FakeProcessor = {
+  connect: ReturnType<typeof vi.fn>;
+  disconnect: ReturnType<typeof vi.fn>;
+  onaudioprocess: ((event: {
+    inputBuffer: { getChannelData: (channel: number) => Float32Array };
+  }) => void) | null;
+};
+
+type FakeGain = {
+  gain: { value: number };
+  connect: ReturnType<typeof vi.fn>;
+};
+
+function FakeAudioContext(
+  resume?: () => Promise<void>,
+  created: Array<{ processor: FakeProcessor; gain: FakeGain; destination: object }> = [],
+) {
   return class {
     sampleRate = 16000;
     destination = {};
     resume = resume;
+    processor: FakeProcessor = {
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      onaudioprocess: null,
+    };
+    gain: FakeGain = { gain: { value: 1 }, connect: vi.fn() };
+    constructor() {
+      created.push({
+        processor: this.processor,
+        gain: this.gain,
+        destination: this.destination,
+      });
+    }
     createMediaStreamSource() {
       return { connect: vi.fn() };
     }
     createScriptProcessor() {
-      return { connect: vi.fn(), disconnect: vi.fn(), onaudioprocess: null };
+      return this.processor;
+    }
+    createGain() {
+      return this.gain;
     }
     close() {}
   } as unknown as new () => never;
@@ -138,5 +170,35 @@ describe("startLiveTranscriptionSession", () => {
     });
 
     expect(close).toHaveBeenCalled();
+  });
+
+  it("mutes the ScriptProcessor tap and keeps a copy of the heard PCM", async () => {
+    const created: Array<{
+      processor: FakeProcessor;
+      gain: FakeGain;
+      destination: object;
+    }> = [];
+
+    const session = await startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      fetchImpl: tokenFetch(true),
+      getUserMedia: emptyMic,
+      WebSocketImpl: FakeListenSocket({ outcome: "open" }),
+      AudioContextImpl: FakeAudioContext(undefined, created),
+    });
+
+    expect(session).not.toBeNull();
+    expect(created[0]?.gain.gain.value).toBe(0);
+    expect(created[0]?.processor.connect).toHaveBeenCalledWith(created[0]?.gain);
+    expect(created[0]?.gain.connect).toHaveBeenCalledWith(created[0]?.destination);
+
+    const tone = new Float32Array([0.2, -0.2, 0.4]);
+    created[0]?.processor.onaudioprocess?.({
+      inputBuffer: { getChannelData: () => tone },
+    });
+
+    const pcm = session!.getPcm();
+    expect(Array.from(pcm.samples)).toEqual(Array.from(tone));
+    expect(pcm.sampleRate).toBe(16000);
   });
 });

@@ -61,6 +61,38 @@ describe("useBackgroundScribe", () => {
     expect((init.body as FormData).get("audio")).toBeInstanceOf(Blob);
   });
 
+  it("names a WAV clip answer.wav when posting /api/scribe", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ transcript: "SCRIBE_TEXT" }), {
+        status: 200,
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderHook(() =>
+      useBackgroundScribe({
+        answers: [
+          {
+            questionIndex: 0,
+            status: "answered",
+            transcript: "こんにちは",
+            audioClip: new Blob([new Uint8Array([9, 9, 9])], {
+              type: "audio/wav",
+            }),
+            pushbackCount: 0,
+          },
+        ],
+        phase: "senseiSpeaking",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+    const file = (fetchMock.mock.calls[0][1] as RequestInit).body as FormData;
+    expect((file.get("audio") as File).name).toBe("answer.wav");
+  });
+
   it("becomes ready immediately after Q3 when every Question was skipped", () => {
     const answers: StoredAnswer[] = [
       { questionIndex: 0, status: "skipped" },

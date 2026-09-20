@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import { useAnswerCapture } from "./useAnswerCapture";
+import * as liveTranscription from "./startLiveTranscription";
 
 describe("useAnswerCapture", () => {
   afterEach(() => {
@@ -731,5 +732,62 @@ describe("useAnswerCapture", () => {
 
     expect(onSubmit.mock.calls[1][0].transcript).toBe("ええ");
     expect(onSubmit.mock.calls[1][0].audioClip.size).not.toBe(recorded.size);
+  });
+
+  it("submits a WAV clip from live PCM and does not open a second microphone", async () => {
+    vi.useFakeTimers();
+    const getUserMedia = vi.fn();
+    vi.stubGlobal("navigator", { mediaDevices: { getUserMedia } });
+    class FakeMediaRecorder {
+      start = vi.fn();
+      stop = vi.fn();
+      constructor(_stream: unknown) {}
+    }
+    vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
+
+    const samples = new Float32Array(16000);
+    for (let index = 0; index < samples.length; index += 1) {
+      samples[index] = 0.3 * Math.sin(index / 10);
+    }
+    const startLive = vi
+      .spyOn(liveTranscription, "startLiveTranscriptionSession")
+      .mockResolvedValue({
+        stop: vi.fn(),
+        commit: vi.fn(),
+        getTranscript: () => "こんにちは。",
+        getPcm: () => ({ samples, sampleRate: 16000 }),
+      });
+
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        liveStt: true,
+        onSubmit,
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => result.current.onSubmitClick());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800);
+    });
+
+    expect(getUserMedia).not.toHaveBeenCalled();
+    expect(onSubmit).toHaveBeenCalledOnce();
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({
+      status: "answered",
+      transcript: "こんにちは。",
+    });
+    expect(onSubmit.mock.calls[0][0].audioClip.type).toBe("audio/wav");
+    expect(onSubmit.mock.calls[0][0].audioClip.size).toBeGreaterThan(44);
+
+    startLive.mockRestore();
+    vi.useRealTimers();
   });
 });

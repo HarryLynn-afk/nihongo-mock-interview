@@ -22,7 +22,11 @@ export async function whisperSpeech({
     form.append(
       "file",
       audio,
-      audio.type.includes("mp4") ? "answer.mp4" : "answer.webm",
+      audio.type.includes("wav")
+        ? "answer.wav"
+        : audio.type.includes("mp4")
+          ? "answer.mp4"
+          : "answer.webm",
     );
 
     const res = await whisperFetch(GROQ_WHISPER_URL, {

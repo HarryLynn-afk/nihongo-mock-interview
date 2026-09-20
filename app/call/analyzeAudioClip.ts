@@ -1,10 +1,21 @@
 import { analyzePcm, notAssessedClip, type AnalyzedClip } from "@/lib/content/deliverySignals";
+import { wavBlobToPcm } from "./pcmAudio";
 
 export async function analyzeAudioClip(
   clip: Blob,
   transcript: string,
 ): Promise<AnalyzedClip> {
   if (clip.size === 0) return notAssessedClip();
+  const buffer = await clip.arrayBuffer();
+  const wav = wavBlobToPcm(buffer);
+  if (wav) {
+    return analyzePcm({
+      samples: wav.samples,
+      sampleRate: wav.sampleRate,
+      transcript,
+    });
+  }
+
   const AudioContextCtor =
     globalThis.AudioContext ??
     (globalThis as typeof globalThis & { webkitAudioContext?: typeof AudioContext })
@@ -13,7 +24,6 @@ export async function analyzeAudioClip(
 
   const context = new AudioContextCtor();
   try {
-    const buffer = await clip.arrayBuffer();
     const decoded = await context.decodeAudioData(buffer.slice(0));
     const samples = decoded.getChannelData(0);
     return analyzePcm({
