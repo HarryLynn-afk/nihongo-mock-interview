@@ -42,8 +42,11 @@ export default function CallPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [formEnabled, setFormEnabled] = useState(false);
   const [revealDone, setRevealDone] = useState(false);
+  const [usefulnessOpen, setUsefulnessOpen] = useState(false);
+  const [usefulnessSubmitted, setUsefulnessSubmitted] = useState(false);
   const [participantId, setParticipantId] = useState<string | null>(null);
   const savedStudyRef = useRef(false);
+  const usefulnessNudgedRef = useRef(false);
 
   useEffect(() => {
     setDevicePrefs(loadDevicePrefs());
@@ -180,6 +183,12 @@ export default function CallPage() {
           revealDone,
           sessionId,
         });
+
+  useEffect(() => {
+    if (!usefulnessView || usefulnessNudgedRef.current) return;
+    usefulnessNudgedRef.current = true;
+    setUsefulnessOpen(true);
+  }, [usefulnessView]);
   return (
     <div
       data-testid="call-screen"
@@ -225,6 +234,11 @@ export default function CallPage() {
               })}
               sessionId={sessionId ?? undefined}
               onRevealComplete={() => setRevealDone(true)}
+              onHelpStudy={
+                usefulnessView && !usefulnessSubmitted
+                  ? () => setUsefulnessOpen(true)
+                  : undefined
+              }
             />
           ) : (
             <>
@@ -252,7 +266,7 @@ export default function CallPage() {
           )}
         </div>
 
-        {usefulnessView && report && !allSkipped ? (
+        {usefulnessView && report && !allSkipped && usefulnessOpen ? (
           <UsefulnessStep
             view={usefulnessView}
             report={report}
@@ -262,6 +276,10 @@ export default function CallPage() {
                 answer.status === "answered" ? answer.pushbackCount : 2,
               forced: false,
             }))}
+            onFinished={(outcome) => {
+              setUsefulnessOpen(false);
+              if (outcome === "submitted") setUsefulnessSubmitted(true);
+            }}
           />
         ) : null}
 

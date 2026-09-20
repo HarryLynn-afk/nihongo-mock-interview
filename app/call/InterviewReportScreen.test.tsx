@@ -270,6 +270,26 @@ describe("InterviewReportScreen", () => {
     );
   });
 
+  it("shows Help the study when onHelpStudy is provided", async () => {
+    const onHelpStudy = vi.fn();
+    render(
+      <InterviewReportScreen view={voiceView} onHelpStudy={onHelpStudy} />,
+    );
+
+    await userEvent.setup().click(
+      screen.getByRole("button", { name: /help the study/i }),
+    );
+    expect(onHelpStudy).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not show Help the study when onHelpStudy is omitted", () => {
+    render(<InterviewReportScreen view={voiceView} />);
+
+    expect(
+      screen.queryByRole("button", { name: /help the study/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it("notifies when the critique reveal finishes", async () => {
     vi.useFakeTimers();
     const onRevealComplete = vi.fn();

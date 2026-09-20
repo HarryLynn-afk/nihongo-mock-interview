@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { UsefulnessStep } from "./UsefulnessStep";
 import { buildUsefulnessView } from "@/lib/content/survey";
@@ -65,6 +65,25 @@ describe("UsefulnessStep", () => {
     expect(body).not.toHaveProperty("usefulness");
   });
 
+  it("notifies the parent that Skip finished after POSTing skipped", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 202 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const onFinished = vi.fn();
+
+    render(
+      <UsefulnessStep
+        view={view}
+        report={report}
+        answers={answers}
+        onFinished={onFinished}
+      />,
+    );
+    await userEvent.setup().click(screen.getByRole("button", { name: /skip/i }));
+
+    expect(fetchMock).toHaveBeenCalled();
+    expect(onFinished).toHaveBeenCalledWith("skipped");
+  });
+
   it("POSTs both ratings and Q1-Q3 Pushback on Submit", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 202 }));
     vi.stubGlobal("fetch", fetchMock);
@@ -84,6 +103,89 @@ describe("UsefulnessStep", () => {
     expect(body.answers).toEqual(answers);
     expect(body.headline).toBe(report.headline);
     expect(body.total).toBe(report.total);
+  });
+
+  it("notifies the parent that Submit finished after POSTing ratings", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 202 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const onFinished = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <UsefulnessStep
+        view={view}
+        report={report}
+        answers={answers}
+        onFinished={onFinished}
+      />,
+    );
+    await user.click(screen.getByRole("radio", { name: /usefulness 4/i }));
+    await user.click(screen.getByRole("radio", { name: /usability 5/i }));
+    await user.click(screen.getByRole("button", { name: /submit/i }));
+
+    expect(onFinished).toHaveBeenCalledWith("submitted");
+  });
+
+  it("is a dialog whose close dismisses without POSTing", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const onFinished = vi.fn();
+
+    render(
+      <UsefulnessStep
+        view={view}
+        report={report}
+        answers={answers}
+        onFinished={onFinished}
+      />,
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: /help the study/i }),
+    ).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: /close/i }));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(onFinished).toHaveBeenCalledWith("dismissed");
+  });
+
+  it("dismisses without POSTing when Escape is pressed", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const onFinished = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <UsefulnessStep
+        view={view}
+        report={report}
+        answers={answers}
+        onFinished={onFinished}
+      />,
+    );
+    await user.keyboard("{Escape}");
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(onFinished).toHaveBeenCalledWith("dismissed");
+  });
+
+  it("dismisses without POSTing when the backdrop is clicked", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const onFinished = vi.fn();
+
+    render(
+      <UsefulnessStep
+        view={view}
+        report={report}
+        answers={answers}
+        onFinished={onFinished}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("usefulness-backdrop"));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(onFinished).toHaveBeenCalledWith("dismissed");
   });
 
   it("shows the locked consent, usefulness, usability, and Skip copy", () => {

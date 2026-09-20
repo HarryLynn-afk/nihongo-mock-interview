@@ -196,10 +196,12 @@ export function InterviewReportScreen({
   view,
   sessionId,
   onRevealComplete,
+  onHelpStudy,
 }: {
   view: ReportView;
   sessionId?: string;
   onRevealComplete?: () => void;
+  onHelpStudy?: () => void;
 }) {
   const [stage, setStage] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -236,6 +238,15 @@ export function InterviewReportScreen({
           <p data-testid="session-id" className="text-[10px] tracking-wide text-paper/40">
             {sessionId}
           </p>
+        ) : null}
+        {onHelpStudy ? (
+          <button
+            type="button"
+            onClick={onHelpStudy}
+            className="w-fit rounded-full border border-paper/20 px-3 py-1 text-sm text-paper/80"
+          >
+            Help the study
+          </button>
         ) : null}
         <nav className="flex flex-col gap-1">
           {view.questions.map((card) => {
