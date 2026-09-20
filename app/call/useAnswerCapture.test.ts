@@ -19,6 +19,45 @@ describe("useAnswerCapture", () => {
     expect(result.current.studentTurn).toBe("idle");
   });
 
+  it("restarts browser speech when recognition ends while still listening", () => {
+    const created: Array<{
+      start: ReturnType<typeof vi.fn>;
+      onend: (() => void) | null;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult = null;
+      onend: (() => void) | null = null;
+      onerror: ((event: { error?: string }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
+
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit: vi.fn(),
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    expect(created[0]?.start).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      created[0]?.onend?.();
+    });
+
+    expect(created[0]?.start).toHaveBeenCalledTimes(2);
+  });
+
   it("does not start browser speech until Speak answer is chosen", () => {
     const created: Array<{ start: ReturnType<typeof vi.fn> }> = [];
     class FakeSpeechRecognition {

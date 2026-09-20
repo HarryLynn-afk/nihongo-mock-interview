@@ -22,6 +22,8 @@ type SpeechRecognitionLike = {
   interimResults: boolean;
   continuous: boolean;
   onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null;
+  onend: (() => void) | null;
+  onerror: ((event: { error?: string }) => void) | null;
   start: () => void;
   stop: () => void;
 };
@@ -96,6 +98,8 @@ export function useAnswerCapture({
 
     const Ctor = getSpeechRecognitionCtor();
     let recognition: SpeechRecognitionLike | undefined;
+    let allowRecognitionRestart = true;
+    let cancelled = false;
     function startBrowserRecognition() {
       if (!Ctor) return;
       recognition = new Ctor();
@@ -114,10 +118,26 @@ export function useAnswerCapture({
         }
         if (text) setPushbackVisible(false);
       };
+      recognition.onerror = (event) => {
+        const error = event.error ?? "unknown";
+        // A denied mic must not be retried in a loop.
+        if (error === "not-allowed" || error === "service-not-allowed") {
+          allowRecognitionRestart = false;
+        }
+      };
+      recognition.onend = () => {
+        // Chrome ends continuous recognition after short silence; restart
+        // while the student turn is still listening.
+        if (cancelled || !allowRecognitionRestart || !recognition) return;
+        try {
+          recognition.start();
+        } catch {
+          /* InvalidStateError if already started */
+        }
+      };
       recognition.start();
     }
 
-    let cancelled = false;
     if (liveStt) {
       void startLiveTranscriptionSession({
         onEvent: (event) => {
@@ -170,11 +190,14 @@ export function useAnswerCapture({
     }
 
     return () => {
+      allowRecognitionRestart = false;
       cancelled = true;
       liveSessionRef.current?.stop();
       liveSessionRef.current = null;
       if (recognition) {
         recognition.onresult = null;
+        recognition.onend = null;
+        recognition.onerror = null;
         recognition.stop();
       }
       const recorder = recorderRef.current;
