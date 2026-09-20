@@ -790,4 +790,88 @@ describe("useAnswerCapture", () => {
     startLive.mockRestore();
     vi.useRealTimers();
   });
+
+  it("stores one answer when Submit is clicked twice during the live wait", async () => {
+    vi.useFakeTimers();
+    const startLive = vi
+      .spyOn(liveTranscription, "startLiveTranscriptionSession")
+      .mockResolvedValue({
+        stop: vi.fn(),
+        commit: vi.fn(),
+        getTranscript: () => "こんにちは。",
+        getPcm: () => ({ samples: new Float32Array(), sampleRate: 16000 }),
+      });
+
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        liveStt: true,
+        onSubmit,
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.submitPending).toBe(false);
+    act(() => result.current.onSubmitClick());
+    expect(result.current.submitPending).toBe(true);
+    act(() => result.current.onSubmitClick());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800);
+    });
+
+    expect(onSubmit).toHaveBeenCalledOnce();
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({
+      status: "answered",
+      transcript: "こんにちは。",
+    });
+    expect(result.current.submitPending).toBe(false);
+
+    startLive.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it("leaves Speak after a live answer is stored so a second Submit does not store again", async () => {
+    vi.useFakeTimers();
+    const startLive = vi
+      .spyOn(liveTranscription, "startLiveTranscriptionSession")
+      .mockResolvedValue({
+        stop: vi.fn(),
+        commit: vi.fn(),
+        getTranscript: () => "こんにちは。",
+        getPcm: () => ({ samples: new Float32Array(), sampleRate: 16000 }),
+      });
+
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        liveStt: true,
+        onSubmit,
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    act(() => result.current.onSubmitClick());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800);
+    });
+
+    expect(onSubmit).toHaveBeenCalledOnce();
+    expect(result.current.studentTurn).toBe("idle");
+    act(() => result.current.onSubmitClick());
+    expect(onSubmit).toHaveBeenCalledOnce();
+
+    startLive.mockRestore();
+    vi.useRealTimers();
+  });
 });

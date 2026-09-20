@@ -65,19 +65,23 @@ export function useAnswerCapture({
   const [spokenCaption, setSpokenCaption] = useState<string | null>(null);
   const [speakPaused, setSpeakPaused] = useState(false);
   const [pushbackVisible, setPushbackVisible] = useState(false);
+  const [submitPending, setSubmitPending] = useState(false);
   const audioChunksRef = useRef<Blob[]>([]);
   const transcriptBaseRef = useRef("");
   const recorderRef = useRef<MediaRecorderLike | null>(null);
   const autoSpeakUsedRef = useRef(false);
   const attemptCountRef = useRef(0);
   const liveSessionRef = useRef<LiveTranscriptionSession | null>(null);
+  const submitPendingRef = useRef(false);
 
   if (!active) {
     autoSpeakUsedRef.current = false;
+    submitPendingRef.current = false;
     if (answerMode !== null) setAnswerMode(null);
     if (spokenCaption !== null) setSpokenCaption(null);
     if (speakPaused) setSpeakPaused(false);
     if (pushbackVisible) setPushbackVisible(false);
+    if (submitPending) setSubmitPending(false);
     audioChunksRef.current = [];
     transcriptBaseRef.current = "";
     attemptCountRef.current = 0;
@@ -242,21 +246,33 @@ export function useAnswerCapture({
 
   const onSubmitClick = useCallback(() => {
     if (answerMode !== "speak") return;
+    if (submitPendingRef.current) return;
+    submitPendingRef.current = true;
+    setSubmitPending(true);
+
+    const finishPending = () => {
+      submitPendingRef.current = false;
+      setSubmitPending(false);
+    };
 
     const submitVoice = (transcript: string, clip?: Blob) => {
       const result = resolveAttempt(transcript);
       if (result.skip) {
+        finishPending();
         resetSpeakSession();
         setAnswerMode(null);
         onSubmit({ status: "skipped" });
         return;
       }
       if (!result.store) {
+        finishPending();
         setPushbackVisible(true);
         resetSpeakSession();
         setAnswerMode(null);
         return;
       }
+      finishPending();
+      setAnswerMode(null);
       onSubmit({
         status: "answered",
         transcript,
@@ -315,6 +331,7 @@ export function useAnswerCapture({
     },
     onToggleSpeakPause: () => setSpeakPaused((current) => !current),
     onSubmitClick,
+    submitPending,
     studentTurn,
     pushbackVisible,
   };

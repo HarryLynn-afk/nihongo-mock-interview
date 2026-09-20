@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { questions } from "@/lib/content/questions";
+import * as liveTranscription from "./startLiveTranscription";
 import { pitchAnswers } from "@/lib/content/pitchAnswers";
 import {
   getSampleReport,
@@ -269,6 +270,34 @@ describe("Call screen", () => {
     expect(
       screen.getByRole("button", { name: /submit answer/i }),
     ).toBeInTheDocument();
+  });
+
+  it("disables Submit answer while the live commit is pending", async () => {
+    const startLive = vi
+      .spyOn(liveTranscription, "startLiveTranscriptionSession")
+      .mockResolvedValue({
+        stop: vi.fn(),
+        commit: vi.fn(),
+        getTranscript: () => "こんにちは。",
+        getPcm: () => ({ samples: new Float32Array(), sampleRate: 16000 }),
+      });
+
+    const user = await startStudentTurn();
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const submit = screen.getByRole("button", { name: /submit answer/i });
+    expect(submit).toBeEnabled();
+    vi.useFakeTimers();
+    fireEvent.click(submit);
+    expect(submit).toBeDisabled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800);
+    });
+    vi.useRealTimers();
+    startLive.mockRestore();
   });
 
   it("shows a Listening live transcript after Speak answer", async () => {

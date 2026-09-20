@@ -43,6 +43,7 @@ export function useQuestionFlow(
   const [turn, setTurn] = useState<"sensei" | "student">("sensei");
   const [answers, setAnswers] = useState<StoredAnswer[]>([]);
   const followUpsUsedRef = useRef(0);
+  const storedQuestionIdsRef = useRef(new Set<number>());
 
   useEffect(() => {
     if (!sessionQuestions || sessionQuestions.length === 0) return;
@@ -51,6 +52,7 @@ export function useQuestionFlow(
     setTurn("sensei");
     setAnswers([]);
     followUpsUsedRef.current = 0;
+    storedQuestionIdsRef.current = new Set();
   }, [sessionQuestions]);
 
   const waiting = items === null;
@@ -73,6 +75,8 @@ export function useQuestionFlow(
   const submitAnswer = useCallback(
     (submission: AnswerSubmission) => {
       if (phase !== "studentAnswering" || currentQuestion === null) return;
+      if (storedQuestionIdsRef.current.has(currentQuestion.id)) return;
+      storedQuestionIdsRef.current.add(currentQuestion.id);
       const questionIndex = index;
       const bank = getBankQuestionById(currentQuestion.id);
       const isFollowUp =

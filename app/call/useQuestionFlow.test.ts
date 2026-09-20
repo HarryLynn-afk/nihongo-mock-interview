@@ -126,6 +126,26 @@ describe("useQuestionFlow", () => {
     expect(result.current.currentQuestion).toBe(questions[0]);
   });
 
+  it("stores one answer when submitAnswer is called twice before re-render", () => {
+    const { result } = renderHook(() => useQuestionFlow());
+
+    act(() => result.current.endSenseiTurn());
+    act(() => {
+      result.current.submitAnswer(answered("こんにちは。"));
+      result.current.submitAnswer(answered("こんにちは。"));
+    });
+
+    expect(result.current.answers).toHaveLength(1);
+    expect(result.current.answers[0]).toMatchObject({
+      questionIndex: 0,
+      questionId: questions[0].id,
+      status: "answered",
+      transcript: "こんにちは。",
+    });
+    expect(result.current.currentQuestion).toBe(questions[1]);
+    expect(result.current.phase).toBe("senseiSpeaking");
+  });
+
   it("inserts a follow-up after a vague practice answer", () => {
     const session = pickSessionQuestions(() => 0);
     const { result } = renderHook(() =>

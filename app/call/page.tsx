@@ -131,6 +131,7 @@ export default function CallPage() {
     onSpeakAnswer,
     onToggleSpeakPause,
     onSubmitClick,
+    submitPending,
     studentTurn,
     pushbackVisible,
   } = useAnswerCapture({
@@ -319,7 +320,8 @@ export default function CallPage() {
               <button
                 type="button"
                 onClick={onSubmitClick}
-                className="rounded-full bg-indigo px-6 py-3 font-medium text-paper transition-colors hover:bg-indigo/90"
+                disabled={submitPending}
+                className="rounded-full bg-indigo px-6 py-3 font-medium text-paper transition-colors hover:bg-indigo/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Submit answer
               </button>

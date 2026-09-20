@@ -77,4 +77,37 @@ describe("parseAnswers", () => {
       },
     ]);
   });
+
+  it("keeps the first row when two answers share a questionIndex", () => {
+    expect(
+      parseAnswers([
+        {
+          questionIndex: 0,
+          transcript: "こんにちは。",
+          pushbackCount: 0,
+        },
+        {
+          questionIndex: 0,
+          transcript: "こんにちは。",
+          pushbackCount: 0,
+        },
+        {
+          questionIndex: 2,
+          transcript: "はい。",
+          pushbackCount: 0,
+        },
+      ]),
+    ).toEqual([
+      {
+        questionIndex: 0,
+        transcript: "こんにちは。",
+        pushbackCount: 0,
+      },
+      {
+        questionIndex: 2,
+        transcript: "はい。",
+        pushbackCount: 0,
+      },
+    ]);
+  });
 });
