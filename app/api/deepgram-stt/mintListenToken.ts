@@ -8,10 +8,13 @@ export async function mintDeepgramListenToken({
   apiKey: string;
   fetchImpl: typeof fetch;
 }): Promise<{ accessToken: string } | null> {
+  // A key pasted into .env.local can carry a trailing newline, which
+  // Deepgram rejects as a bad Authorization header.
+  const key = apiKey.trim();
   const res = await fetchImpl(DEEPGRAM_GRANT_URL, {
     method: "POST",
     headers: {
-      Authorization: `Token ${apiKey}`,
+      Authorization: `Token ${key}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ ttl_seconds: LISTEN_TTL_SECONDS }),
