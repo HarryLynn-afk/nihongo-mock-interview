@@ -14,6 +14,27 @@ export type LiveTranscriptionSession = {
 };
 
 const MAX_LISTEN_MS = 20 * 60 * 1000;
+const OPEN_WAIT_MS = 3000;
+
+function waitForListenOpen(
+  socket: WebSocket,
+  WebSocketImpl: typeof WebSocket,
+): Promise<boolean> {
+  if (socket.readyState === WebSocketImpl.OPEN) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => finish(false), OPEN_WAIT_MS);
+    function finish(ok: boolean) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(ok);
+    }
+    socket.addEventListener("open", () => finish(true));
+    socket.addEventListener("error", () => finish(false));
+    socket.addEventListener("close", () => finish(false));
+  });
+}
 
 type ProcessorNode = {
   connect: (destination: unknown) => void;
@@ -26,6 +47,7 @@ type AudioContextLike = {
   createMediaStreamSource: (stream: MediaStream) => { connect: (node: ProcessorNode) => void };
   createScriptProcessor: (bufferSize: number, inputChannels: number, outputChannels: number) => ProcessorNode;
   destination: unknown;
+  resume?: () => Promise<void> | void;
   close: () => Promise<void> | void;
 };
 
@@ -80,17 +102,24 @@ export async function startLiveTranscriptionSession({
     audioContext = null;
     stream?.getTracks().forEach((track) => track.stop());
     stream = null;
-    if (socket && socket.readyState === WebSocketImpl.OPEN) {
+    if (socket) {
       socket.close();
     }
     socket = null;
   }
 
   try {
-    socket = new WebSocketImpl(deepgramListenUrl(accessToken));
+    // Two protocols: a space in one string is an invalid Sec-WebSocket-Protocol.
+    socket = new WebSocketImpl(deepgramListenUrl(), ["bearer", accessToken]);
     socket.binaryType = "arraybuffer";
+    const opened = await waitForListenOpen(socket, WebSocketImpl);
+    if (!opened) {
+      stopSession();
+      return null;
+    }
     stream = await getUserMedia();
     audioContext = new AudioContextImpl();
+    await audioContext.resume?.();
     const source = audioContext.createMediaStreamSource(stream);
     // ScriptProcessorNode is deprecated; AudioWorklet is later technical debt.
     processor = audioContext.createScriptProcessor(4096, 1, 1);

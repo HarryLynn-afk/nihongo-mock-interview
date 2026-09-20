@@ -14,10 +14,8 @@ export function deepgramListenQuery(): URLSearchParams {
   });
 }
 
-export function deepgramListenUrl(accessToken: string): string {
-  const query = deepgramListenQuery();
-  query.set("token", accessToken);
-  return `${DEEPGRAM_LISTEN_PATH}?${query.toString()}`;
+export function deepgramListenUrl(): string {
+  return `${DEEPGRAM_LISTEN_PATH}?${deepgramListenQuery().toString()}`;
 }
 
 export type TranscriptionDelta = {

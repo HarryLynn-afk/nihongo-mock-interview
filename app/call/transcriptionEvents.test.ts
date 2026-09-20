@@ -7,15 +7,15 @@ import {
 } from "./transcriptionEvents";
 
 describe("Deepgram live transcript helpers", () => {
-  it("builds a Nova-3 Japanese listen URL that uses the ephemeral token", () => {
-    const url = new URL(deepgramListenUrl("dg-temp"));
+  it("builds a Nova-3 Japanese listen URL without putting the JWT on the query", () => {
+    const url = new URL(deepgramListenUrl());
     expect(url.protocol).toBe("wss:");
     expect(url.hostname).toBe("api.deepgram.com");
     expect(url.searchParams.get("model")).toBe("nova-3");
     expect(url.searchParams.get("language")).toBe("ja");
     expect(url.searchParams.get("encoding")).toBe("linear16");
     expect(url.searchParams.get("sample_rate")).toBe("16000");
-    expect(url.searchParams.get("token")).toBe("dg-temp");
+    expect(url.searchParams.get("token")).toBeNull();
   });
 
   it("parses interim and final Results without empty transcripts", () => {
