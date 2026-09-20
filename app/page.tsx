@@ -86,7 +86,7 @@ export default function Home() {
           </p>
 
           <div className="mt-8 hidden w-full max-w-[584px] flex-col gap-4 md:flex md:flex-row">
-            <JoinInterview label="Try as guest" className="md:flex-1" />
+            <JoinInterview label="Try as guest" className="md:flex-1" guest />
             <a
               href="/login"
               className="inline-flex h-[60px] w-full items-center justify-center rounded-full bg-white px-5 text-lg font-medium text-ink/65 shadow-[0_4px_7px_rgba(0,0,0,0.05)] transition-colors hover:bg-[#f4f4f4] md:flex-1"

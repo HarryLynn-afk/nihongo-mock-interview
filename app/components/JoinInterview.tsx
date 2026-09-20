@@ -11,6 +11,8 @@ import { saveDevicePrefs } from "./devicePrefs";
 type JoinInterviewProps = {
   label?: string;
   className?: string;
+  /** Guest Join from `/` — `/call` must not reuse a leftover Participant session. */
+  guest?: boolean;
 };
 
 /**
@@ -21,6 +23,7 @@ type JoinInterviewProps = {
 export function JoinInterview({
   label = "Join interview",
   className = "",
+  guest = false,
 }: JoinInterviewProps) {
   const router = useRouter();
 
@@ -49,8 +52,8 @@ export function JoinInterview({
   useEffect(() => {
     if (!interviewStarted) return;
     saveDevicePrefs({ cameraOn, micOn });
-    router.push("/call");
-  }, [interviewStarted, cameraOn, micOn, router]);
+    router.push(guest ? "/call?guest=1" : "/call");
+  }, [interviewStarted, cameraOn, micOn, guest, router]);
 
   return (
     <>

@@ -129,7 +129,7 @@ describe("Home (start screen)", () => {
     expect(
       screen.getByRole("dialog", { name: /interview will start soon/i }),
     ).toBeInTheDocument();
-    expect(pushMock).toHaveBeenCalledWith("/call");
+    expect(pushMock).toHaveBeenCalledWith("/call?guest=1");
   });
 
   it("gates Join behind a desktop viewport and shows the open-on-a-computer message on narrow viewports, via a CSS breakpoint pair", () => {

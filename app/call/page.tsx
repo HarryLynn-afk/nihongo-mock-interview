@@ -90,6 +90,12 @@ export default function CallPage() {
   }, []);
 
   useEffect(() => {
+    const guestJoin =
+      new URLSearchParams(window.location.search).get("guest") === "1";
+    if (guestJoin) {
+      setStudyReady(true);
+      return;
+    }
     void fetch("/api/study/me")
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { participantId?: string | null } | null) => {

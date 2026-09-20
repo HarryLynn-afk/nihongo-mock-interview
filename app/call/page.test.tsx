@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { questions } from "@/lib/content/questions";
+import { GUEST_BANNER } from "@/lib/content/studyAuth";
 import { PUSHBACK_TRY_AGAIN } from "@/lib/content/pushbackCopy";
 import * as liveTranscription from "./startLiveTranscription";
 import { pitchAnswers } from "@/lib/content/pitchAnswers";
@@ -1433,6 +1434,46 @@ describe("Call screen", () => {
     expect(screen.getByTestId("session-id").textContent).toMatch(
       /^G-[A-HJ-NP-Z2-9]{4}$/,
     );
+  });
+
+  it("keeps Try as guest as Guest even if a leftover Participant session exists", async () => {
+    mockLiveGradeAndSurvey("P001");
+    window.history.pushState({}, "", "/call?guest=1");
+
+    render(<CallPage />);
+
+    await expect(
+      screen.findByText("Participant P001", {}, { timeout: 400 }),
+    ).rejects.toThrow();
+    expect(screen.getByText(GUEST_BANNER)).toBeInTheDocument();
+  });
+
+  it("shows Participant P001 after a consented Join", async () => {
+    mockLiveGradeAndSurvey("P001");
+    window.history.pushState({}, "", "/call");
+
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Participant P001")).toBeInTheDocument();
+    });
+    expect(screen.queryByText(GUEST_BANNER)).not.toBeInTheDocument();
+  });
+
+  it("tags a Guest Interview with a G- session code even if study/me still has P001", async () => {
+    mockLiveGradeAndSurvey("P001");
+    window.history.pushState({}, "", "/call?guest=1");
+
+    const user = userEvent.setup();
+    render(<CallPage />);
+    await completeLockedInterview(user);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("session-id").textContent).toMatch(
+        /^G-[A-HJ-NP-Z2-9]{4}$/,
+      );
+    });
+    expect(screen.queryByText("Participant P001")).not.toBeInTheDocument();
   });
 
   it("tags a Participant Interview with a P- session code, not a UUID", async () => {
