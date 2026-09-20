@@ -38,6 +38,9 @@ export function JoinInterview({
     cameraOn,
     micOn,
     cameraBlocked,
+    cameraErrorName,
+    micBlocked,
+    micErrorName,
     videoRef,
     toggleCamera,
     toggleMic,
@@ -64,6 +67,9 @@ export function JoinInterview({
           cameraEnabled={cameraOn}
           micEnabled={micOn}
           cameraBlocked={cameraBlocked}
+          cameraErrorName={cameraErrorName}
+          micBlocked={micBlocked}
+          micErrorName={micErrorName}
           videoRef={videoRef}
           onToggleCamera={toggleCamera}
           onToggleMic={toggleMic}

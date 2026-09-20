@@ -92,13 +92,26 @@ describe("Home (start screen)", () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByTestId("classroom-preview")).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: /camera/i })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: /microphone/i })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /camera/i })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /microphone/i })).not.toBeChecked();
+    expect(getUserMedia).not.toHaveBeenCalled();
     expect(
       screen.getByRole("button", { name: /enter classroom/i }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: /interview will start soon/i })).not.toBeInTheDocument();
     expect(pushMock).not.toHaveBeenCalled();
+  });
+
+  it("asks for the camera when the Camera box is clicked", async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.click(screen.getByRole("button", { name: "Try as guest" }));
+    await user.click(screen.getByRole("checkbox", { name: /camera/i }));
+
+    expect(getUserMedia).toHaveBeenCalledWith({ video: true });
+    expect(getUserMedia).not.toHaveBeenCalledWith({ audio: true });
+    expect(screen.getByRole("checkbox", { name: /camera/i })).toBeChecked();
   });
 
   it("Enter classroom then Skip navigates to the call screen", async () => {

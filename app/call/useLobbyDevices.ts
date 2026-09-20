@@ -1,110 +1,236 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { RefCallback } from "react";
 
 function stopStream(stream: MediaStream | null) {
   stream?.getTracks().forEach((track) => track.stop());
 }
 
+/** DOMException is not always an `instanceof Error`, so read `name` directly. */
+function deviceErrorName(error: unknown): string {
+  const name = (error as { name?: unknown } | null)?.name;
+  return typeof name === "string" && name ? name : "UnknownError";
+}
+
+type MicrophonePermissionState = "granted" | "denied" | "prompt" | "unknown";
+
+async function queryMicrophoneState(): Promise<MicrophonePermissionState> {
+  const permissions = (
+    navigator as Navigator & {
+      permissions?: {
+        query: (descriptor: { name: string }) => Promise<{ state: string }>;
+      };
+    }
+  ).permissions;
+  if (!permissions?.query) return "unknown";
+  try {
+    const status = await permissions.query({ name: "microphone" });
+    if (
+      status.state === "denied" ||
+      status.state === "granted" ||
+      status.state === "prompt"
+    ) {
+      return status.state;
+    }
+  } catch {
+    /* Safari can throw for this query */
+  }
+  return "unknown";
+}
+
+function playPreview(video: HTMLVideoElement, stream: MediaStream | null) {
+  video.srcObject = stream;
+  video.muted = true;
+  try {
+    video.playsInline = true;
+  } catch {
+    /* ignore */
+  }
+  if (!stream || typeof video.play !== "function") return;
+  try {
+    const playing = video.play();
+    if (playing && typeof playing.catch === "function") {
+      void playing.catch(() => {});
+    }
+  } catch {
+    /* jsdom does not implement play() */
+  }
+}
+
+/**
+ * Lobby device preview. Camera and microphone are requested only from
+ * their own toggle clicks — getUserMedia must start in that click so
+ * Safari will show a permission popup.
+ */
 export function useLobbyDevices({ active }: { active: boolean }) {
-  const [cameraOn, setCameraOn] = useState(true);
-  const [micOn, setMicOn] = useState(true);
+  const [cameraOn, setCameraOn] = useState(false);
+  const [micOn, setMicOn] = useState(false);
   const [cameraBlocked, setCameraBlocked] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [cameraErrorName, setCameraErrorName] = useState<string | null>(null);
+  const [micBlocked, setMicBlocked] = useState(false);
+  const [micErrorName, setMicErrorName] = useState<string | null>(null);
+  const videoElRef = useRef<HTMLVideoElement | null>(null);
   const videoStreamRef = useRef<MediaStream | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
+  const cameraOnRef = useRef(false);
+  const micOnRef = useRef(false);
+  const micBlockedRef = useRef(false);
+
+  const attachPreview = useCallback((stream: MediaStream | null) => {
+    const video = videoElRef.current;
+    if (!video) return;
+    playPreview(video, stream);
+  }, []);
+
+  const videoRef: RefCallback<HTMLVideoElement> = useCallback(
+    (node) => {
+      videoElRef.current = node;
+      if (node && videoStreamRef.current) {
+        playPreview(node, videoStreamRef.current);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    if (!active) {
-      stopStream(videoStreamRef.current);
-      videoStreamRef.current = null;
-      if (videoRef.current) videoRef.current.srcObject = null;
-      stopStream(audioStreamRef.current);
-      audioStreamRef.current = null;
-      return;
-    }
+    micBlockedRef.current = micBlocked;
+  }, [micBlocked]);
 
-    if (!cameraOn) {
-      stopStream(videoStreamRef.current);
-      videoStreamRef.current = null;
-      if (videoRef.current) videoRef.current.srcObject = null;
-      return;
-    }
-
-    if (!navigator.mediaDevices?.getUserMedia) return;
+  useEffect(() => {
+    if (!active) return;
 
     let cancelled = false;
+    async function refreshMicrophonePermission() {
+      const state = await queryMicrophoneState();
+      if (cancelled) return;
+      if (state === "denied") {
+        setMicBlocked(true);
+        if (micOnRef.current) setMicOn(false);
+        return;
+      }
+      if (micBlockedRef.current && state !== "unknown") {
+        setMicBlocked(false);
+      }
+    }
 
-    navigator.mediaDevices
+    function onFocus() {
+      void refreshMicrophonePermission();
+    }
+
+    void refreshMicrophonePermission();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [active]);
+
+  useEffect(() => {
+    if (active) return;
+    stopStream(videoStreamRef.current);
+    stopStream(audioStreamRef.current);
+    videoStreamRef.current = null;
+    audioStreamRef.current = null;
+    cameraOnRef.current = false;
+    micOnRef.current = false;
+    attachPreview(null);
+  }, [active, attachPreview]);
+
+  const toggleCamera = useCallback(() => {
+    if (cameraOnRef.current) {
+      cameraOnRef.current = false;
+      setCameraOn(false);
+      stopStream(videoStreamRef.current);
+      videoStreamRef.current = null;
+      attachPreview(null);
+      return;
+    }
+
+    cameraOnRef.current = true;
+    setCameraBlocked(false);
+    setCameraErrorName(null);
+    setCameraOn(true);
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraBlocked(true);
+      setCameraErrorName("NotSupportedError");
+      setCameraOn(false);
+      cameraOnRef.current = false;
+      return;
+    }
+
+    void navigator.mediaDevices
       .getUserMedia({ video: true })
       .then((stream) => {
-        if (cancelled) {
+        if (!cameraOnRef.current) {
           stopStream(stream);
           return;
         }
         stopStream(videoStreamRef.current);
         videoStreamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
-        setCameraBlocked(false);
+        attachPreview(stream);
       })
-      .catch(() => {
-        if (!cancelled) {
-          setCameraBlocked(true);
-          setCameraOn(false);
-        }
+      .catch((error: unknown) => {
+        cameraOnRef.current = false;
+        stopStream(videoStreamRef.current);
+        videoStreamRef.current = null;
+        setCameraBlocked(true);
+        setCameraErrorName(deviceErrorName(error));
+        setCameraOn(false);
+        attachPreview(null);
       });
+  }, [attachPreview]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [active, cameraOn]);
-
-  useEffect(() => {
-    if (!active) return;
-
-    if (!micOn) {
+  const toggleMic = useCallback(() => {
+    if (micOnRef.current) {
+      micOnRef.current = false;
+      setMicOn(false);
       stopStream(audioStreamRef.current);
       audioStreamRef.current = null;
       return;
     }
 
-    if (!navigator.mediaDevices?.getUserMedia) return;
+    micOnRef.current = true;
+    setMicBlocked(false);
+    setMicErrorName(null);
+    setMicOn(true);
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setMicErrorName("NotSupportedError");
+      setMicOn(false);
+      micOnRef.current = false;
+      return;
+    }
 
-    let cancelled = false;
-
-    navigator.mediaDevices
+    void navigator.mediaDevices
       .getUserMedia({ audio: true })
       .then((stream) => {
-        if (cancelled) {
+        if (!micOnRef.current) {
           stopStream(stream);
           return;
         }
         stopStream(audioStreamRef.current);
         audioStreamRef.current = stream;
+        setMicBlocked(false);
+        setMicErrorName(null);
       })
-      .catch(() => {
-        if (!cancelled) setMicOn(false);
+      .catch(async (error: unknown) => {
+        micOnRef.current = false;
+        stopStream(audioStreamRef.current);
+        audioStreamRef.current = null;
+        setMicOn(false);
+        setMicErrorName(deviceErrorName(error));
+        const state = await queryMicrophoneState();
+        if (state === "denied") setMicBlocked(true);
       });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [active, micOn]);
-
-  const toggleCamera = useCallback(() => {
-    setCameraOn((current) => {
-      if (current) return false;
-      setCameraBlocked(false);
-      return true;
-    });
-  }, []);
-
-  const toggleMic = useCallback(() => {
-    setMicOn((current) => !current);
   }, []);
 
   return {
     cameraOn,
     micOn,
     cameraBlocked,
+    cameraErrorName,
+    micBlocked,
+    micErrorName,
     videoRef,
     toggleCamera,
     toggleMic,
