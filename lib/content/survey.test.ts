@@ -168,11 +168,18 @@ describe("buildSurveyPayload", () => {
 });
 
 describe("createSessionId", () => {
-  it("returns a random UUID", () => {
-    const id = createSessionId();
-    expect(id).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-    );
-    expect(createSessionId()).not.toBe(id);
+  it("returns a G- code for a Guest, not a UUID", () => {
+    const id = createSessionId("guest");
+    expect(id).toMatch(/^G-[A-HJ-NP-Z2-9]{4}$/);
+  });
+
+  it("returns a P- code for a Participant, not a UUID", () => {
+    const id = createSessionId("participant");
+    expect(id).toMatch(/^P-[A-HJ-NP-Z2-9]{4}$/);
+  });
+
+  it("returns a different Guest code on each call", () => {
+    const id = createSessionId("guest");
+    expect(createSessionId("guest")).not.toBe(id);
   });
 });

@@ -45,8 +45,22 @@ export function buildUsefulnessView({
   return { sessionId, copy: SURVEY_COPY };
 }
 
-export function createSessionId(): string {
-  return crypto.randomUUID();
+export type SessionRespondent = "guest" | "participant";
+
+const SESSION_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+function randomSessionCode(): string {
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  return Array.from(
+    bytes,
+    (byte) => SESSION_CODE_CHARS[byte % SESSION_CODE_CHARS.length],
+  ).join("");
+}
+
+export function createSessionId(respondent: SessionRespondent): string {
+  const prefix = respondent === "participant" ? "P" : "G";
+  return `${prefix}-${randomSessionCode()}`;
 }
 
 export function buildSurveyPayload({

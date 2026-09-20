@@ -17,11 +17,15 @@ import { useDeliverySignals } from "./useDeliverySignals";
 import { useCameraStream } from "./useCameraStream";
 import { useInterviewScore } from "./useInterviewScore";
 import { useMicToggle } from "./useMicToggle";
-import { useQuestionFlow } from "./useQuestionFlow";
+import { useQuestionFlow, type StoredAnswer } from "./useQuestionFlow";
 import { getPitchCaptions } from "@/lib/content/pitchAnswers";
 import { questions } from "@/lib/content/questions";
 import { pickSessionQuestions } from "@/lib/content/questionBank";
 import type { InterviewQuestion } from "@/lib/content/questions";
+import {
+  getSampleReport,
+  type InterviewReport,
+} from "@/lib/content/sampleReport";
 import { loadSeenQuestionIds, saveSeenQuestionIds } from "./seenQuestionIds";
 import { TryAgainBanner } from "./TryAgainBanner";
 import {
@@ -32,6 +36,25 @@ import { loadDevicePrefs, type DevicePrefs } from "../components/devicePrefs";
 import { GUEST_BANNER } from "@/lib/content/studyAuth";
 
 const DEFAULT_DEVICE_PREFS: DevicePrefs = { cameraOn: true, micOn: true };
+
+/** Temporary local preview — remove before Issue 15 deploy. */
+const SHOW_SKIP_INTERVIEW = process.env.NODE_ENV === "development";
+const DEBUG_PREVIEW_TRANSCRIPTS = [
+  "アウン・ミン・タントです",
+  "この学校で日本語を勉強したいです",
+  "専門学校でウェブを勉強します",
+] as const;
+const DEBUG_PREVIEW_ANSWERS: StoredAnswer[] = questions.map(
+  (question, questionIndex) => ({
+    status: "answered" as const,
+    transcript: DEBUG_PREVIEW_TRANSCRIPTS[questionIndex] ?? "はい、そうです。",
+    audioClip: new Blob(),
+    pushbackCount: 0 as const,
+    questionIndex,
+    questionId: question.id,
+    isFollowUp: false,
+  }),
+);
 
 export default function CallPage() {
   const [devicePrefs, setDevicePrefs] = useState(DEFAULT_DEVICE_PREFS);
@@ -45,6 +68,10 @@ export default function CallPage() {
   const [usefulnessOpen, setUsefulnessOpen] = useState(false);
   const [usefulnessSubmitted, setUsefulnessSubmitted] = useState(false);
   const [participantId, setParticipantId] = useState<string | null>(null);
+  const [studyReady, setStudyReady] = useState(false);
+  const [previewReport, setPreviewReport] = useState<InterviewReport | null>(
+    null,
+  );
   const savedStudyRef = useRef(false);
   const usefulnessNudgedRef = useRef(false);
 
@@ -69,7 +96,10 @@ export default function CallPage() {
       .then((data: { participantId?: string | null } | null) => {
         if (data?.participantId) setParticipantId(data.participantId);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        setStudyReady(true);
+      });
   }, []);
 
   const { cameraState, toggleCamera, videoRef } = useCameraStream({
@@ -80,15 +110,24 @@ export default function CallPage() {
     useQuestionFlow(sessionQuestions, { enableFollowUps: !isPitchMode && sessionQuestions !== null });
   const scribe = useBackgroundScribe({ answers, phase });
   const delivery = useDeliverySignals({ answers, phase });
-  const { report } = useInterviewScore(scribe);
+  const { report: scoredReport } = useInterviewScore(scribe);
+  const previewing = previewReport !== null;
+  const report = previewReport ?? scoredReport;
+  const displayAnswers = previewing ? DEBUG_PREVIEW_ANSWERS : answers;
+  const displayQuestions = previewing ? questions : flowQuestions;
+  const displayPhase = previewing ? "done" : phase;
 
   useEffect(() => {
-    if (!report) return;
-    setSessionId((current) => current ?? createSessionId());
-  }, [report]);
+    if (!report || !studyReady) return;
+    setSessionId(
+      (current) =>
+        current ??
+        createSessionId(participantId ? "participant" : "guest"),
+    );
+  }, [report, studyReady, participantId]);
 
   useEffect(() => {
-    if (!report) return;
+    if (!report || previewing) return;
     fetch("/api/survey")
       .then((res) => res.json())
       .then((data: { enabled?: boolean }) => {
@@ -97,10 +136,10 @@ export default function CallPage() {
       .catch(() => {
         setFormEnabled(false);
       });
-  }, [report]);
+  }, [report, previewing]);
 
   useEffect(() => {
-    if (!report || !participantId || savedStudyRef.current) return;
+    if (!report || !participantId || savedStudyRef.current || previewing) return;
     savedStudyRef.current = true;
     void fetch("/api/study/save", {
       method: "POST",
@@ -126,7 +165,7 @@ export default function CallPage() {
         followUpCount: answers.filter((answer) => answer.isFollowUp).length,
       }),
     }).catch(() => {});
-  }, [report, participantId, answers]);
+  }, [report, participantId, answers, previewing]);
 
   const {
     liveCaption,
@@ -138,7 +177,7 @@ export default function CallPage() {
     studentTurn,
     pushbackVisible,
   } = useAnswerCapture({
-    active: phase === "studentAnswering",
+    active: phase === "studentAnswering" && !previewing,
     micOn,
     autoSpeak: isPitchMode,
     liveStt: !isPitchMode,
@@ -148,7 +187,7 @@ export default function CallPage() {
   });
 
   useEffect(() => {
-    if (!currentQuestion) return;
+    if (previewing || !currentQuestion) return;
 
     let cancelled = false;
     const playback = playQuestionAudio(currentQuestion.id);
@@ -159,7 +198,7 @@ export default function CallPage() {
       cancelled = true;
       playback.stop();
     };
-  }, [currentQuestion, endSenseiTurn]);
+  }, [currentQuestion, endSenseiTurn, previewing]);
 
   function handleSpeakAnswer() {
     if (!micOn) toggleMic();
@@ -171,9 +210,9 @@ export default function CallPage() {
       ? getPitchCaptions(questionIndex)
       : null;
   const allSkipped =
-    phase === "done" &&
-    answers.length > 0 &&
-    answers.every((answer) => answer.status === "skipped");
+    displayPhase === "done" &&
+    displayAnswers.length > 0 &&
+    displayAnswers.every((answer) => answer.status === "skipped");
   const usefulnessView =
     sessionId === null
       ? null
@@ -205,19 +244,34 @@ export default function CallPage() {
             Participant {participantId}
           </p>
         ) : null}
-        {pushbackVisible ? <TryAgainBanner /> : null}
+        {pushbackVisible && !previewing ? <TryAgainBanner /> : null}
+        {SHOW_SKIP_INTERVIEW &&
+        !isPitchMode &&
+        !previewing &&
+        phase !== "done" ? (
+          <button
+            type="button"
+            onClick={() => {
+              setPreviewReport(getSampleReport(null));
+              setFormEnabled(true);
+            }}
+            className="self-end text-xs text-paper/40 underline-offset-2 hover:text-paper/70 hover:underline"
+          >
+            Skip interview
+          </button>
+        ) : null}
         <div
           data-testid="call-stage"
           className="flex w-full flex-col items-stretch gap-4 md:flex-row md:items-start md:gap-5"
         >
-          {phase === "done" && allSkipped ? (
+          {displayPhase === "done" && allSkipped ? (
             <MicTroubleScreen />
-          ) : phase === "done" && report ? (
+          ) : displayPhase === "done" && report ? (
             <InterviewReportScreen
               view={buildReportView({
                 report,
-                sessionQuestions: flowQuestions,
-                answers: answers.map((answer) =>
+                sessionQuestions: displayQuestions,
+                answers: displayAnswers.map((answer) =>
                   answer.status === "answered"
                     ? {
                         questionIndex: answer.questionIndex,
@@ -229,8 +283,11 @@ export default function CallPage() {
                         status: "skipped" as const,
                       },
                 ),
-                delivery:
-                  delivery.status === "ready" ? delivery.delivery : null,
+                delivery: previewing
+                  ? null
+                  : delivery.status === "ready"
+                    ? delivery.delivery
+                    : null,
               })}
               sessionId={sessionId ?? undefined}
               onRevealComplete={() => setRevealDone(true)}
@@ -270,7 +327,7 @@ export default function CallPage() {
           <UsefulnessStep
             view={usefulnessView}
             report={report}
-            answers={answers.map((answer) => ({
+            answers={displayAnswers.map((answer) => ({
               questionIndex: answer.questionIndex,
               pushbackCount:
                 answer.status === "answered" ? answer.pushbackCount : 2,
@@ -283,7 +340,7 @@ export default function CallPage() {
           />
         ) : null}
 
-        {phase !== "done" && currentQuestion ? (
+        {displayPhase !== "done" && currentQuestion ? (
           <LanguageHud
             speaker={phase === "studentAnswering" ? "student" : "sensei"}
             caption={currentQuestion.japanese}
@@ -301,7 +358,7 @@ export default function CallPage() {
           />
         ) : null}
 
-        {phase === "done" ? null : (
+        {displayPhase === "done" ? null : (
           <div
             data-testid="answer-dock"
             className="flex w-full max-w-xl flex-col items-center gap-4 rounded-2xl border border-paper/10 bg-ink/90 px-5 py-4"

@@ -261,12 +261,12 @@ describe("InterviewReportScreen", () => {
     render(
       <InterviewReportScreen
         view={voiceView}
-        sessionId="11111111-1111-4111-8111-111111111111"
+        sessionId="G-7K2M"
       />,
     );
 
     expect(screen.getByTestId("session-id")).toHaveTextContent(
-      "11111111-1111-4111-8111-111111111111",
+      "G-7K2M",
     );
   });
 

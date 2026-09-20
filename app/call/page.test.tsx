@@ -1415,7 +1415,86 @@ describe("Call screen", () => {
       { timeout: 2000 },
     );
     expect(screen.getByTestId("session-id").textContent).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      /^G-[A-HJ-NP-Z2-9]{4}$/,
+    );
+  });
+
+  it("tags a Participant Interview with a P- session code, not a UUID", async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      if (String(input).includes("/api/study/me")) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ participantId: "P001" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      if (String(input).includes("/api/score")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              report: {
+                headline: "Ready",
+                stamp: "準備OK",
+                total: 88,
+                scores: {
+                  speaking: { raw: 5, weight: 20, points: 20 },
+                  listening: { raw: 4, weight: 15, points: 12 },
+                  grammarPoliteness: { raw: 4, weight: 15, points: 12 },
+                  motivation: { raw: 5, weight: 20, points: 20 },
+                  studyPlan: { raw: 4, weight: 20, points: 16 },
+                  consistency: { raw: 4, weight: 10, points: 8 },
+                },
+                gatesFired: [],
+                critiques: [
+                  {
+                    questionIndex: 0,
+                    quote: "はじめまして",
+                    explanation: "Use です/ます all the way through.",
+                    rewrite: "はじめまして。",
+                    category: "speaking",
+                  },
+                ],
+                profileName: "Aung Min Khant",
+                source: "grade",
+                banner: null,
+              },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      if (String(input).includes("/api/survey")) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ enabled: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      return Promise.resolve(new Response(null, { status: 202 }));
+    });
+
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    for (const question of questions) {
+      await waitFor(() => {
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
+      });
+      await act(async () => {
+        endedHandlers.splice(0).forEach((handler) => handler());
+      });
+      await speakAndSubmit(user, `答え${question.id}`);
+    }
+
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("session-id").textContent).toMatch(
+          /^P-[A-HJ-NP-Z2-9]{4}$/,
+        );
+      },
+      { timeout: 2000 },
     );
   });
 
