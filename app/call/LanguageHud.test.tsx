@@ -82,12 +82,11 @@ describe("LanguageHud", () => {
     expect(screen.getByText("ကျွန်တော် အောင်မင်းခန့်ပါ။")).toBeInTheDocument();
   });
 
-  it("keeps the Question caption and shows the try-again lines underneath", () => {
+  it("keeps the Question caption and does not show try-again copy", () => {
     render(
       <LanguageHud
         speaker="student"
         caption="はじめに、簡単に自己紹介をお願いします。"
-        tryAgain={PUSHBACK_TRY_AGAIN}
       />,
     );
 
@@ -95,9 +94,13 @@ describe("LanguageHud", () => {
       screen.getByText("はじめに、簡単に自己紹介をお願いします。"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(PUSHBACK_TRY_AGAIN.japanese),
-    ).toBeInTheDocument();
-    expect(screen.getByText(PUSHBACK_TRY_AGAIN.english)).toBeInTheDocument();
-    expect(screen.getByText(PUSHBACK_TRY_AGAIN.burmese)).toBeInTheDocument();
+      screen.queryByText(PUSHBACK_TRY_AGAIN.japanese),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(PUSHBACK_TRY_AGAIN.english),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(PUSHBACK_TRY_AGAIN.burmese),
+    ).not.toBeInTheDocument();
   });
 });

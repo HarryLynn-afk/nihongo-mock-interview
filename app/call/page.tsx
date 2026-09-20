@@ -23,7 +23,7 @@ import { questions } from "@/lib/content/questions";
 import { pickSessionQuestions } from "@/lib/content/questionBank";
 import type { InterviewQuestion } from "@/lib/content/questions";
 import { loadSeenQuestionIds, saveSeenQuestionIds } from "./seenQuestionIds";
-import { PUSHBACK_TRY_AGAIN } from "@/lib/content/pushbackCopy";
+import { TryAgainBanner } from "./TryAgainBanner";
 import {
   buildUsefulnessView,
   createSessionId,
@@ -196,6 +196,7 @@ export default function CallPage() {
             Participant {participantId}
           </p>
         ) : null}
+        {pushbackVisible ? <TryAgainBanner /> : null}
         <div
           data-testid="call-stage"
           className="flex w-full flex-col items-stretch gap-4 md:flex-row md:items-start md:gap-5"
@@ -279,7 +280,6 @@ export default function CallPage() {
                 ? (pitchCaptions?.burmese ?? currentQuestion.burmeseTranslation)
                 : null
             }
-            tryAgain={pushbackVisible ? PUSHBACK_TRY_AGAIN : null}
           />
         ) : null}
 

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { questions } from "@/lib/content/questions";
+import { PUSHBACK_TRY_AGAIN } from "@/lib/content/pushbackCopy";
 import * as liveTranscription from "./startLiveTranscription";
 import { pitchAnswers } from "@/lib/content/pitchAnswers";
 import {
@@ -389,21 +390,57 @@ describe("Call screen", () => {
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 
-  it("keeps the Question Japanese and shows the try-again lines after empty Speak Submit", async () => {
+  it("keeps the Question Japanese and shows one English try-again notice above the interviewer", async () => {
     const user = await startStudentTurn();
 
     await user.click(screen.getByRole("button", { name: /speak answer/i }));
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
 
     expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
-    expect(hud().getByText("すみません、もう一度お願いします。")).toBeInTheDocument();
     expect(
-      hud().getByText("Sorry, could you try answering that again?"),
-    ).toBeInTheDocument();
-    expect(hud().getByText("တစ်ဖန်ထပ်ဖြေပေးပါဦးနော်။")).toBeInTheDocument();
+      hud().queryByText(PUSHBACK_TRY_AGAIN.english),
+    ).not.toBeInTheDocument();
+    expect(
+      hud().queryByText(PUSHBACK_TRY_AGAIN.japanese),
+    ).not.toBeInTheDocument();
+    expect(
+      hud().queryByText(PUSHBACK_TRY_AGAIN.burmese),
+    ).not.toBeInTheDocument();
+
+    const banner = screen.getByRole("status");
+    expect(banner).toHaveTextContent(PUSHBACK_TRY_AGAIN.english);
+    expect(banner).not.toHaveTextContent(PUSHBACK_TRY_AGAIN.japanese);
+    expect(banner).not.toHaveTextContent(PUSHBACK_TRY_AGAIN.burmese);
+    const stage = screen.getByTestId("call-stage");
+    expect(
+      banner.compareDocumentPosition(stage) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0);
   });
 
-  it("does not keep the try-again line after the Interview advances", async () => {
+  it("hides the try-again notice on the first live Speak caption", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+    expect(screen.getByRole("status")).toHaveTextContent(
+      PUSHBACK_TRY_AGAIN.english,
+    );
+
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    await waitFor(() => {
+      expect(recognitionInstances.length).toBeGreaterThan(0);
+    });
+    act(() => {
+      const spoken = Object.assign([{ transcript: "は" }], { isFinal: false });
+      recognitionInstances[recognitionInstances.length - 1]?.onresult?.({
+        results: [spoken],
+      });
+    });
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("does not keep the try-again notice after the Interview advances", async () => {
     const user = await startStudentTurn();
 
     await speakAndSubmit(user, "はじめまして");
@@ -411,8 +448,9 @@ describe("Call screen", () => {
     await waitFor(() => {
       expect(hud().getByText(questions[1].japanese)).toBeInTheDocument();
     });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(
-      screen.queryByText("すみません、もう一度お願いします。"),
+      screen.queryByText(PUSHBACK_TRY_AGAIN.english),
     ).not.toBeInTheDocument();
   });
 

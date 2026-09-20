@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PUSHBACK_TRY_AGAIN } from "./pushbackCopy";
+import { PUSHBACK_TRY_AGAIN, tryAgainLineFor } from "./pushbackCopy";
 
 describe("PUSHBACK_TRY_AGAIN", () => {
   it("locks the one try-again line in Japanese, English, and Burmese", () => {
@@ -8,5 +8,11 @@ describe("PUSHBACK_TRY_AGAIN", () => {
       english: "Sorry, could you try answering that again?",
       burmese: "တစ်ဖန်ထပ်ဖြေပေးပါဦးနော်။",
     });
+  });
+});
+
+describe("tryAgainLineFor", () => {
+  it("returns the locked English line until system language exists", () => {
+    expect(tryAgainLineFor()).toBe(PUSHBACK_TRY_AGAIN.english);
   });
 });
