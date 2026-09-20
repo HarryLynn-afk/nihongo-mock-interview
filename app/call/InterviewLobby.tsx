@@ -44,13 +44,15 @@ export function InterviewLobby({
     : micBlocked
       ? micBlockedHelpCopy(browserFamily)
       : null;
-  const cameraHelp =
+  const cameraKind =
     cameraBlocked && !pageCannotUseDevices
-      ? cameraTroubleCopy(
-          classifyDeviceError(cameraErrorName ?? ""),
-          browserFamily,
-        )
+      ? classifyDeviceError(cameraErrorName ?? "")
       : null;
+  const cameraHelp = cameraKind
+    ? cameraTroubleCopy(cameraKind, browserFamily)
+    : null;
+  const cameraHelpIsQuiet =
+    cameraKind === "missing" || cameraKind === "unknown";
   return (
     <div
       role="dialog"
@@ -82,10 +84,10 @@ export function InterviewLobby({
           )}
           <p className="absolute bottom-3 left-3 rounded-full bg-ink/80 px-3 py-1 text-xs text-paper">
             Camera{" "}
-            {cameraBlocked
-              ? "blocked"
-              : cameraEnabled
-                ? "ready"
+            {cameraEnabled && !cameraBlocked
+              ? "ready"
+              : cameraEnabled && cameraBlocked
+                ? "blocked"
                 : "off"}{" "}
             · Mic {micBlocked ? "blocked" : micEnabled ? "ready" : "off"}
           </p>
@@ -134,16 +136,27 @@ export function InterviewLobby({
           {cameraHelp ? (
             <div
               data-testid="camera-blocked-help"
-              className="mt-3 rounded-lg border border-amber-300/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-100"
+              className={
+                cameraHelpIsQuiet
+                  ? "mt-3 rounded-lg border border-paper/15 bg-paper/5 px-3 py-2 text-sm text-paper/80"
+                  : "mt-3 rounded-lg border border-amber-300/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-100"
+              }
             >
               <p className="font-medium">{cameraHelp.title}</p>
-              <p className="mt-1 text-amber-100/90">{cameraHelp.steps}</p>
-              <p className="mt-1 text-amber-100/80">{cameraHelp.after}</p>
-              {cameraErrorName ? (
-                <p className="mt-1 text-xs text-amber-100/60">
-                  Browser reported: {cameraErrorName}
-                </p>
-              ) : null}
+              <p
+                className={
+                  cameraHelpIsQuiet ? "mt-1 text-paper/70" : "mt-1 text-amber-100/90"
+                }
+              >
+                {cameraHelp.steps}
+              </p>
+              <p
+                className={
+                  cameraHelpIsQuiet ? "mt-1 text-paper/60" : "mt-1 text-amber-100/80"
+                }
+              >
+                {cameraHelp.after}
+              </p>
             </div>
           ) : null}
 

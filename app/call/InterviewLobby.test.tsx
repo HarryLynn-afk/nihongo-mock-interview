@@ -58,7 +58,32 @@ describe("InterviewLobby", () => {
     const help = screen.getByTestId("camera-blocked-help");
     expect(help).toHaveTextContent("Camera is blocked");
     expect(help).toHaveTextContent(/Privacy & Security/i);
-    expect(help).toHaveTextContent("NotAllowedError");
+    expect(help).not.toHaveTextContent("NotAllowedError");
+    expect(help).not.toHaveTextContent("Browser reported");
+  });
+
+  it("does not show the browser exception on a missing camera", () => {
+    render(
+      <InterviewLobby
+        cameraEnabled={false}
+        micEnabled={false}
+        cameraBlocked
+        cameraErrorName="OverconstrainedError"
+        videoRef={createRef()}
+        onToggleCamera={vi.fn()}
+        onToggleMic={vi.fn()}
+        onContinue={vi.fn()}
+      />,
+    );
+
+    const help = screen.getByTestId("camera-blocked-help");
+    expect(help).toHaveTextContent("Camera isn't available");
+    expect(help).toHaveTextContent(/continue with voice/i);
+    expect(help).not.toHaveTextContent("OverconstrainedError");
+    expect(help).not.toHaveTextContent("Browser reported");
+    expect(help).not.toHaveTextContent("No camera found");
+    expect(screen.getByRole("checkbox", { name: "Camera" })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: "Enter classroom" })).toBeEnabled();
   });
 
   it("tells the user to close the other app when the camera is busy", () => {

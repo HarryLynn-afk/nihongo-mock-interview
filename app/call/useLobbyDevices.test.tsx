@@ -4,6 +4,7 @@ import { useLobbyDevices } from "./useLobbyDevices";
 
 describe("useLobbyDevices", () => {
   const getUserMedia = vi.fn();
+  const enumerateDevices = vi.fn();
   const queryMicrophone = vi.fn();
 
   function makeStream(kinds: Array<"video" | "audio">) {
@@ -23,13 +24,14 @@ describe("useLobbyDevices", () => {
 
   beforeEach(() => {
     queryMicrophone.mockResolvedValue({ state: "prompt" });
+    enumerateDevices.mockResolvedValue([]);
     getUserMedia.mockImplementation(async (constraints: MediaStreamConstraints) => {
       if (constraints.video) return makeStream(["video"]);
       if (constraints.audio) return makeStream(["audio"]);
       return makeStream([]);
     });
     vi.stubGlobal("navigator", {
-      mediaDevices: { getUserMedia },
+      mediaDevices: { getUserMedia, enumerateDevices },
       permissions: { query: queryMicrophone },
     });
   });
@@ -37,6 +39,7 @@ describe("useLobbyDevices", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     getUserMedia.mockReset();
+    enumerateDevices.mockReset();
     queryMicrophone.mockReset();
   });
 
@@ -117,6 +120,52 @@ describe("useLobbyDevices", () => {
     expect(videoStream.getTracks()[0]?.stop).not.toHaveBeenCalled();
   });
 
+  it("uses a listed camera when the default video request is overconstrained", async () => {
+    const iphoneStream = makeStream(["video"]);
+    getUserMedia.mockImplementation(async (constraints: MediaStreamConstraints) => {
+      if (constraints.video === true) {
+        throw new DOMException("over", "OverconstrainedError");
+      }
+      const video = constraints.video;
+      const deviceId =
+        typeof video === "object" && video && typeof video.deviceId === "object"
+          ? video.deviceId
+          : undefined;
+      const id =
+        deviceId && typeof deviceId === "object"
+          ? ("ideal" in deviceId ? deviceId.ideal : deviceId.exact)
+          : undefined;
+      if (id === "iphone") {
+        return iphoneStream;
+      }
+      throw new DOMException("missing", "NotFoundError");
+    });
+    enumerateDevices.mockResolvedValue([
+      {
+        kind: "videoinput",
+        deviceId: "iphone",
+        label: "iPhone",
+        groupId: "",
+        toJSON: () => ({}),
+      },
+    ]);
+
+    const { result } = renderHook(() => useLobbyDevices({ active: true }));
+    const video = document.createElement("video");
+    act(() => {
+      result.current.videoRef(video);
+    });
+    act(() => {
+      result.current.toggleCamera();
+    });
+
+    await waitFor(() => {
+      expect(video.srcObject).toBe(iphoneStream);
+      expect(result.current.cameraOn).toBe(true);
+      expect(result.current.cameraBlocked).toBe(false);
+    });
+  });
+
   it("marks camera blocked when camera permission is denied", async () => {
     getUserMedia.mockImplementation(async (constraints: MediaStreamConstraints) => {
       if (constraints.video) {
@@ -158,11 +207,11 @@ describe("useLobbyDevices", () => {
 
   it("clears the camera failure when a later try succeeds", async () => {
     const videoStream = makeStream(["video"]);
-    let failNext = true;
+    let videoCalls = 0;
     getUserMedia.mockImplementation(async (constraints: MediaStreamConstraints) => {
       if (constraints.video) {
-        if (failNext) {
-          failNext = false;
+        videoCalls += 1;
+        if (videoCalls <= 2) {
           throw new DOMException("Busy", "NotReadableError");
         }
         return videoStream;

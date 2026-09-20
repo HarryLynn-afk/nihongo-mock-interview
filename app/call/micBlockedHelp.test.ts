@@ -69,14 +69,13 @@ describe("micBlockedHelp", () => {
 
   it("explains a missing camera without blaming permission", () => {
     const copy = cameraTroubleCopy("missing", "safari");
-    expect(copy.title).toBe("No camera found");
+    expect(copy.title).toBe("Camera isn't available");
+    expect(copy.steps).toMatch(/continue with voice/i);
     expect(copy.steps).not.toMatch(/Allow/i);
+    expect(copy.steps).not.toMatch(/Overconstrained/i);
   });
 
-  it("names a closed MacBook lid for a missing or busy camera", () => {
-    expect(cameraTroubleCopy("missing", "safari").steps).toMatch(
-      /lid is closed/i,
-    );
+  it("names a closed MacBook lid for a busy camera", () => {
     expect(cameraTroubleCopy("in-use", "safari").steps).toMatch(
       /lid is closed/i,
     );
@@ -98,7 +97,7 @@ describe("micBlockedHelp", () => {
 
   it("still gives next steps when the camera error is unknown", () => {
     const copy = cameraTroubleCopy("unknown", "other");
-    expect(copy.title).toBe("Camera did not start");
+    expect(copy.title).toBe("Camera isn't available");
     expect(copy.steps.length).toBeGreaterThan(0);
   });
 });

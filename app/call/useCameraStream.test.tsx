@@ -4,16 +4,19 @@ import { useCameraStream } from "./useCameraStream";
 
 describe("useCameraStream", () => {
   const getUserMedia = vi.fn();
+  const enumerateDevices = vi.fn();
 
   beforeEach(() => {
+    enumerateDevices.mockResolvedValue([]);
     vi.stubGlobal("navigator", {
-      mediaDevices: { getUserMedia },
+      mediaDevices: { getUserMedia, enumerateDevices },
     });
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
     getUserMedia.mockReset();
+    enumerateDevices.mockReset();
   });
 
   it("does not request the camera when startOn is false", () => {
@@ -28,6 +31,44 @@ describe("useCameraStream", () => {
     const { result } = renderHook(() => useCameraStream());
 
     await waitFor(() => {
+      expect(result.current.cameraState).toBe("on");
+    });
+  });
+
+  it("settles to 'on' when a listed camera opens after the default is overconstrained", async () => {
+    const iphoneStream = { id: "iphone-stream" } as unknown as MediaStream;
+    getUserMedia.mockImplementation(async (constraints: MediaStreamConstraints) => {
+      if (constraints.video === true) {
+        throw new DOMException("over", "OverconstrainedError");
+      }
+      const video = constraints.video;
+      const deviceId =
+        typeof video === "object" && video && typeof video.deviceId === "object"
+          ? video.deviceId
+          : undefined;
+      const id =
+        deviceId && typeof deviceId === "object"
+          ? ("ideal" in deviceId ? deviceId.ideal : deviceId.exact)
+          : undefined;
+      if (id === "iphone") {
+        return iphoneStream;
+      }
+      throw new DOMException("missing", "NotFoundError");
+    });
+    enumerateDevices.mockResolvedValue([
+      {
+        kind: "videoinput",
+        deviceId: "iphone",
+        label: "iPhone",
+        groupId: "",
+        toJSON: () => ({}),
+      },
+    ]);
+
+    const { result } = renderHook(() => useCameraStream());
+
+    await waitFor(() => {
+      expect(getUserMedia).toHaveBeenCalledTimes(3);
       expect(result.current.cameraState).toBe("on");
     });
   });

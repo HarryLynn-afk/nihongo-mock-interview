@@ -119,18 +119,18 @@ export function cameraTroubleCopy(
   }
   if (kind === "missing") {
     return {
-      title: "No camera found",
+      title: "Camera isn't available",
       steps:
-        "If your MacBook lid is closed while you use an external monitor, the built-in camera is switched off — open the lid, or plug in a USB camera. You can also leave Camera off: the interview works with voice only.",
-      after: retry,
+        "You can continue with voice. This Interview does not need video.",
+      after: "Try Camera again if you want a preview, or enter the classroom.",
     };
   }
   if (kind === "unknown") {
     return {
-      title: "Camera did not start",
+      title: "Camera isn't available",
       steps:
-        "Reload this page and try again. If it keeps failing, leave Camera off — the interview still works with voice only.",
-      after: retry,
+        "You can continue with voice. This Interview does not need video.",
+      after: "Try Camera again if you want a preview, or enter the classroom.",
     };
   }
 

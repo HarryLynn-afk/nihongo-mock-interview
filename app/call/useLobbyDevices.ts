@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RefCallback } from "react";
+import { openNavigatorCamera } from "./openUserCamera";
 
 function stopStream(stream: MediaStream | null) {
   stream?.getTracks().forEach((track) => track.stop());
@@ -151,34 +152,29 @@ export function useLobbyDevices({ active }: { active: boolean }) {
     setCameraBlocked(false);
     setCameraErrorName(null);
     setCameraOn(true);
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraBlocked(true);
-      setCameraErrorName("NotSupportedError");
-      setCameraOn(false);
-      cameraOnRef.current = false;
-      return;
-    }
 
-    void navigator.mediaDevices
-      .getUserMedia({ video: true })
-      .then((stream) => {
-        if (!cameraOnRef.current) {
-          stopStream(stream);
-          return;
-        }
+    void openNavigatorCamera().then((result) => {
+      if (!cameraOnRef.current) {
+        if ("stream" in result) stopStream(result.stream);
+        return;
+      }
+      if ("stream" in result) {
         stopStream(videoStreamRef.current);
-        videoStreamRef.current = stream;
-        attachPreview(stream);
-      })
-      .catch((error: unknown) => {
-        cameraOnRef.current = false;
-        stopStream(videoStreamRef.current);
-        videoStreamRef.current = null;
-        setCameraBlocked(true);
-        setCameraErrorName(deviceErrorName(error));
-        setCameraOn(false);
-        attachPreview(null);
-      });
+        videoStreamRef.current = result.stream;
+        attachPreview(result.stream);
+        return;
+      }
+      cameraOnRef.current = false;
+      stopStream(videoStreamRef.current);
+      videoStreamRef.current = null;
+      setCameraBlocked(true);
+      setCameraErrorName(result.errorName);
+      setCameraOn(false);
+      if (typeof console !== "undefined" && "debug" in console) {
+        console.debug("Camera open failed", result.errorName);
+      }
+      attachPreview(null);
+    });
   }, [attachPreview]);
 
   const toggleMic = useCallback(() => {

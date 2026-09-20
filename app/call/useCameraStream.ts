@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { openNavigatorCamera } from "./openUserCamera";
 
 export type CameraState = "on" | "off" | "blocked";
 
@@ -27,20 +28,21 @@ export function useCameraStream({ startOn = true }: { startOn?: boolean } = {}) 
 
     let cancelled = false;
 
-    navigator.mediaDevices
-      .getUserMedia({ video: true })
-      .then((stream) => {
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
+    void openNavigatorCamera().then((result) => {
+      if (cancelled) {
+        if ("stream" in result) {
+          result.stream.getTracks().forEach((track) => track.stop());
         }
-        streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
+        return;
+      }
+      if ("stream" in result) {
+        streamRef.current = result.stream;
+        if (videoRef.current) videoRef.current.srcObject = result.stream;
         setCameraState("on");
-      })
-      .catch(() => {
-        if (!cancelled) setCameraState("blocked");
-      });
+        return;
+      }
+      setCameraState("blocked");
+    });
 
     return () => {
       cancelled = true;
