@@ -4,23 +4,21 @@ import { getSampleReport } from "./sampleReport";
 import { buildSurveyPayload, buildUsefulnessView, createSessionId } from "./survey";
 
 describe("buildUsefulnessView", () => {
-  it("returns null in Pitch mode even when the form is enabled and reveal is done", () => {
+  it("returns null in Pitch mode even when the form is enabled", () => {
     expect(
       buildUsefulnessView({
         isPitchMode: true,
         formEnabled: true,
-        revealDone: true,
         sessionId: "11111111-1111-4111-8111-111111111111",
       }),
     ).toBeNull();
   });
 
-  it("returns a view with the session id after reveal when the form is enabled", () => {
+  it("returns a view with the session id when the form is enabled", () => {
     const sessionId = "11111111-1111-4111-8111-111111111111";
     const view = buildUsefulnessView({
       isPitchMode: false,
       formEnabled: true,
-      revealDone: true,
       sessionId,
     });
 
@@ -32,18 +30,6 @@ describe("buildUsefulnessView", () => {
       buildUsefulnessView({
         isPitchMode: false,
         formEnabled: false,
-        revealDone: true,
-        sessionId: "11111111-1111-4111-8111-111111111111",
-      }),
-    ).toBeNull();
-  });
-
-  it("returns null before the report reveal finishes", () => {
-    expect(
-      buildUsefulnessView({
-        isPitchMode: false,
-        formEnabled: true,
-        revealDone: false,
         sessionId: "11111111-1111-4111-8111-111111111111",
       }),
     ).toBeNull();
@@ -53,7 +39,6 @@ describe("buildUsefulnessView", () => {
     const view = buildUsefulnessView({
       isPitchMode: false,
       formEnabled: true,
-      revealDone: true,
       sessionId: "11111111-1111-4111-8111-111111111111",
     });
 

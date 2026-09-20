@@ -32,13 +32,14 @@ import {
   buildUsefulnessView,
   createSessionId,
 } from "@/lib/content/survey";
+import { useUsefulnessNudge } from "./useUsefulnessNudge";
 import { loadDevicePrefs, type DevicePrefs } from "../components/devicePrefs";
 import { GUEST_BANNER } from "@/lib/content/studyAuth";
 
 const DEFAULT_DEVICE_PREFS: DevicePrefs = { cameraOn: true, micOn: true };
 
 /** Temporary local preview — remove before Issue 15 deploy. */
-const SHOW_SKIP_INTERVIEW = process.env.NODE_ENV === "development";
+const SHOW_SKIP_INTERVIEW = process.env.NODE_ENV !== "production";
 const DEBUG_PREVIEW_TRANSCRIPTS = [
   "アウン・ミン・タントです",
   "この学校で日本語を勉強したいです",
@@ -65,7 +66,6 @@ export default function CallPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [formEnabled, setFormEnabled] = useState(false);
   const [revealDone, setRevealDone] = useState(false);
-  const [usefulnessOpen, setUsefulnessOpen] = useState(false);
   const [usefulnessSubmitted, setUsefulnessSubmitted] = useState(false);
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [studyReady, setStudyReady] = useState(false);
@@ -73,7 +73,6 @@ export default function CallPage() {
     null,
   );
   const savedStudyRef = useRef(false);
-  const usefulnessNudgedRef = useRef(false);
 
   useEffect(() => {
     setDevicePrefs(loadDevicePrefs());
@@ -219,15 +218,10 @@ export default function CallPage() {
       : buildUsefulnessView({
           isPitchMode,
           formEnabled,
-          revealDone,
           sessionId,
         });
-
-  useEffect(() => {
-    if (!usefulnessView || usefulnessNudgedRef.current) return;
-    usefulnessNudgedRef.current = true;
-    setUsefulnessOpen(true);
-  }, [usefulnessView]);
+  const { open: usefulnessOpen, openNow: openUsefulness, close: closeUsefulness } =
+    useUsefulnessNudge(Boolean(usefulnessView && revealDone));
   return (
     <div
       data-testid="call-screen"
@@ -293,7 +287,7 @@ export default function CallPage() {
               onRevealComplete={() => setRevealDone(true)}
               onHelpStudy={
                 usefulnessView && !usefulnessSubmitted
-                  ? () => setUsefulnessOpen(true)
+                  ? openUsefulness
                   : undefined
               }
             />
@@ -334,7 +328,7 @@ export default function CallPage() {
               forced: false,
             }))}
             onFinished={(outcome) => {
-              setUsefulnessOpen(false);
+              closeUsefulness();
               if (outcome === "submitted") setUsefulnessSubmitted(true);
             }}
           />

@@ -33,15 +33,13 @@ export type SurveyPayload = {
 export function buildUsefulnessView({
   isPitchMode,
   formEnabled,
-  revealDone,
   sessionId,
 }: {
   isPitchMode: boolean;
   formEnabled: boolean;
-  revealDone: boolean;
   sessionId: string;
 }): UsefulnessView | null {
-  if (isPitchMode || !formEnabled || !revealDone) return null;
+  if (isPitchMode || !formEnabled) return null;
   return { sessionId, copy: SURVEY_COPY };
 }
 

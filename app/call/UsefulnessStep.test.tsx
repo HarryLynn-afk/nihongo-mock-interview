@@ -9,7 +9,6 @@ import { getSampleReport } from "@/lib/content/sampleReport";
 const view = buildUsefulnessView({
   isPitchMode: false,
   formEnabled: true,
-  revealDone: true,
   sessionId: "11111111-1111-4111-8111-111111111111",
 })!;
 

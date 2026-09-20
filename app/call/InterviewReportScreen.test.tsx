@@ -270,15 +270,17 @@ describe("InterviewReportScreen", () => {
     );
   });
 
-  it("shows Help the study when onHelpStudy is provided", async () => {
+  it("shows Help the study at the top-right of the report", async () => {
     const onHelpStudy = vi.fn();
     render(
       <InterviewReportScreen view={voiceView} onHelpStudy={onHelpStudy} />,
     );
 
-    await userEvent.setup().click(
-      screen.getByRole("button", { name: /help the study/i }),
-    );
+    const help = screen.getByRole("button", { name: /help the study/i });
+    expect(help.className).toMatch(/absolute/);
+    expect(help.className).toMatch(/right-4/);
+    expect(help.className).toMatch(/top-4/);
+    await userEvent.setup().click(help);
     expect(onHelpStudy).toHaveBeenCalledTimes(1);
   });
 

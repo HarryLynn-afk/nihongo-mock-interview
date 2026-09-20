@@ -122,6 +122,20 @@ describe("Call screen", () => {
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
   }
 
+  async function completeLockedInterview(
+    user: ReturnType<typeof userEvent.setup>,
+  ) {
+    for (const question of questions) {
+      await waitFor(() => {
+        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
+      });
+      await act(async () => {
+        endedHandlers.splice(0).forEach((handler) => handler());
+      });
+      await speakAndSubmit(user, `答え${question.id}`);
+    }
+  }
+
   /**
    * Pitch mode auto-enters Speak for every student turn, so there is no
    * idle Speak answer button to press — just deliver a transcript and submit.
@@ -144,6 +158,63 @@ describe("Call screen", () => {
 
   function hud() {
     return within(screen.getByTestId("language-hud"));
+  }
+
+  function mockLiveGradeAndSurvey(participantId?: string) {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      if (participantId && String(input).includes("/api/study/me")) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ participantId }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      if (String(input).includes("/api/score")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              report: {
+                headline: "Ready",
+                stamp: "準備OK",
+                total: 88,
+                scores: {
+                  speaking: { raw: 5, weight: 20, points: 20 },
+                  listening: { raw: 4, weight: 15, points: 12 },
+                  grammarPoliteness: { raw: 4, weight: 15, points: 12 },
+                  motivation: { raw: 5, weight: 20, points: 20 },
+                  studyPlan: { raw: 4, weight: 20, points: 16 },
+                  consistency: { raw: 4, weight: 10, points: 8 },
+                },
+                gatesFired: [],
+                critiques: [
+                  {
+                    questionIndex: 0,
+                    quote: "はじめまして",
+                    explanation: "Use です/ます all the way through.",
+                    rewrite: "はじめまして。",
+                    category: "speaking",
+                  },
+                ],
+                profileName: "Aung Min Khant",
+                source: "grade",
+                banner: null,
+              },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      if (String(input).includes("/api/survey")) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ enabled: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      return Promise.resolve(new Response(null, { status: 202 }));
+    });
   }
 
   it("renders both the student tile and the sensei tile on an Ink background with Indigo accents", () => {
@@ -1343,150 +1414,33 @@ describe("Call screen", () => {
     ).toBe(true);
   });
 
-  it("shows the Usefulness step and session id after the report reveal when the form is enabled", async () => {
-    fetchMock.mockImplementation((input: RequestInfo | URL) => {
-      if (String(input).includes("/api/score")) {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              report: {
-                headline: "Ready",
-                stamp: "準備OK",
-                total: 88,
-                scores: {
-                  speaking: { raw: 5, weight: 20, points: 20 },
-                  listening: { raw: 4, weight: 15, points: 12 },
-                  grammarPoliteness: { raw: 4, weight: 15, points: 12 },
-                  motivation: { raw: 5, weight: 20, points: 20 },
-                  studyPlan: { raw: 4, weight: 20, points: 16 },
-                  consistency: { raw: 4, weight: 10, points: 8 },
-                },
-                gatesFired: [],
-                critiques: [
-                  {
-                    questionIndex: 0,
-                    quote: "はじめまして",
-                    explanation: "Use です/ます all the way through.",
-                    rewrite: "はじめまして。",
-                    category: "speaking",
-                  },
-                ],
-                profileName: "Aung Min Khant",
-                source: "grade",
-                banner: null,
-              },
-            }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          ),
-        );
-      }
-      if (String(input).includes("/api/survey")) {
-        return Promise.resolve(
-          new Response(JSON.stringify({ enabled: true }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          }),
-        );
-      }
-      return Promise.resolve(new Response(null, { status: 202 }));
-    });
+  it("shows Help the study and the session id after the report without opening the dialog immediately", async () => {
+    mockLiveGradeAndSurvey();
 
     const user = userEvent.setup();
     render(<CallPage />);
-
-    for (const question of questions) {
-      await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
-      });
-      await act(async () => {
-        endedHandlers.splice(0).forEach((handler) => handler());
-      });
-      await speakAndSubmit(user, `答え${question.id}`);
-    }
+    await completeLockedInterview(user);
 
     await waitFor(() => {
       expect(screen.getByTestId("interview-report")).toBeInTheDocument();
     });
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /help the study/i }),
+      ).toBeInTheDocument();
+    });
     expect(screen.queryByTestId("usefulness-step")).not.toBeInTheDocument();
-    await waitFor(
-      () => {
-        expect(screen.getByTestId("usefulness-step")).toBeInTheDocument();
-      },
-      { timeout: 2000 },
-    );
     expect(screen.getByTestId("session-id").textContent).toMatch(
       /^G-[A-HJ-NP-Z2-9]{4}$/,
     );
   });
 
   it("tags a Participant Interview with a P- session code, not a UUID", async () => {
-    fetchMock.mockImplementation((input: RequestInfo | URL) => {
-      if (String(input).includes("/api/study/me")) {
-        return Promise.resolve(
-          new Response(JSON.stringify({ participantId: "P001" }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          }),
-        );
-      }
-      if (String(input).includes("/api/score")) {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              report: {
-                headline: "Ready",
-                stamp: "準備OK",
-                total: 88,
-                scores: {
-                  speaking: { raw: 5, weight: 20, points: 20 },
-                  listening: { raw: 4, weight: 15, points: 12 },
-                  grammarPoliteness: { raw: 4, weight: 15, points: 12 },
-                  motivation: { raw: 5, weight: 20, points: 20 },
-                  studyPlan: { raw: 4, weight: 20, points: 16 },
-                  consistency: { raw: 4, weight: 10, points: 8 },
-                },
-                gatesFired: [],
-                critiques: [
-                  {
-                    questionIndex: 0,
-                    quote: "はじめまして",
-                    explanation: "Use です/ます all the way through.",
-                    rewrite: "はじめまして。",
-                    category: "speaking",
-                  },
-                ],
-                profileName: "Aung Min Khant",
-                source: "grade",
-                banner: null,
-              },
-            }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          ),
-        );
-      }
-      if (String(input).includes("/api/survey")) {
-        return Promise.resolve(
-          new Response(JSON.stringify({ enabled: true }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          }),
-        );
-      }
-      return Promise.resolve(new Response(null, { status: 202 }));
-    });
+    mockLiveGradeAndSurvey("P001");
 
     const user = userEvent.setup();
     render(<CallPage />);
-
-    for (const question of questions) {
-      await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
-      });
-      await act(async () => {
-        endedHandlers.splice(0).forEach((handler) => handler());
-      });
-      await speakAndSubmit(user, `答え${question.id}`);
-    }
+    await completeLockedInterview(user);
 
     await waitFor(
       () => {
@@ -1498,78 +1452,26 @@ describe("Call screen", () => {
     );
   });
 
-  it("lets Help the study reopen the Usefulness dialog after Close", async () => {
-    fetchMock.mockImplementation((input: RequestInfo | URL) => {
-      if (String(input).includes("/api/score")) {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              report: {
-                headline: "Ready",
-                stamp: "準備OK",
-                total: 88,
-                scores: {
-                  speaking: { raw: 5, weight: 20, points: 20 },
-                  listening: { raw: 4, weight: 15, points: 12 },
-                  grammarPoliteness: { raw: 4, weight: 15, points: 12 },
-                  motivation: { raw: 5, weight: 20, points: 20 },
-                  studyPlan: { raw: 4, weight: 20, points: 16 },
-                  consistency: { raw: 4, weight: 10, points: 8 },
-                },
-                gatesFired: [],
-                critiques: [
-                  {
-                    questionIndex: 0,
-                    quote: "はじめまして",
-                    explanation: "Use です/ます all the way through.",
-                    rewrite: "はじめまして。",
-                    category: "speaking",
-                  },
-                ],
-                profileName: "Aung Min Khant",
-                source: "grade",
-                banner: null,
-              },
-            }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          ),
-        );
-      }
-      if (String(input).includes("/api/survey")) {
-        return Promise.resolve(
-          new Response(JSON.stringify({ enabled: true }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          }),
-        );
-      }
-      return Promise.resolve(new Response(null, { status: 202 }));
-    });
+  it("lets Help the study open and reopen the Usefulness dialog after Close", async () => {
+    mockLiveGradeAndSurvey();
 
     const user = userEvent.setup();
     render(<CallPage />);
-
-    for (const question of questions) {
-      await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
-      });
-      await act(async () => {
-        endedHandlers.splice(0).forEach((handler) => handler());
-      });
-      await speakAndSubmit(user, `答え${question.id}`);
-    }
+    await completeLockedInterview(user);
 
     await waitFor(() => {
-      expect(screen.getByTestId("interview-report")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /help the study/i }),
+      ).toBeInTheDocument();
     });
-    await waitFor(
-      () => {
-        expect(
-          screen.getByRole("dialog", { name: /help the study/i }),
-        ).toBeInTheDocument();
-      },
-      { timeout: 2000 },
-    );
+    expect(
+      screen.queryByRole("dialog", { name: /help the study/i }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /help the study/i }));
+    expect(
+      screen.getByRole("dialog", { name: /help the study/i }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /close/i }));
     expect(
@@ -1583,74 +1485,18 @@ describe("Call screen", () => {
   });
 
   it("hides Help the study after Usefulness Submit", async () => {
-    fetchMock.mockImplementation((input: RequestInfo | URL) => {
-      if (String(input).includes("/api/score")) {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              report: {
-                headline: "Ready",
-                stamp: "準備OK",
-                total: 88,
-                scores: {
-                  speaking: { raw: 5, weight: 20, points: 20 },
-                  listening: { raw: 4, weight: 15, points: 12 },
-                  grammarPoliteness: { raw: 4, weight: 15, points: 12 },
-                  motivation: { raw: 5, weight: 20, points: 20 },
-                  studyPlan: { raw: 4, weight: 20, points: 16 },
-                  consistency: { raw: 4, weight: 10, points: 8 },
-                },
-                gatesFired: [],
-                critiques: [
-                  {
-                    questionIndex: 0,
-                    quote: "はじめまして",
-                    explanation: "Use です/ます all the way through.",
-                    rewrite: "はじめまして。",
-                    category: "speaking",
-                  },
-                ],
-                profileName: "Aung Min Khant",
-                source: "grade",
-                banner: null,
-              },
-            }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          ),
-        );
-      }
-      if (String(input).includes("/api/survey")) {
-        return Promise.resolve(
-          new Response(JSON.stringify({ enabled: true }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          }),
-        );
-      }
-      return Promise.resolve(new Response(null, { status: 202 }));
-    });
+    mockLiveGradeAndSurvey();
 
     const user = userEvent.setup();
     render(<CallPage />);
+    await completeLockedInterview(user);
 
-    for (const question of questions) {
-      await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
-      });
-      await act(async () => {
-        endedHandlers.splice(0).forEach((handler) => handler());
-      });
-      await speakAndSubmit(user, `答え${question.id}`);
-    }
-
-    await waitFor(
-      () => {
-        expect(
-          screen.getByRole("dialog", { name: /help the study/i }),
-        ).toBeInTheDocument();
-      },
-      { timeout: 2000 },
-    );
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /help the study/i }),
+      ).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /help the study/i }));
 
     await user.click(screen.getByRole("radio", { name: /usefulness 4/i }));
     await user.click(screen.getByRole("radio", { name: /usability 5/i }));
@@ -1664,54 +1510,40 @@ describe("Call screen", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("keeps Help the study on a Skip interview sample report after Close", async () => {
+    mockLiveGradeAndSurvey();
+
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    await user.click(screen.getByRole("button", { name: /skip interview/i }));
+    await waitFor(() => {
+      expect(screen.getByTestId("interview-report")).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /help the study/i }),
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("usefulness-step")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /help the study/i }));
+    expect(
+      screen.getByRole("dialog", { name: /help the study/i }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /close/i }));
+    expect(
+      screen.queryByRole("dialog", { name: /help the study/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /help the study/i }),
+    ).toBeInTheDocument();
+  });
+
   it("never shows the Usefulness step on ?pitch=1 even when the form is enabled", async () => {
     window.history.pushState({}, "", "/call?pitch=1");
-    fetchMock.mockImplementation((input: RequestInfo | URL) => {
-      if (String(input).includes("/api/score")) {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              report: {
-                headline: "Ready",
-                stamp: "準備OK",
-                total: 88,
-                scores: {
-                  speaking: { raw: 5, weight: 20, points: 20 },
-                  listening: { raw: 4, weight: 15, points: 12 },
-                  grammarPoliteness: { raw: 4, weight: 15, points: 12 },
-                  motivation: { raw: 5, weight: 20, points: 20 },
-                  studyPlan: { raw: 4, weight: 20, points: 16 },
-                  consistency: { raw: 4, weight: 10, points: 8 },
-                },
-                gatesFired: [],
-                critiques: [
-                  {
-                    questionIndex: 0,
-                    quote: "はじめまして",
-                    explanation: "Use です/ます all the way through.",
-                    rewrite: "はじめまして。",
-                    category: "speaking",
-                  },
-                ],
-                profileName: "Aung Min Khant",
-                source: "grade",
-                banner: null,
-              },
-            }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          ),
-        );
-      }
-      if (String(input).includes("/api/survey")) {
-        return Promise.resolve(
-          new Response(JSON.stringify({ enabled: true }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          }),
-        );
-      }
-      return Promise.resolve(new Response(null, { status: 202 }));
-    });
+    mockLiveGradeAndSurvey();
 
     const user = userEvent.setup();
     render(<CallPage />);
@@ -1733,5 +1565,8 @@ describe("Call screen", () => {
       await new Promise((resolve) => setTimeout(resolve, 1500));
     });
     expect(screen.queryByTestId("usefulness-step")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /help the study/i }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -225,8 +225,22 @@ export function InterviewReportScreen({
   return (
     <section
       data-testid="interview-report"
-      className="flex w-full min-w-0 flex-1 flex-col gap-4 rounded-2xl border border-paper/10 bg-ink p-4 text-paper md:flex-row md:items-stretch md:p-5"
+      className="relative flex w-full min-w-0 flex-1 flex-col gap-4 rounded-2xl border border-paper/10 bg-ink p-4 text-paper md:p-5"
     >
+      {onHelpStudy ? (
+        <button
+          type="button"
+          onClick={onHelpStudy}
+          className="absolute right-4 top-4 z-10 rounded-full bg-indigo px-4 py-2 text-sm font-medium text-paper md:right-5 md:top-5"
+        >
+          Help the study
+        </button>
+      ) : null}
+      <div
+        className={`flex min-h-0 flex-1 flex-col gap-4 md:flex-row md:items-stretch ${
+          onHelpStudy ? "pt-12 md:pt-0" : ""
+        }`}
+      >
       <aside
         data-testid="report-question-nav"
         className="flex w-full shrink-0 flex-col gap-2 md:max-w-52"
@@ -238,15 +252,6 @@ export function InterviewReportScreen({
           <p data-testid="session-id" className="text-[10px] tracking-wide text-paper/40">
             {sessionId}
           </p>
-        ) : null}
-        {onHelpStudy ? (
-          <button
-            type="button"
-            onClick={onHelpStudy}
-            className="w-fit rounded-full border border-paper/20 px-3 py-1 text-sm text-paper/80"
-          >
-            Help the study
-          </button>
         ) : null}
         <nav className="flex flex-col gap-1">
           {view.questions.map((card) => {
@@ -276,7 +281,11 @@ export function InterviewReportScreen({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col gap-4">
-        <header className="flex flex-wrap items-end justify-between gap-3">
+        <header
+          className={`flex flex-wrap items-end justify-between gap-3 ${
+            onHelpStudy ? "md:pr-40" : ""
+          }`}
+        >
           <div>
             <h1 className="text-xl font-medium">{view.title}</h1>
             <p className="mt-1 text-sm font-medium text-paper/80">
@@ -288,7 +297,7 @@ export function InterviewReportScreen({
             ) : null}
             <p className="mt-2 text-sm text-paper/60">{view.disclaimer}</p>
           </div>
-          <div data-testid="report-stamp" className={revealClass(stage >= 1)}>
+          <div data-testid="report-stamp" className={`text-right ${revealClass(stage >= 1)}`}>
             <p className="text-3xl font-medium md:text-4xl">
               {view.total}/100
             </p>
@@ -412,6 +421,7 @@ export function InterviewReportScreen({
             />
           ) : null}
         </div>
+      </div>
       </div>
     </section>
   );
