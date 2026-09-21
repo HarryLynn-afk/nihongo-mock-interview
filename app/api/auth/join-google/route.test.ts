@@ -83,6 +83,12 @@ describe("POST /api/auth/join-google", () => {
     );
     const body = (await res.json()) as { url: string | null };
     expect(body.url).toBe("https://accounts.google.com/oauth");
+    expect(signInWithOAuth).toHaveBeenCalledWith({
+      provider: "google",
+      options: expect.objectContaining({
+        queryParams: { prompt: "select_account" },
+      }),
+    });
     const setCookie = res.headers.get("set-cookie") ?? "";
     expect(setCookie).toContain(`${JOIN_FROM_COOKIE}=T1`);
     expect(setCookie.toLowerCase()).toContain("httponly");

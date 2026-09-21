@@ -62,6 +62,7 @@ describe("POST /api/auth/login-google", () => {
       options: {
         redirectTo: "http://localhost/auth/callback",
         skipBrowserRedirect: true,
+        queryParams: { prompt: "select_account" },
       },
     });
     const setCookie = res.headers.get("set-cookie") ?? "";

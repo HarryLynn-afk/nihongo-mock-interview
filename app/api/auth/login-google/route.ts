@@ -26,7 +26,15 @@ export async function POST(request: Request) {
           createOAuthUrl: async (redirectTo) => {
             const { data, error } = await supabase.auth.signInWithOAuth({
               provider: "google",
-              options: { redirectTo, skipBrowserRedirect: true },
+              options: {
+                redirectTo,
+                skipBrowserRedirect: true,
+                // Force Google's account chooser every time. Without this,
+                // Google silently reuses whichever account is already
+                // active in the browser, so "sign in with a different
+                // account" can land back on the same cached session.
+                queryParams: { prompt: "select_account" },
+              },
             });
             if (error) return null;
             return data.url ?? null;
