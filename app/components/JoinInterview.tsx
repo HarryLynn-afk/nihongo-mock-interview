@@ -7,6 +7,7 @@ import { InterviewStartReminder } from "../call/InterviewStartReminder";
 import { useInterviewLobby } from "../call/useInterviewLobby";
 import { useLobbyDevices } from "../call/useLobbyDevices";
 import { saveDevicePrefs } from "./devicePrefs";
+import { useCopy } from "./useUiLocale";
 
 type JoinInterviewProps = {
   label?: string;
@@ -21,11 +22,13 @@ type JoinInterviewProps = {
  * this lobby (see `app/pitch/page.tsx`).
  */
 export function JoinInterview({
-  label = "Join interview",
+  label,
   className = "",
   guest = false,
 }: JoinInterviewProps) {
   const router = useRouter();
+  const { copy } = useCopy();
+  const buttonLabel = label ?? copy.join.joinInterview;
 
   const {
     devicesVisible,
@@ -62,7 +65,7 @@ export function JoinInterview({
         onClick={openDevices}
         className={`inline-flex h-[60px] w-full items-center justify-center rounded-full bg-indigo px-5 text-lg font-medium text-paper shadow-[0_4px_7px_rgba(0,0,0,0.05)] transition-colors hover:bg-[#4338ca] ${className}`.trim()}
       >
-        {label}
+        {buttonLabel}
       </button>
 
       {devicesVisible ? (

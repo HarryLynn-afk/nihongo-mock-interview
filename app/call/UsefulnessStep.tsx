@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import type { InterviewReport } from "@/lib/content/sampleReport";
+import type { UiLocale } from "@/lib/content/locale";
 import {
   buildSurveyPayload,
   type SurveyAnswer,
   type SurveyRating,
   type UsefulnessView,
 } from "@/lib/content/survey";
+import { uiCopy } from "@/lib/content/uiCopy";
 
 const RATINGS: SurveyRating[] = [1, 2, 3, 4, 5];
 
@@ -15,13 +17,16 @@ export function UsefulnessStep({
   view,
   report,
   answers,
+  locale = "en",
   onFinished,
 }: {
   view: UsefulnessView;
   report: InterviewReport;
   answers: readonly SurveyAnswer[];
+  locale?: UiLocale;
   onFinished?: (outcome: "skipped" | "submitted" | "dismissed") => void;
 }) {
+  const chrome = uiCopy(locale);
   const [usefulness, setUsefulness] = useState<SurveyRating | null>(null);
   const [usability, setUsability] = useState<SurveyRating | null>(null);
   const [comment, setComment] = useState("");
@@ -63,30 +68,34 @@ export function UsefulnessStep({
       >
         <div className="flex items-start justify-between gap-3">
           <h2 id="help-the-study-title" className="text-lg font-medium">
-            Help the study
+            {chrome.usefulness.title}
           </h2>
           <button
             type="button"
             onClick={() => onFinished?.("dismissed")}
             className="rounded-full px-3 py-1 text-sm text-paper/80"
           >
-            Close
+            {chrome.usefulness.close}
           </button>
         </div>
-        <p>{view.copy.consent.english}</p>
-        <p className="text-paper/80">{view.copy.consent.burmese}</p>
+        <p>
+          {locale === "my" ? view.copy.consent.burmese : view.copy.consent.english}
+        </p>
         <fieldset className="flex flex-col gap-2">
           <legend>
-            <span className="block">{view.copy.usefulness.english}</span>
-            <span className="block text-sm text-paper/80">
-              {view.copy.usefulness.burmese}
-            </span>
+            {locale === "my"
+              ? view.copy.usefulness.burmese
+              : view.copy.usefulness.english}
           </legend>
           <p className="text-xs text-paper/60">
-            1 = {view.copy.usefulness.scaleLowEnglish} /{" "}
-            {view.copy.usefulness.scaleLowBurmese} · 5 ={" "}
-            {view.copy.usefulness.scaleHighEnglish} /{" "}
-            {view.copy.usefulness.scaleHighBurmese}
+            1 ={" "}
+            {locale === "my"
+              ? view.copy.usefulness.scaleLowBurmese
+              : view.copy.usefulness.scaleLowEnglish}{" "}
+            · 5 ={" "}
+            {locale === "my"
+              ? view.copy.usefulness.scaleHighBurmese
+              : view.copy.usefulness.scaleHighEnglish}
           </p>
           <div className="flex gap-3">
             {RATINGS.map((rating) => (
@@ -105,16 +114,19 @@ export function UsefulnessStep({
         </fieldset>
         <fieldset className="flex flex-col gap-2">
           <legend>
-            <span className="block">{view.copy.usability.english}</span>
-            <span className="block text-sm text-paper/80">
-              {view.copy.usability.burmese}
-            </span>
+            {locale === "my"
+              ? view.copy.usability.burmese
+              : view.copy.usability.english}
           </legend>
           <p className="text-xs text-paper/60">
-            1 = {view.copy.usability.scaleLowEnglish} /{" "}
-            {view.copy.usability.scaleLowBurmese} · 5 ={" "}
-            {view.copy.usability.scaleHighEnglish} /{" "}
-            {view.copy.usability.scaleHighBurmese}
+            1 ={" "}
+            {locale === "my"
+              ? view.copy.usability.scaleLowBurmese
+              : view.copy.usability.scaleLowEnglish}{" "}
+            · 5 ={" "}
+            {locale === "my"
+              ? view.copy.usability.scaleHighBurmese
+              : view.copy.usability.scaleHighEnglish}
           </p>
           <div className="flex gap-3">
             {RATINGS.map((rating) => (
@@ -132,7 +144,7 @@ export function UsefulnessStep({
           </div>
         </fieldset>
         <textarea
-          aria-label="Comment"
+          aria-label={chrome.usefulness.comment}
           value={comment}
           onChange={(event) => setComment(event.target.value)}
           className="h-20 w-full rounded-xl border border-indigo/30 bg-ink px-4 py-3 text-paper"
@@ -153,7 +165,7 @@ export function UsefulnessStep({
             }}
             className="rounded-full bg-indigo px-6 py-3 font-medium text-paper disabled:opacity-40"
           >
-            Submit
+            {chrome.usefulness.submit}
           </button>
           <button
             type="button"
@@ -162,10 +174,9 @@ export function UsefulnessStep({
               onFinished?.("skipped");
             }}
             className="rounded-full bg-paper/10 px-6 py-3 font-medium text-paper"
+            aria-label="Skip"
           >
-            <span>{view.copy.skip.english}</span>
-            {" / "}
-            <span>{view.copy.skip.burmese}</span>
+            {locale === "my" ? view.copy.skip.burmese : view.copy.skip.english}
           </button>
         </div>
       </section>

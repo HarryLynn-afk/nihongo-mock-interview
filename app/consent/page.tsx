@@ -3,10 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CONSENT_VERSION } from "@/lib/content/studyAuth";
+import { fillTemplate } from "@/lib/content/uiCopy";
 import { JoinInterview } from "../components/JoinInterview";
+import { LanguageBar } from "../components/LanguageBar";
+import { useCopy } from "../components/useUiLocale";
 
 export default function ConsentPage() {
   const router = useRouter();
+  const { copy } = useCopy();
   const [agreed, setAgreed] = useState(false);
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -21,43 +25,39 @@ export default function ConsentPage() {
       const data = (await res.json()) as { participantId?: string; error?: string };
       if (!res.ok || !data.participantId) {
         if (res.status === 401) {
-          setError(
-            "You are not signed in. Open the sign-in link from your email inbox, then agree.",
-          );
+          setError(copy.consent.errorSignedOut);
         } else if (data.error === "not_invited" || res.status === 403) {
-          setError("This email is not in the invited-tester list.");
+          setError(copy.consent.errorNotInvited);
         } else {
-          setError("Consent could not be saved. Try the email link again.");
+          setError(copy.consent.errorSave);
         }
         return;
       }
       setParticipantId(data.participantId);
     } catch {
-      setError("This email is not in the invited-tester list.");
+      setError(copy.consent.errorNotInvited);
     } finally {
       setPending(false);
     }
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-paper px-6 py-16 text-ink">
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-paper px-6 py-16 text-ink">
+      <LanguageBar variant="light" />
       <main className="flex w-full max-w-md flex-col gap-6">
-        <h1 className="text-3xl font-semibold tracking-tight">Study consent</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{copy.consent.title}</h1>
         {participantId ? (
           <>
             <p className="text-sm text-ink/70">
-              Your participant id is <strong>{participantId}</strong>. This id
-              is shown in the app; your email is not.
+              {copy.consent.participantId} <strong>{participantId}</strong>.{" "}
+              {copy.consent.participantIdNote}
             </p>
             <JoinInterview />
           </>
         ) : (
           <>
             <p className="text-sm text-ink/70">
-              This practice Interview can be saved for the NihonGo user study
-              (consent version {CONSENT_VERSION}). Answers and scores are stored
-              under a participant id, not your name. Guest sessions stay
-              separate and are not added to the study.
+              {fillTemplate(copy.consent.body, { version: CONSENT_VERSION })}
             </p>
             <label className="flex items-start gap-3 text-left text-sm">
               <input
@@ -66,8 +66,7 @@ export default function ConsentPage() {
                 onChange={(event) => setAgreed(event.target.checked)}
                 className="mt-1"
               />
-              I agree to take part and to save this session under a participant
-              id.
+              {copy.consent.checkbox}
             </label>
             <button
               type="button"
@@ -75,7 +74,7 @@ export default function ConsentPage() {
               onClick={() => void handleConsent()}
               className="rounded-full bg-indigo px-5 py-3 font-medium text-paper disabled:opacity-60"
             >
-              Agree and continue
+              {copy.consent.agree}
             </button>
             {error ? <p className="text-sm text-ink/80">{error}</p> : null}
             <button
@@ -83,7 +82,7 @@ export default function ConsentPage() {
               onClick={() => router.push("/")}
               className="text-sm font-medium text-indigo"
             >
-              Try as guest instead
+              {copy.consent.guestInstead}
             </button>
           </>
         )}

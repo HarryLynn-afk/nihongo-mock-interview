@@ -18,7 +18,6 @@ export function SenseiTile() {
         <p className="text-sm font-medium text-paper">
           Tanaka-sensei · AI · Admissions
         </p>
-        <p className="text-xs text-paper/70">Tokyo Pathway Japanese School</p>
       </div>
     </div>
   );

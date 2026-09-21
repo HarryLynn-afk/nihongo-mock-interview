@@ -71,7 +71,7 @@ describe("buildReportView", () => {
 
     expect(view.title).toBe("AI Interview Practice Feedback");
     expect(view.answerQualityTitle).toBe("Interview Answer Quality");
-    expect(view.answerQualityNote).toMatch(/confirmed response transcript/i);
+    expect(view).not.toHaveProperty("answerQualityNote");
     expect(view.headlineLabel).toBe("Strong");
     expect(view.stamp).toBe("準備OK");
     expect(view.stampColorClass).toBe("text-stamp-ready");

@@ -229,6 +229,11 @@ describe("Call screen", () => {
 
     const root = screen.getByTestId("call-screen");
     expect(root).toHaveClass("bg-ink");
+    expect(screen.getByRole("group", { name: "Language" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "ENG" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   it("places Tanaka-sensei and the student as separate classroom tiles", () => {
@@ -284,6 +289,11 @@ describe("Call screen", () => {
       screen.getByText("Tanaka-sensei · AI · Admissions"),
     ).toBeInTheDocument();
     expect(screen.getByText("You")).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Language" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "ENG" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   it("on mount, starts playing Q1 audio without a join dialog and does not warm n8n", async () => {
@@ -328,6 +338,18 @@ describe("Call screen", () => {
     expect(screen.getByTestId("language-hud").textContent).not.toMatch(
       /[\u1000-\u109F]/,
     );
+  });
+
+  it("MM shows Burmese on the student-turn HUD instead of English", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: "MM" }));
+
+    expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
+    expect(hud().getByText(questions[0].burmeseTranslation)).toBeInTheDocument();
+    expect(
+      hud().queryByText(questions[0].englishTranslation),
+    ).not.toBeInTheDocument();
   });
 
   it("during the student turn, Speak answer is shown and Submit is not until Speak is chosen", async () => {
@@ -776,7 +798,7 @@ describe("Call screen", () => {
     ).toBe(false);
   });
 
-  it("with ?pitch=1 shows locked EN/MY for the current question index, not the live transcript", async () => {
+  it("with ?pitch=1 shows locked English for the current question index, not the live transcript", async () => {
     window.history.pushState({}, "", "/call?pitch=1");
 
     render(<CallPage />);
@@ -789,7 +811,7 @@ describe("Call screen", () => {
     });
 
     expect(hud().getByText(pitchAnswers[0].english)).toBeInTheDocument();
-    expect(hud().getByText(pitchAnswers[0].burmese)).toBeInTheDocument();
+    expect(hud().queryByText(pitchAnswers[0].burmese)).not.toBeInTheDocument();
 
     await waitFor(() => {
       expect(recognitionInstances.length).toBeGreaterThan(0);
@@ -805,13 +827,31 @@ describe("Call screen", () => {
     });
 
     expect(hud().getByText(pitchAnswers[0].english)).toBeInTheDocument();
-    expect(hud().getByText(pitchAnswers[0].burmese)).toBeInTheDocument();
+    expect(hud().queryByText(pitchAnswers[0].burmese)).not.toBeInTheDocument();
     expect(
       hud().queryByText("garbage transcript that must not be matched"),
     ).not.toBeInTheDocument();
   });
 
-  it("with ?pitch=1 shows Q2 locked EN/MY after Q1, not Q1 captions", async () => {
+  it("with ?pitch=1, MM shows locked Burmese instead of English", async () => {
+    window.history.pushState({}, "", "/call?pitch=1");
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(capturedAudioSrcs).toContain("/question-1.mp3");
+    });
+    await act(async () => {
+      endedHandlers.splice(0).forEach((handler) => handler());
+    });
+
+    await user.click(screen.getByRole("button", { name: "MM" }));
+
+    expect(hud().getByText(pitchAnswers[0].burmese)).toBeInTheDocument();
+    expect(hud().queryByText(pitchAnswers[0].english)).not.toBeInTheDocument();
+  });
+
+  it("with ?pitch=1 shows Q2 locked English after Q1, not Q1 captions", async () => {
     window.history.pushState({}, "", "/call?pitch=1");
 
     const user = userEvent.setup();
@@ -843,7 +883,7 @@ describe("Call screen", () => {
     });
 
     expect(hud().getByText(pitchAnswers[1].english)).toBeInTheDocument();
-    expect(hud().getByText(pitchAnswers[1].burmese)).toBeInTheDocument();
+    expect(hud().queryByText(pitchAnswers[1].burmese)).not.toBeInTheDocument();
     expect(hud().queryByText(pitchAnswers[0].english)).not.toBeInTheDocument();
   });
 

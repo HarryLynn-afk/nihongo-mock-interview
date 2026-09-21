@@ -9,6 +9,8 @@ import {
   MAGIC_LINK_MISSING_COPY,
   readAuthCallback,
 } from "@/lib/content/studyAuth";
+import { localizeAuthMessage } from "@/lib/content/uiCopy";
+import { useCopy } from "../components/useUiLocale";
 
 export function HashSessionCatcher({
   redirectTo = "/consent",
@@ -18,6 +20,7 @@ export function HashSessionCatcher({
   idle?: boolean;
 }) {
   const router = useRouter();
+  const { locale } = useCopy();
   const [status, setStatus] = useState<string | null>(idle ? null : "Signing you in…");
 
   useEffect(() => {
@@ -94,5 +97,7 @@ export function HashSessionCatcher({
   }, [idle, redirectTo, router]);
 
   if (!status) return null;
-  return <p className="text-sm text-ink/70">{status}</p>;
+  return (
+    <p className="text-sm text-ink/70">{localizeAuthMessage(status, locale)}</p>
+  );
 }

@@ -12,7 +12,9 @@ describe("PUSHBACK_TRY_AGAIN", () => {
 });
 
 describe("tryAgainLineFor", () => {
-  it("returns the locked English line until system language exists", () => {
+  it("returns English by default and Burmese when MM is selected", () => {
     expect(tryAgainLineFor()).toBe(PUSHBACK_TRY_AGAIN.english);
+    expect(tryAgainLineFor("en")).toBe(PUSHBACK_TRY_AGAIN.english);
+    expect(tryAgainLineFor("my")).toBe(PUSHBACK_TRY_AGAIN.burmese);
   });
 });

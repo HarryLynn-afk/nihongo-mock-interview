@@ -101,6 +101,9 @@ describe("InterviewReportScreen", () => {
 
     expect(screen.getByText("AI Interview Practice Feedback")).toBeInTheDocument();
     expect(screen.getByText("Interview Answer Quality")).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Based on the confirmed response transcript/i),
+    ).not.toBeInTheDocument();
     const stamp = screen.getByText(/準備OK/);
     expect(stamp).toHaveClass("text-stamp-ready");
     expect(screen.getByText("90/100")).toBeInTheDocument();
@@ -154,23 +157,27 @@ describe("InterviewReportScreen", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("reveals Burmese explanation only after the toggle", async () => {
-    const user = userEvent.setup();
-    render(<InterviewReportScreen view={voiceView} />);
-
-    expect(
-      screen.queryByText(
-        "သင်ပြောခဲ့သည့်စာကြောင်း − 「はじめまして」။ အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
-      ),
-    ).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /burmese explanation/i }));
+  it("reveals Burmese explanation when MM is selected", () => {
+    render(<InterviewReportScreen view={voiceView} locale="my" />);
 
     expect(
       screen.getByText(
         "သင်ပြောခဲ့သည့်စာကြောင်း − 「はじめまして」။ အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
       ),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /burmese explanation/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides Burmese explanation on ENG", () => {
+    render(<InterviewReportScreen view={voiceView} locale="en" />);
+
+    expect(
+      screen.queryByText(
+        "သင်ပြောခဲ့သည့်စာကြောင်း − 「はじめまして」။ အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it("switches the detail card from the question nav", async () => {

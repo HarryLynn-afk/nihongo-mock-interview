@@ -1,38 +1,21 @@
 import type { InterviewReport } from "@/lib/content/sampleReport";
 import {
   normalizePracticeTotal,
-  RAW_RATING_LABEL,
   type Headline,
   type RubricCategoryKey,
 } from "@/lib/content/rubric";
 import type { InterviewQuestion } from "@/lib/content/questions";
 import { questions } from "@/lib/content/questions";
-import { getBankQuestionById, TOPIC_NAV_LABEL } from "@/lib/content/questionBank";
+import { getBankQuestionById } from "@/lib/content/questionBank";
 import {
   buildNextStep,
   formatQuotedCritique,
   isAffirmingCritique,
   type FormattedCritique,
 } from "@/lib/content/critiqueCopy";
-import {
-  ANSWER_QUALITY_NOTE,
-  ANSWER_QUALITY_TITLE,
-  DELIVERY_SECTION_TITLE,
-  type SessionDelivery,
-} from "@/lib/content/deliverySignals";
-
-const DISCLAIMER =
-  "NihonGo provides AI-assisted mock interview practice. It evaluates interview-answer quality from the confirmed transcript. It is not an official language-proficiency score or admission decision.";
-
-const LISTENING_OMITTED =
-  "Listening comprehension is not scored — this session has no listening task. Answer relevance is whether each answer matched the Question.";
-
-const NOT_ASSESSED = "Not assessed";
-
-const NO_ANSWER_TRANSCRIPT = "No answer was captured for this Question.";
-const NO_ANSWER_NEXT_HEADING = "Try this Question again next practice";
-const NO_ANSWER_NEXT_STEP =
-  "Check your microphone and try this Question again in your next practice session.";
+import { type SessionDelivery } from "@/lib/content/deliverySignals";
+import { DEFAULT_UI_LOCALE, type UiLocale } from "@/lib/content/locale";
+import { uiCopy, type UiCopy } from "@/lib/content/uiCopy";
 
 const SCORE_ORDER: RubricCategoryKey[] = [
   "listening",
@@ -42,35 +25,11 @@ const SCORE_ORDER: RubricCategoryKey[] = [
   "consistency",
 ];
 
-const SCORE_LABELS: Record<RubricCategoryKey, string> = {
-  speaking: "Answer wording",
-  listening: "Answer relevance",
-  grammarPoliteness: "Grammar & naturalness",
-  motivation: "Motivation for studying in Japan",
-  studyPlan: "Study plan specificity",
-  consistency: "Consistency across answers",
-};
-
-const RADAR_LABELS: Record<RubricCategoryKey, string> = {
-  speaking: "Wording",
-  listening: "Relevance",
-  grammarPoliteness: "Grammar",
-  motivation: "Motivation",
-  studyPlan: "Study plan",
-  consistency: "Consistency",
-};
-
-const QUESTION_NAV_LABELS = [
-  "Self-introduction",
-  "Motivation",
-  "Study plan",
+const PITCH_NAV_TOPICS = [
+  "selfIntroduction",
+  "motivationJapan",
+  "studyPlan",
 ] as const;
-
-const HEADLINE_LABEL: Record<Headline, string> = {
-  Ready: "Strong",
-  AlmostReady: "Good",
-  KeepPracticing: "Keep practicing",
-};
 
 const STAMP_COLOR_CLASS: Record<Headline, string> = {
   Ready: "text-stamp-ready",
@@ -111,7 +70,6 @@ export type ReportQuestionCard = {
 export type ReportView = {
   title: string;
   answerQualityTitle: string;
-  answerQualityNote: string;
   headlineLabel: string;
   stamp: InterviewReport["stamp"];
   stampColorClass: string;
@@ -132,52 +90,87 @@ export type ReportAnswerInput =
   | { questionIndex: number; status: "answered"; transcript: string }
   | { questionIndex: number; status: "skipped" };
 
+function scoreLabel(copy: UiCopy, key: RubricCategoryKey): string {
+  if (key === "speaking") return "Answer wording";
+  return copy.report.scores[key];
+}
+
+function radarLabel(copy: UiCopy, key: RubricCategoryKey): string {
+  if (key === "speaking") return "Wording";
+  return copy.report.radar[key];
+}
+
+function localizeNextHeading(heading: string, copy: UiCopy): string {
+  if (heading === "Improve next") return copy.report.improveNext;
+  if (heading === "Optional enhancement") return copy.report.optionalEnhancement;
+  if (heading === "Make it even stronger") return copy.report.makeStronger;
+  return heading;
+}
+
+function localizeRewriteHeading(heading: string, copy: UiCopy): string {
+  if (heading === "Suggested improved Japanese answer") {
+    return copy.report.rewriteHeading;
+  }
+  if (heading === "Useful phrase to keep") return copy.report.usefulPhrase;
+  return heading;
+}
+
 export function buildReportView({
   report,
   answers,
   sessionQuestions = questions,
   delivery = null,
+  locale = DEFAULT_UI_LOCALE,
 }: {
   report: InterviewReport;
   answers: readonly ReportAnswerInput[];
   sessionQuestions?: readonly InterviewQuestion[];
   delivery?: SessionDelivery | null;
+  locale?: UiLocale;
 }): ReportView {
+  const copy = uiCopy(locale);
   const notes: string[] = [];
+  const localizedDelivery = delivery
+    ? {
+        ...delivery,
+        headline: copy.report.deliveryHeadline[delivery.status],
+        note: copy.report.deliveryNote[delivery.status],
+      }
+    : null;
 
   return {
-    title: "AI Interview Practice Feedback",
-    answerQualityTitle: ANSWER_QUALITY_TITLE,
-    answerQualityNote: ANSWER_QUALITY_NOTE,
-    headlineLabel: HEADLINE_LABEL[report.headline],
+    title: copy.report.title,
+    answerQualityTitle: copy.report.answerQualityTitle,
+    headlineLabel: copy.report.headline[report.headline],
     stamp: report.stamp,
     stampColorClass: STAMP_COLOR_CLASS[report.headline],
     total: normalizePracticeTotal(report.scores, false),
-    disclaimer: DISCLAIMER,
-    listeningNote: LISTENING_OMITTED,
+    disclaimer: copy.report.disclaimer,
+    listeningNote: copy.report.listeningNote,
     voiceNote: null,
     banner: report.banner,
     scores: SCORE_ORDER.map((key) => {
       const row = report.scores[key];
+      const raw = row.raw as 1 | 2 | 3 | 4 | 5;
       return {
         key,
-        label: SCORE_LABELS[key],
-        radarLabel: RADAR_LABELS[key],
+        label: scoreLabel(copy, key),
+        radarLabel: radarLabel(copy, key),
         raw: row.raw,
-        ratingLabel: RAW_RATING_LABEL[row.raw as 1 | 2 | 3 | 4 | 5],
+        ratingLabel: copy.report.rating[raw],
         points: row.points,
         weight: row.weight,
         assessed: true,
       };
     }),
-    delivery,
-    deliveryTitle: DELIVERY_SECTION_TITLE,
+    delivery: localizedDelivery,
+    deliveryTitle: copy.report.deliveryTitle,
     questions: sessionQuestions.map((question, index) => {
       const answer = answers.find((item) => item.questionIndex === index);
       const bank = getBankQuestionById(question.id);
-      const navLabel =
-        (bank ? TOPIC_NAV_LABEL[bank.topic] : QUESTION_NAV_LABELS[index]) ??
-        `Question ${index + 1}`;
+      const navLabel = bank
+        ? copy.report.topics[bank.topic]
+        : copy.report.topics[PITCH_NAV_TOPICS[index] ?? "selfIntroduction"];
 
       if (!answer || answer.status === "skipped") {
         return {
@@ -185,14 +178,14 @@ export function buildReportView({
           navLabel,
           categoryLabel: navLabel,
           japanese: question.japanese,
-          transcript: NO_ANSWER_TRANSCRIPT,
+          transcript: copy.report.noAnswerTranscript,
           scoreText: "—",
           ratingLabel: "",
           quote: "",
           strengths: [],
-          nextHeading: NO_ANSWER_NEXT_HEADING,
-          improvements: [NO_ANSWER_NEXT_STEP],
-          rewriteHeading: "Suggested improved Japanese answer",
+          nextHeading: copy.report.noAnswerNextHeading,
+          improvements: [copy.report.noAnswerNextStep],
+          rewriteHeading: copy.report.rewriteHeading,
           rewrite: "",
           burmese: "",
           evidence: "",
@@ -208,29 +201,29 @@ export function buildReportView({
       const category = critique?.category;
       const scored = category ? report.scores[category] : null;
       const transcript = answer.transcript.trim() || "（無言）";
-      const next = formatted && category && scored
-        ? buildNextStep({
-            affirming,
-            raw: scored.raw,
-            category,
-            transcript,
-            quote: formatted.quote,
-            explanation: formatted.explanation,
-            rewrite: formatted.rewrite,
-          })
-        : null;
+      const next =
+        formatted && category && scored
+          ? buildNextStep({
+              affirming,
+              raw: scored.raw,
+              category,
+              transcript,
+              quote: formatted.quote,
+              explanation: formatted.explanation,
+              rewrite: formatted.rewrite,
+            })
+          : null;
       const showScore = Boolean(category && category !== "speaking" && scored);
       const quote = formatted?.quote ?? "";
+      const raw = scored ? (scored.raw as 1 | 2 | 3 | 4 | 5) : null;
       return {
         questionIndex: index,
         navLabel,
-        categoryLabel: category ? SCORE_LABELS[category] : navLabel,
+        categoryLabel: category ? scoreLabel(copy, category) : navLabel,
         japanese: question.japanese,
         transcript,
         scoreText: showScore && scored ? `${scored.points}/${scored.weight}` : "—",
-        ratingLabel: showScore && scored
-          ? RAW_RATING_LABEL[scored.raw as 1 | 2 | 3 | 4 | 5]
-          : "",
+        ratingLabel: showScore && scored && raw ? copy.report.rating[raw] : "",
         quote,
         strengths: formatted
           ? affirming
@@ -239,9 +232,15 @@ export function buildReportView({
               ? [`Your answer includes 「${quote}」.`]
               : []
           : [],
-        nextHeading: next?.heading ?? "Improve next",
+        nextHeading: localizeNextHeading(
+          next?.heading ?? "Improve next",
+          copy,
+        ),
         improvements: next?.lines ?? [],
-        rewriteHeading: next?.rewriteHeading ?? "Suggested improved Japanese answer",
+        rewriteHeading: localizeRewriteHeading(
+          next?.rewriteHeading ?? "Suggested improved Japanese answer",
+          copy,
+        ),
         rewrite: next?.rewrite ?? "",
         burmese: formatted?.burmese ?? "",
         evidence: formatted ? formatted.explanation : "",
@@ -253,4 +252,4 @@ export function buildReportView({
   };
 }
 
-export const REPORT_NOT_ASSESSED = NOT_ASSESSED;
+export const REPORT_NOT_ASSESSED = uiCopy("en").report.deliveryHeadline.notAssessed;

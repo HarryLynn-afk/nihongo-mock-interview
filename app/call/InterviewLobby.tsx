@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { Ref } from "react";
+import { useCopy } from "../components/useUiLocale";
 import {
   cameraTroubleCopy,
   classifyDeviceError,
@@ -33,6 +34,7 @@ export function InterviewLobby({
   onToggleMic,
   onContinue,
 }: InterviewLobbyProps) {
+  const { copy } = useCopy();
   const showCameraPreview = cameraEnabled && !cameraBlocked;
   const browserFamily = detectBrowserFamily(
     typeof navigator === "undefined" ? "" : navigator.userAgent,
@@ -49,14 +51,28 @@ export function InterviewLobby({
       ? classifyDeviceError(cameraErrorName ?? "")
       : null;
   const cameraHelp = cameraKind
-    ? cameraTroubleCopy(cameraKind, browserFamily)
+    ? cameraKind === "missing" || cameraKind === "unknown"
+      ? copy.cameraMiss
+      : cameraTroubleCopy(cameraKind, browserFamily)
     : null;
   const cameraHelpIsQuiet =
     cameraKind === "missing" || cameraKind === "unknown";
+  const cameraStatus =
+    cameraEnabled && !cameraBlocked
+      ? copy.lobby.cameraReady
+      : cameraEnabled && cameraBlocked
+        ? copy.lobby.cameraBlocked
+        : copy.lobby.cameraOff;
+  const micStatus = micBlocked
+    ? copy.lobby.micBlocked
+    : micEnabled
+      ? copy.lobby.micReady
+      : copy.lobby.micOff;
+
   return (
     <div
       role="dialog"
-      aria-label="Ready to join"
+      aria-label={copy.lobby.readyToJoin}
       className="fixed inset-0 z-50 flex items-center justify-center bg-ink p-6 text-paper"
     >
       <div className="flex w-full max-w-3xl flex-col gap-8 md:flex-row md:items-center">
@@ -83,23 +99,13 @@ export function InterviewLobby({
             />
           )}
           <p className="absolute bottom-3 left-3 rounded-full bg-ink/80 px-3 py-1 text-xs text-paper">
-            Camera{" "}
-            {cameraEnabled && !cameraBlocked
-              ? "ready"
-              : cameraEnabled && cameraBlocked
-                ? "blocked"
-                : "off"}{" "}
-            · Mic {micBlocked ? "blocked" : micEnabled ? "ready" : "off"}
+            {copy.lobby.camera} {cameraStatus} · {copy.lobby.mic} {micStatus}
           </p>
         </div>
 
         <div className="flex w-full flex-col text-left">
-          <h2 className="text-2xl font-medium">
-            Japanese interview with Tanaka-sensei
-          </h2>
-          <p className="mt-2 text-paper/80">
-            Choose camera and microphone, then enter the classroom.
-          </p>
+          <h2 className="text-2xl font-medium">{copy.lobby.heading}</h2>
+          <p className="mt-2 text-paper/80">{copy.lobby.subhead}</p>
 
           <div className="mt-6 flex flex-col gap-3">
             {/* Click, not change: Safari only shows a camera/mic popup if
@@ -114,10 +120,10 @@ export function InterviewLobby({
                   onToggleCamera();
                 }}
               />
-              Camera
+              {copy.lobby.camera}
             </label>
             <p className="-mt-1 ml-7 text-sm text-paper/60">
-              Camera is optional. Your feedback comes from your voice.
+              {copy.lobby.cameraOptional}
             </p>
             <label className="flex items-center gap-3">
               <input
@@ -129,7 +135,7 @@ export function InterviewLobby({
                   onToggleMic();
                 }}
               />
-              Microphone
+              {copy.lobby.microphone}
             </label>
           </div>
 
@@ -176,7 +182,7 @@ export function InterviewLobby({
             onClick={onContinue}
             className="mt-8 w-full rounded-full bg-indigo px-6 py-3 font-medium text-paper"
           >
-            Enter classroom
+            {copy.lobby.enterClassroom}
           </button>
         </div>
       </div>

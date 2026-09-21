@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { UiLocale } from "@/lib/content/locale";
+import { uiCopy } from "@/lib/content/uiCopy";
 import type { ReportQuestionCard, ReportView } from "./buildReportView";
-import { REPORT_NOT_ASSESSED } from "./buildReportView";
 
 export const REPORT_STAMP_REVEAL_MS = 700;
 export const REPORT_COACHING_REVEAL_MS = 1400;
@@ -77,19 +78,18 @@ function HighlightedAnswer({
 
 function QuestionCard({
   card,
-  burmeseOn,
-  onToggleBurmese,
+  locale,
 }: {
   card: ReportQuestionCard;
-  burmeseOn: boolean;
-  onToggleBurmese: () => void;
+  locale: UiLocale;
 }) {
+  const copy = uiCopy(locale);
   return (
     <article className="flex min-h-0 flex-1 flex-col gap-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-paper">
-            Question {card.questionIndex + 1} · {card.navLabel}
+            {copy.report.questionLabel} {card.questionIndex + 1} · {card.navLabel}
           </p>
           <p className="mt-1 text-paper/80">{card.japanese}</p>
         </div>
@@ -102,7 +102,7 @@ function QuestionCard({
         <div className="flex flex-col gap-3">
           <div>
             <p className="text-xs font-medium tracking-wide text-paper/50">
-              Your answer
+              {copy.report.yourAnswer}
             </p>
             <div className="mt-2 rounded-xl border border-paper/10 bg-paper/5 px-4 py-3 text-sm leading-relaxed">
               <HighlightedAnswer
@@ -112,16 +112,7 @@ function QuestionCard({
               />
             </div>
           </div>
-          <button
-            type="button"
-            aria-pressed={burmeseOn}
-            aria-label="Burmese explanation"
-            onClick={onToggleBurmese}
-            className="w-fit rounded-full border border-paper/20 px-3 py-1 text-sm text-paper/80"
-          >
-            {burmeseOn ? "Hide Burmese explanation" : "Show Burmese explanation"}
-          </button>
-          {burmeseOn ? (
+          {locale === "my" ? (
             <p
               lang="my"
               data-testid="report-burmese"
@@ -135,7 +126,7 @@ function QuestionCard({
         <div className="flex flex-col gap-3">
           <div>
             <p className="text-xs font-medium tracking-wide text-stamp-ready">
-              What you did well
+              {copy.report.whatWentWell}
             </p>
             <ul className="mt-2 flex flex-col gap-1 text-sm text-paper/90">
               {card.strengths.length > 0 ? (
@@ -146,7 +137,7 @@ function QuestionCard({
                   </li>
                 ))
               ) : (
-                <li className="text-paper/50">No strength note for this Question.</li>
+                <li className="text-paper/50">{copy.report.noStrength}</li>
               )}
             </ul>
           </div>
@@ -163,7 +154,7 @@ function QuestionCard({
                   </li>
                 ))
               ) : (
-                <li className="text-paper/50">No extra correction for this Question.</li>
+                <li className="text-paper/50">{copy.report.noExtra}</li>
               )}
             </ul>
           </div>
@@ -174,17 +165,17 @@ function QuestionCard({
           {card.rewriteHeading}
         </p>
         <p className="mt-2 rounded-xl border border-indigo/30 bg-indigo/10 px-4 py-3 text-sm leading-relaxed text-paper">
-          {card.rewrite || "No rewrite was returned for this Question."}
+          {card.rewrite || copy.report.noRewrite}
         </p>
       </div>
       {card.quote || card.evidence ? (
         <p className="text-xs text-paper/50">
           {card.quote && card.quote !== "（無言）" ? (
             <>
-              Evidence: 「<span>{card.quote}</span>」. {card.evidence}
+              {copy.report.evidence}: 「<span>{card.quote}</span>」. {card.evidence}
             </>
           ) : (
-            `Missing element: ${card.evidence}`
+            `${copy.report.missingElement}: ${card.evidence}`
           )}
         </p>
       ) : null}
@@ -195,17 +186,19 @@ function QuestionCard({
 export function InterviewReportScreen({
   view,
   sessionId,
+  locale = "en",
   onRevealComplete,
   onHelpStudy,
 }: {
   view: ReportView;
   sessionId?: string;
+  locale?: UiLocale;
   onRevealComplete?: () => void;
   onHelpStudy?: () => void;
 }) {
+  const copy = uiCopy(locale);
   const [stage, setStage] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [burmeseOn, setBurmeseOn] = useState(false);
 
   useEffect(() => {
     const stamp = window.setTimeout(() => setStage(1), REPORT_STAMP_REVEAL_MS);
@@ -233,7 +226,7 @@ export function InterviewReportScreen({
           onClick={onHelpStudy}
           className="absolute right-4 top-4 z-10 rounded-full bg-indigo px-4 py-2 text-sm font-medium text-paper md:right-5 md:top-5"
         >
-          Help the study
+          {copy.report.helpTheStudy}
         </button>
       ) : null}
       <div
@@ -246,7 +239,7 @@ export function InterviewReportScreen({
         className="flex w-full shrink-0 flex-col gap-2 md:max-w-52"
       >
         <p className="text-xs font-medium tracking-wide text-paper/50">
-          Interview transcript
+          {copy.report.transcript}
         </p>
         {sessionId ? (
           <p data-testid="session-id" className="text-[10px] tracking-wide text-paper/40">
@@ -262,7 +255,6 @@ export function InterviewReportScreen({
                 type="button"
                 onClick={() => {
                   setSelectedIndex(card.questionIndex);
-                  setBurmeseOn(false);
                 }}
                 className={`rounded-xl px-3 py-2 text-left text-sm ${
                   selectedNav
@@ -291,7 +283,6 @@ export function InterviewReportScreen({
             <p className="mt-1 text-sm font-medium text-paper/80">
               {view.answerQualityTitle}
             </p>
-            <p className="mt-1 text-xs text-paper/50">{view.answerQualityNote}</p>
             {view.banner ? (
               <p className="mt-1 text-sm text-paper/80">{view.banner}</p>
             ) : null}
@@ -375,7 +366,9 @@ export function InterviewReportScreen({
                     </span>
                   </>
                 ) : (
-                  <span className="text-paper/50">{REPORT_NOT_ASSESSED}</span>
+                  <span className="text-paper/50">
+                    {copy.report.deliveryHeadline.notAssessed}
+                  </span>
                 )}
               </li>
             ))}
@@ -414,11 +407,7 @@ export function InterviewReportScreen({
           className={`flex min-h-[18rem] flex-1 flex-col overflow-y-auto rounded-2xl border border-paper/10 bg-paper/5 p-4 ${revealClass(stage >= 2)}`}
         >
           {selected ? (
-            <QuestionCard
-              card={selected}
-              burmeseOn={burmeseOn}
-              onToggleBurmese={() => setBurmeseOn((current) => !current)}
-            />
+            <QuestionCard card={selected} locale={locale} />
           ) : null}
         </div>
       </div>

@@ -29,8 +29,6 @@ export type SessionDelivery = {
 
 export const DELIVERY_SECTION_TITLE = "Speech Delivery Signals";
 export const ANSWER_QUALITY_TITLE = "Interview Answer Quality";
-export const ANSWER_QUALITY_NOTE =
-  "Based on the confirmed response transcript.";
 export const DELIVERY_NOT_PROFICIENCY =
   "These are timing signals, not a Japanese proficiency score.";
 

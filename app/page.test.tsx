@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Home from "./page";
+import { UI_LOCALE_STORAGE_KEY } from "@/lib/content/locale";
 
 const { pushMock } = vi.hoisted(() => ({ pushMock: vi.fn() }));
 
@@ -54,6 +55,10 @@ describe("Home (start screen)", () => {
     expect(screen.getByText("Speak in Japanese")).toHaveClass("rounded-full");
     expect(screen.getByText("Coaching report")).toHaveClass("rounded-full");
     expect(screen.getByText("10–15 min")).toHaveClass("rounded-full");
+    expect(screen.getByText("Tanaka-sensei")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Tokyo Pathway Japanese School"),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByText("Japanese language school interview practice"),
     ).not.toBeInTheDocument();
@@ -65,6 +70,11 @@ describe("Home (start screen)", () => {
     expect(
       screen.queryByRole("dialog", { name: /ready to join/i }),
     ).not.toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Language" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "ENG" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   it("places Try as guest and Participant login in an equal-width row on desktop", () => {
@@ -159,6 +169,45 @@ describe("Home (start screen)", () => {
     expect(joinContainer).toHaveClass("hidden", "md:flex");
     expect(desktopOnlyMessage).toHaveClass("md:hidden");
     expect(desktopOnlyMessage).not.toHaveClass("hidden");
+  });
+
+  it("switches start-screen copy to Burmese when MM is selected", async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.click(screen.getByRole("button", { name: "MM" }));
+
+    expect(screen.getByRole("button", { name: "MM" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(
+      screen.getByRole("heading", {
+        name: "Tanaka-sensei နှင့် အင်တာဗျူး လေ့ကျင့်ပါ",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "ဧည့်သည်အဖြစ် စမ်းကြည့်ရန်" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "ပါဝင်သူ ဝင်ရောက်ရန်" }),
+    ).toBeInTheDocument();
+    expect(sessionStorage.getItem(UI_LOCALE_STORAGE_KEY)).toBe("my");
+
+    await user.click(
+      screen.getByRole("button", { name: "ဧည့်သည်အဖြစ် စမ်းကြည့်ရန်" }),
+    );
+    expect(
+      screen.getByRole("dialog", { name: "ဝင်ရန် အဆင်သင့်" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "Tanaka-sensei နှင့် ဂျပန် အင်တာဗျူး",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "စာသင်ခန်းထဲ ဝင်ရန်" }),
+    ).toBeInTheDocument();
   });
 
   it("never prints exam or verdict labels anywhere on the page", () => {

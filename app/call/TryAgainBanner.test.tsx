@@ -12,4 +12,12 @@ describe("TryAgainBanner", () => {
     expect(banner).not.toHaveTextContent(PUSHBACK_TRY_AGAIN.japanese);
     expect(banner).not.toHaveTextContent(PUSHBACK_TRY_AGAIN.burmese);
   });
+
+  it("shows the locked Burmese line when MM is selected", () => {
+    render(<TryAgainBanner locale="my" />);
+
+    const banner = screen.getByRole("status");
+    expect(banner).toHaveTextContent(PUSHBACK_TRY_AGAIN.burmese);
+    expect(banner).not.toHaveTextContent(PUSHBACK_TRY_AGAIN.english);
+  });
 });

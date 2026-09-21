@@ -191,12 +191,26 @@ describe("UsefulnessStep", () => {
     render(<UsefulnessStep view={view} report={report} answers={answers} />);
 
     expect(screen.getByText(view.copy.consent.english)).toBeInTheDocument();
-    expect(screen.getByText(view.copy.consent.burmese)).toBeInTheDocument();
+    expect(screen.queryByText(view.copy.consent.burmese)).not.toBeInTheDocument();
     expect(screen.getByText(view.copy.usefulness.english)).toBeInTheDocument();
-    expect(screen.getByText(view.copy.usefulness.burmese)).toBeInTheDocument();
+    expect(screen.queryByText(view.copy.usefulness.burmese)).not.toBeInTheDocument();
     expect(screen.getByText(view.copy.usability.english)).toBeInTheDocument();
-    expect(screen.getByText(view.copy.usability.burmese)).toBeInTheDocument();
     expect(screen.getByText(view.copy.skip.english)).toBeInTheDocument();
+  });
+
+  it("shows Burmese Help the study copy when MM is selected", () => {
+    render(
+      <UsefulnessStep
+        view={view}
+        report={report}
+        answers={answers}
+        locale="my"
+      />,
+    );
+
+    expect(screen.getByText(view.copy.consent.burmese)).toBeInTheDocument();
+    expect(screen.queryByText(view.copy.consent.english)).not.toBeInTheDocument();
+    expect(screen.getByText(view.copy.usefulness.burmese)).toBeInTheDocument();
     expect(screen.getByText(view.copy.skip.burmese)).toBeInTheDocument();
   });
 });

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { useCopy } from "../components/useUiLocale";
 
 type SpeakAnswerButtonProps = {
   listening: boolean;
@@ -11,11 +12,12 @@ export function SpeakAnswerButton({
   paused = false,
   onClick,
 }: SpeakAnswerButtonProps) {
+  const { copy } = useCopy();
   const ariaLabel = paused
-    ? "Resume listening"
+    ? copy.call.resumeListening
     : listening
-      ? "Pause listening"
-      : "Speak answer";
+      ? copy.call.pauseListening
+      : copy.call.speakAnswer;
 
   return (
     <button

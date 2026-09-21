@@ -1,3 +1,5 @@
+import { useCopy } from "../components/useUiLocale";
+
 type InterviewStartReminderProps = {
   secondsLeft: number;
   onSkip: () => void;
@@ -7,6 +9,8 @@ export function InterviewStartReminder({
   secondsLeft,
   onSkip,
 }: InterviewStartReminderProps) {
+  const { copy } = useCopy();
+
   return (
     <div
       data-testid="start-reminder-backdrop"
@@ -14,13 +18,13 @@ export function InterviewStartReminder({
     >
       <div
         role="dialog"
-        aria-label="Interview will start soon"
+        aria-label={copy.reminder.aria}
         className="flex w-full max-w-md flex-col items-center rounded-2xl border border-paper/10 bg-ink p-8 text-center text-paper"
       >
         <p className="text-sm tracking-wide text-paper/60">
-          Japanese interview with Tanaka-sensei
+          {copy.reminder.eyebrow}
         </p>
-        <h2 className="mt-3 text-2xl font-medium">Interview will start soon</h2>
+        <h2 className="mt-3 text-2xl font-medium">{copy.reminder.heading}</h2>
         <p className="mt-6 text-6xl font-medium tabular-nums">{secondsLeft}s</p>
         <button
           type="button"
@@ -28,7 +32,7 @@ export function InterviewStartReminder({
           disabled={secondsLeft <= 0}
           className="mt-10 w-full rounded-full bg-indigo px-6 py-3 font-medium text-paper disabled:opacity-60"
         >
-          Skip
+          {copy.reminder.skip}
         </button>
       </div>
     </div>

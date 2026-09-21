@@ -34,7 +34,9 @@ import {
 } from "@/lib/content/survey";
 import { useUsefulnessNudge } from "./useUsefulnessNudge";
 import { loadDevicePrefs, type DevicePrefs } from "../components/devicePrefs";
-import { GUEST_BANNER } from "@/lib/content/studyAuth";
+import { LanguageToggle } from "../components/LanguageToggle";
+import { useCopy } from "../components/useUiLocale";
+import { helperLinesForLocale } from "@/lib/content/locale";
 
 const DEFAULT_DEVICE_PREFS: DevicePrefs = { cameraOn: true, micOn: true };
 
@@ -73,6 +75,7 @@ export default function CallPage() {
     null,
   );
   const savedStudyRef = useRef(false);
+  const { locale, setLocale, copy } = useCopy();
 
   useEffect(() => {
     setDevicePrefs(loadDevicePrefs());
@@ -255,6 +258,16 @@ export default function CallPage() {
     isPitchMode && phase === "studentAnswering" && questionIndex !== null
       ? getPitchCaptions(questionIndex)
       : null;
+  const helperLines =
+    phase === "studentAnswering" && currentQuestion
+      ? helperLinesForLocale(
+          locale,
+          pitchCaptions ?? {
+            english: currentQuestion.englishTranslation,
+            burmese: currentQuestion.burmeseTranslation,
+          },
+        )
+      : { english: null, burmese: null };
   const allSkipped =
     displayPhase === "done" &&
     displayAnswers.length > 0 &&
@@ -286,31 +299,40 @@ export default function CallPage() {
             : "mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-7xl flex-col items-center gap-5 md:min-h-[calc(100vh-3rem)] md:gap-6"
         }
       >
+        <div className="flex w-full shrink-0 items-center justify-end gap-3">
+          {SHOW_SKIP_INTERVIEW &&
+          !isPitchMode &&
+          !previewing &&
+          phase !== "done" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setPreviewReport(getSampleReport(null));
+                setFormEnabled(true);
+              }}
+              className="text-xs text-paper/40 underline-offset-2 hover:text-paper/70 hover:underline"
+            >
+              {copy.call.skipInterview}
+            </button>
+          ) : null}
+          <LanguageToggle
+            locale={locale}
+            onChange={setLocale}
+            variant="dark"
+          />
+        </div>
         {!isPitchMode && !participantId ? (
           <p className="w-full shrink-0 rounded-xl border border-paper/15 bg-paper/5 px-4 py-2 text-center text-sm text-paper/80">
-            {GUEST_BANNER}
+            {copy.call.guestBanner}
           </p>
         ) : null}
         {participantId ? (
           <p className="w-full text-center text-sm text-paper/70">
-            Participant {participantId}
+            {copy.call.participant} {participantId}
           </p>
         ) : null}
-        {pushbackVisible && !previewing ? <TryAgainBanner /> : null}
-        {SHOW_SKIP_INTERVIEW &&
-        !isPitchMode &&
-        !previewing &&
-        phase !== "done" ? (
-          <button
-            type="button"
-            onClick={() => {
-              setPreviewReport(getSampleReport(null));
-              setFormEnabled(true);
-            }}
-            className="self-end text-xs text-paper/40 underline-offset-2 hover:text-paper/70 hover:underline"
-          >
-            Skip interview
-          </button>
+        {pushbackVisible && !previewing ? (
+          <TryAgainBanner locale={locale} />
         ) : null}
         <div
           data-testid="call-stage"
@@ -326,6 +348,7 @@ export default function CallPage() {
             <InterviewReportScreen
               view={buildReportView({
                 report,
+                locale,
                 sessionQuestions: displayQuestions,
                 answers: displayAnswers.map((answer) =>
                   answer.status === "answered"
@@ -352,6 +375,7 @@ export default function CallPage() {
                   ? openUsefulness
                   : undefined
               }
+              locale={locale}
             />
           ) : (
             <>
@@ -378,17 +402,8 @@ export default function CallPage() {
                       liveCaption={
                         studentTurn === "speak" ? null : liveCaption
                       }
-                      english={
-                        phase === "studentAnswering"
-                          ? (pitchCaptions?.english ??
-                            currentQuestion.englishTranslation)
-                          : null
-                      }
-                      burmese={
-                        phase === "studentAnswering"
-                          ? (pitchCaptions?.burmese ?? null)
-                          : null
-                      }
+                      english={helperLines.english}
+                      burmese={helperLines.burmese}
                       onHearAgain={
                         studentTurn === "idle" || speakPaused
                           ? handleHearAgain
@@ -425,6 +440,7 @@ export default function CallPage() {
                 answer.status === "answered" ? answer.pushbackCount : 2,
               forced: false,
             }))}
+            locale={locale}
             onFinished={(outcome) => {
               closeUsefulness();
               if (outcome === "submitted") setUsefulnessSubmitted(true);
@@ -443,11 +459,11 @@ export default function CallPage() {
               className="w-full rounded-2xl border border-paper/10 bg-paper/5 px-4 py-3 text-center"
             >
               <p className="text-xs font-medium tracking-wide text-paper/60">
-                Live transcript
+                {copy.call.liveTranscript}
               </p>
               <p className="mt-1.5 text-base leading-relaxed text-paper">
                 {liveCaption ??
-                  (speakPaused ? "Paused" : "Listening…")}
+                  (speakPaused ? copy.call.paused : copy.call.listening)}
               </p>
             </div>
           ) : null}
@@ -458,7 +474,7 @@ export default function CallPage() {
                   <button
                     type="button"
                     onClick={handleAnswerAgain}
-                    aria-label="Answer again"
+                    aria-label={copy.call.answerAgain}
                     className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-paper/70 transition-colors hover:bg-paper/10 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper"
                   >
                     <svg
@@ -474,7 +490,7 @@ export default function CallPage() {
                       <path d="M3 12a9 9 0 1 0 3-6.7" />
                       <path d="M3 4v5h5" />
                     </svg>
-                    1 retry
+                    {copy.call.oneRetry}
                   </button>
                 ) : null}
               </div>
@@ -500,7 +516,7 @@ export default function CallPage() {
                 disabled={submitPending}
                 className="rounded-full bg-indigo px-6 py-3 font-medium text-paper transition-colors hover:bg-indigo/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Submit answer
+                {copy.call.submitAnswer}
               </button>
             ) : null}
           </div>
