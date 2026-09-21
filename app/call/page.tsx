@@ -177,6 +177,8 @@ export default function CallPage() {
     speakPaused,
     onSpeakAnswer,
     onToggleSpeakPause,
+    onAnswerAgain,
+    canAnswerAgain,
     onSubmitClick,
     submitPending,
     studentTurn,
@@ -205,9 +207,48 @@ export default function CallPage() {
     };
   }, [currentQuestion, endSenseiTurn, previewing]);
 
+  const hearAgainRef = useRef<{ stop: () => void } | null>(null);
+  const [hearAgainPlaying, setHearAgainPlaying] = useState(false);
+
+  function stopHearAgain() {
+    hearAgainRef.current?.stop();
+    hearAgainRef.current = null;
+    setHearAgainPlaying(false);
+  }
+
+  useEffect(() => {
+    return () => stopHearAgain();
+  }, [currentQuestion]);
+
+  function handleHearAgain() {
+    if (!currentQuestion) return;
+    if (hearAgainPlaying) {
+      stopHearAgain();
+      return;
+    }
+    stopHearAgain();
+    const playback = playQuestionAudio(currentQuestion.id);
+    hearAgainRef.current = playback;
+    setHearAgainPlaying(true);
+    void playback.ended.then(() => {
+      if (hearAgainRef.current === playback) setHearAgainPlaying(false);
+    });
+  }
+
   function handleSpeakAnswer() {
+    stopHearAgain();
     if (!micOn) toggleMic();
     onSpeakAnswer();
+  }
+
+  function handleToggleSpeakPause() {
+    if (speakPaused) stopHearAgain();
+    onToggleSpeakPause();
+  }
+
+  function handleAnswerAgain() {
+    stopHearAgain();
+    onAnswerAgain();
   }
 
   const pitchCaptions =
@@ -348,6 +389,12 @@ export default function CallPage() {
                           ? (pitchCaptions?.burmese ?? null)
                           : null
                       }
+                      onHearAgain={
+                        studentTurn === "idle" || speakPaused
+                          ? handleHearAgain
+                          : undefined
+                      }
+                      hearAgainPlaying={hearAgainPlaying}
                     />
                   ) : null}
                 </div>
@@ -405,19 +452,47 @@ export default function CallPage() {
             </div>
           ) : null}
           <div className="flex flex-col items-center gap-3">
-            {studentTurn === "idle" ? (
-              <SpeakAnswerButton
-                listening={false}
-                onClick={handleSpeakAnswer}
-              />
-            ) : null}
-            {studentTurn === "speak" ? (
-              <SpeakAnswerButton
-                listening={!speakPaused}
-                paused={speakPaused}
-                onClick={onToggleSpeakPause}
-              />
-            ) : null}
+            <div className="flex items-center justify-center gap-3">
+              <div className="flex min-w-[5.5rem] items-center justify-end">
+                {canAnswerAgain ? (
+                  <button
+                    type="button"
+                    onClick={handleAnswerAgain}
+                    aria-label="Answer again"
+                    className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-paper/70 transition-colors hover:bg-paper/10 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="size-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M3 12a9 9 0 1 0 3-6.7" />
+                      <path d="M3 4v5h5" />
+                    </svg>
+                    1 retry
+                  </button>
+                ) : null}
+              </div>
+              {studentTurn === "idle" ? (
+                <SpeakAnswerButton
+                  listening={false}
+                  onClick={handleSpeakAnswer}
+                />
+              ) : null}
+              {studentTurn === "speak" ? (
+                <SpeakAnswerButton
+                  listening={!speakPaused}
+                  paused={speakPaused}
+                  onClick={handleToggleSpeakPause}
+                />
+              ) : null}
+              <div className="min-w-[5.5rem]" aria-hidden="true" />
+            </div>
             {studentTurn === "speak" ? (
               <button
                 type="button"

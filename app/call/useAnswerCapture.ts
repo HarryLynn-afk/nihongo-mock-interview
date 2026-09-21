@@ -73,10 +73,12 @@ export function useAnswerCapture({
   const attemptCountRef = useRef(0);
   const liveSessionRef = useRef<LiveTranscriptionSession | null>(null);
   const submitPendingRef = useRef(false);
+  const answerAgainUsedRef = useRef(false);
 
   if (!active) {
     autoSpeakUsedRef.current = false;
     submitPendingRef.current = false;
+    answerAgainUsedRef.current = false;
     if (answerMode !== null) setAnswerMode(null);
     if (spokenCaption !== null) setSpokenCaption(null);
     if (speakPaused) setSpeakPaused(false);
@@ -322,6 +324,20 @@ export function useAnswerCapture({
     finishSpeak(spokenCaption ?? "");
   }, [answerMode, onSubmit, spokenCaption]);
 
+  const canAnswerAgain =
+    studentTurn === "speak" &&
+    !answerAgainUsedRef.current &&
+    !submitPending;
+
+  function onAnswerAgain() {
+    if (answerMode !== "speak") return;
+    if (submitPendingRef.current) return;
+    if (answerAgainUsedRef.current) return;
+    answerAgainUsedRef.current = true;
+    resetSpeakSession();
+    setAnswerMode(null);
+  }
+
   return {
     liveCaption: answerMode === "speak" ? spokenCaption : null,
     speakPaused,
@@ -330,6 +346,8 @@ export function useAnswerCapture({
       setAnswerMode("speak");
     },
     onToggleSpeakPause: () => setSpeakPaused((current) => !current),
+    onAnswerAgain,
+    canAnswerAgain,
     onSubmitClick,
     submitPending,
     studentTurn,

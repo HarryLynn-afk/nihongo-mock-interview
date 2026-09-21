@@ -87,6 +87,33 @@ describe("LanguageHud", () => {
     expect(screen.getByText("ကျွန်တော် အောင်မင်းခန့်ပါ။")).toBeInTheDocument();
   });
 
+  it("shows Hear again when onHearAgain is provided", () => {
+    render(
+      <LanguageHud
+        speaker="student"
+        caption="はじめに、簡単に自己紹介をお願いします。"
+        onHearAgain={() => {}}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /hear again/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show Hear again when onHearAgain is omitted", () => {
+    render(
+      <LanguageHud
+        speaker="student"
+        caption="はじめに、簡単に自己紹介をお願いします。"
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: /hear again/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it("keeps the Question caption and does not show try-again copy", () => {
     render(
       <LanguageHud

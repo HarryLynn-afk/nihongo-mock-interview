@@ -369,6 +369,94 @@ describe("Call screen", () => {
     ).toBeInTheDocument();
   });
 
+  it("Answer again during the first Speak returns to Speak answer", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    expect(
+      within(screen.getByTestId("answer-dock")).getByRole("button", {
+        name: /answer again/i,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("1 retry")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /answer again/i }));
+
+    expect(
+      screen.getByRole("button", { name: /speak answer/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /answer again/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /submit answer/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not show Answer again after it was used on this Question", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    await user.click(screen.getByRole("button", { name: /answer again/i }));
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+
+    expect(
+      screen.queryByRole("button", { name: /answer again/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("Answer again is available again on the next Question", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    await user.click(screen.getByRole("button", { name: /answer again/i }));
+    await speakAndSubmit(user, "はじめまして");
+
+    await waitFor(() => {
+      expect(hud().getByText(questions[1].japanese)).toBeInTheDocument();
+    });
+    await act(async () => {
+      endedHandlers.splice(0).forEach((handler) => handler());
+    });
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+
+    expect(
+      screen.getByRole("button", { name: /answer again/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("Hear again on idle replays the Question without leaving the student turn", async () => {
+    const user = await startStudentTurn();
+
+    expect(
+      within(screen.getByTestId("language-hud")).getByRole("button", {
+        name: /hear again/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("answer-dock")).queryByRole("button", {
+        name: /hear again/i,
+      }),
+    ).not.toBeInTheDocument();
+    expect(capturedAudioSrcs.filter((src) => src === "/question-1.mp3")).toHaveLength(
+      1,
+    );
+    await user.click(screen.getByRole("button", { name: /hear again/i }));
+
+    expect(capturedAudioSrcs.filter((src) => src === "/question-1.mp3")).toHaveLength(
+      2,
+    );
+    expect(
+      screen.getByRole("button", { name: /speak answer/i }),
+    ).toBeInTheDocument();
+    await act(async () => {
+      endedHandlers.splice(0).forEach((handler) => handler());
+    });
+    expect(
+      screen.getByRole("button", { name: /speak answer/i }),
+    ).toBeInTheDocument();
+  });
+
   it("disables Submit answer while the live commit is pending", async () => {
     const startLive = vi
       .spyOn(liveTranscription, "startLiveTranscriptionSession")
@@ -413,6 +501,22 @@ describe("Call screen", () => {
 
     expect(screen.getByTestId("speak-answer-paused")).toBeInTheDocument();
     expect(screen.getByTestId("live-transcript")).toHaveTextContent("Paused");
+  });
+
+  it("shows Hear again when listening is paused, not while listening", async () => {
+    const user = await startStudentTurn();
+
+    await user.click(screen.getByRole("button", { name: /speak answer/i }));
+    expect(
+      screen.queryByRole("button", { name: /hear again/i }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /pause listening/i }));
+    expect(
+      within(screen.getByTestId("language-hud")).getByRole("button", {
+        name: /hear again/i,
+      }),
+    ).toBeInTheDocument();
   });
 
   it("does not show a recording control just because the mic is off", async () => {

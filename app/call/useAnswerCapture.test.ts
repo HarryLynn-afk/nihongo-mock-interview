@@ -104,6 +104,132 @@ describe("useAnswerCapture", () => {
     expect(result.current.studentTurn).toBe("speak");
   });
 
+  it("Answer again from Speak returns to idle and drops the live caption", () => {
+    const created: Array<{
+      onresult: ((event: { results: unknown[] }) => void) | null;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit,
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => {
+      created[0]?.onresult?.({
+        results: [
+          Object.assign([{ transcript: "こんにちは" }], { isFinal: true }),
+        ],
+      });
+    });
+    expect(result.current.canAnswerAgain).toBe(true);
+
+    act(() => result.current.onAnswerAgain());
+
+    expect(result.current.studentTurn).toBe("idle");
+    expect(result.current.liveCaption).toBeNull();
+    expect(result.current.canAnswerAgain).toBe(false);
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("a second Answer again on the same Question does not drop the new take", () => {
+    const created: Array<{
+      onresult: ((event: { results: unknown[] }) => void) | null;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit: vi.fn(),
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => result.current.onAnswerAgain());
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => {
+      created[created.length - 1]?.onresult?.({
+        results: [Object.assign([{ transcript: "はい" }], { isFinal: true })],
+      });
+    });
+    expect(result.current.canAnswerAgain).toBe(false);
+
+    act(() => result.current.onAnswerAgain());
+
+    expect(result.current.studentTurn).toBe("speak");
+    expect(result.current.liveCaption).toBe("はい");
+  });
+
+  it("Answer again after autoSpeak stays idle and does not auto-reenter Speak", () => {
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        autoSpeak: true,
+        onSubmit: vi.fn(),
+      }),
+    );
+
+    expect(result.current.studentTurn).toBe("speak");
+
+    act(() => result.current.onAnswerAgain());
+
+    expect(result.current.studentTurn).toBe("idle");
+  });
+
+  it("restores Answer again when the next student turn becomes active", () => {
+    const { result, rerender } = renderHook(
+      ({ active }) =>
+        useAnswerCapture({
+          active,
+          micOn: true,
+          onSubmit: vi.fn(),
+        }),
+      { initialProps: { active: true } },
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => result.current.onAnswerAgain());
+    expect(result.current.canAnswerAgain).toBe(false);
+
+    rerender({ active: false });
+    rerender({ active: true });
+
+    act(() => result.current.onSpeakAnswer());
+
+    expect(result.current.canAnswerAgain).toBe(true);
+  });
+
   it("updates the live Japanese caption from browser speech after Speak answer", () => {
     const created: FakeSpeechRecognition[] = [];
     class FakeSpeechRecognition {
