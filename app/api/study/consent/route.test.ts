@@ -3,20 +3,30 @@ import { JOIN_FROM_COOKIE } from "@/lib/content/joinLink";
 
 const ORIGINAL_ENV = { ...process.env };
 
-const { getUser, participantMaybeSingle, invitedMaybeSingle, insertParticipant, rpc, upsert } =
-  vi.hoisted(() => ({
-    getUser: vi.fn(),
-    participantMaybeSingle: vi.fn(),
-    invitedMaybeSingle: vi.fn(),
-    insertParticipant: vi.fn(),
-    rpc: vi.fn(),
-    upsert: vi.fn(),
-  }));
+const {
+  getUser,
+  participantMaybeSingle,
+  invitedMaybeSingle,
+  insertParticipant,
+  rpc,
+  upsert,
+  joinCookie,
+} = vi.hoisted(() => ({
+  getUser: vi.fn(),
+  participantMaybeSingle: vi.fn(),
+  invitedMaybeSingle: vi.fn(),
+  insertParticipant: vi.fn(),
+  rpc: vi.fn(),
+  upsert: vi.fn(),
+  joinCookie: { value: "T1" as string | undefined },
+}));
 
 vi.mock("next/headers", () => ({
   cookies: async () => ({
     get: (name: string) =>
-      name === JOIN_FROM_COOKIE ? { value: "T1" } : undefined,
+      name === JOIN_FROM_COOKIE && joinCookie.value
+        ? { value: joinCookie.value }
+        : undefined,
   }),
 }));
 
@@ -75,6 +85,11 @@ describe("POST /api/study/consent join link", () => {
     getUser.mockResolvedValue({
       data: { user: { id: "user-1", email: "classmate@school.org" } },
     });
+    participantMaybeSingle.mockReset();
+    invitedMaybeSingle.mockReset();
+    insertParticipant.mockReset();
+    rpc.mockReset();
+    upsert.mockReset();
     participantMaybeSingle.mockResolvedValue({ data: null, error: null });
     invitedMaybeSingle.mockResolvedValue({
       data: { email: "classmate@school.org" },
@@ -83,6 +98,7 @@ describe("POST /api/study/consent join link", () => {
     insertParticipant.mockResolvedValue({ error: null });
     rpc.mockResolvedValue({ data: true, error: null });
     upsert.mockResolvedValue({ error: null });
+    joinCookie.value = "T1";
   });
 
   it("lets a join-link Google user consent and become a Participant", async () => {
@@ -93,5 +109,29 @@ describe("POST /api/study/consent join link", () => {
     expect(res.status).toBe(200);
     expect(body.participantId).toBe("P001");
     expect(rpc).toHaveBeenCalledWith("consume_invite_slot", { invite_code: "T1" });
+  });
+
+  it("lets an allowlisted Google login consent without consuming a join slot", async () => {
+    joinCookie.value = undefined;
+    vi.resetModules();
+    const { POST } = await import("./route");
+    const res = await POST();
+    const body = (await res.json()) as { participantId?: string };
+    expect(res.status).toBe(200);
+    expect(body.participantId).toBe("P001");
+    expect(rpc).not.toHaveBeenCalled();
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects Google login when the email is not in invited_emails", async () => {
+    joinCookie.value = undefined;
+    invitedMaybeSingle.mockResolvedValue({ data: null, error: null });
+    vi.resetModules();
+    const { POST } = await import("./route");
+    const res = await POST();
+    const body = (await res.json()) as { error?: string };
+    expect(res.status).toBe(403);
+    expect(body.error).toBe("not_invited");
+    expect(insertParticipant).not.toHaveBeenCalled();
   });
 });

@@ -98,3 +98,36 @@ export async function maybeSendMagicLink({
   }
   return { message: MAGIC_LINK_COPY };
 }
+
+/** Allowlisted Participant Google: callback has no join `from`. */
+export async function startLoginGoogle({
+  origin,
+  createOAuthUrl,
+}: {
+  origin: string;
+  createOAuthUrl: (redirectTo: string) => Promise<string | null>;
+}): Promise<{ url: string | null }> {
+  const url = await createOAuthUrl(`${origin}/auth/callback`);
+  return { url };
+}
+
+/**
+ * `/join?from=` still accepts any Google until the cap.
+ * `/login` Google (no `from`) only continues when the email is already listed
+ * or the user is already a Participant.
+ */
+export function allowlistedLoginGate({
+  from,
+  alreadyParticipant,
+  allowlisted,
+}: {
+  from: string | null;
+  alreadyParticipant: boolean;
+  allowlisted: boolean;
+}): { destination: "/consent" | "/login"; reject: boolean } {
+  if (from) return { destination: "/consent", reject: false };
+  if (alreadyParticipant || allowlisted) {
+    return { destination: "/consent", reject: false };
+  }
+  return { destination: "/login", reject: true };
+}

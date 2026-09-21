@@ -1,6 +1,8 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { JOIN_FROM_COOKIE, readJoinFrom } from "@/lib/content/joinLink";
+import { allowlistedLoginGate, normalizeEmail } from "@/lib/content/studyAuth";
+import { createStudyAdminClient } from "@/lib/server/study/adminClients";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
 
 const OTP_TYPES = new Set<EmailOtpType>([
@@ -32,6 +34,49 @@ function redirectWithJoinFrom(url: URL, from: string | null) {
   return response;
 }
 
+function redirectLoginNotInvited(origin: string) {
+  const login = new URL("/login", origin);
+  login.searchParams.set("error", "not_invited");
+  const response = NextResponse.redirect(login);
+  response.cookies.set(JOIN_FROM_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
+  return response;
+}
+
+async function gateSession(from: string | null) {
+  const admin = createStudyAdminClient();
+  const supabase = await createStudyServerClient();
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
+
+  let alreadyParticipant = false;
+  let allowlisted = false;
+  if (admin && user?.id) {
+    const existing = await admin
+      .from("participants")
+      .select("participant_id")
+      .eq("id", user.id)
+      .maybeSingle();
+    alreadyParticipant = Boolean(existing.data?.participant_id);
+  }
+  if (admin && user?.email) {
+    const listed = await admin
+      .from("invited_emails")
+      .select("email")
+      .eq("email", normalizeEmail(user.email))
+      .maybeSingle();
+    allowlisted = Boolean(listed.data);
+  }
+
+  return allowlistedLoginGate({ from, alreadyParticipant, allowlisted });
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const from = readJoinFrom(
@@ -44,11 +89,21 @@ export async function GET(request: Request) {
 
   if (supabase && code) {
     await supabase.auth.exchangeCodeForSession(code);
+    const gate = await gateSession(from);
+    if (gate.reject) {
+      await supabase.auth.signOut();
+      return redirectLoginNotInvited(origin);
+    }
     return redirectWithJoinFrom(new URL("/consent", origin), from);
   }
 
   if (supabase && tokenHash && isOtpType(type)) {
     await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+    const gate = await gateSession(from);
+    if (gate.reject) {
+      await supabase.auth.signOut();
+      return redirectLoginNotInvited(origin);
+    }
     return redirectWithJoinFrom(new URL("/consent", origin), from);
   }
 

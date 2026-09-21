@@ -18,7 +18,9 @@ const en = {
   },
   login: {
     title: "Participant login",
-    body: "Invited testers receive a sign-in link. Guest practice stays on the start screen and is never merged into the study.",
+    body: "Invited testers sign in with Google using the email on the list. Guest practice stays on the start screen and is never merged into the study.",
+    google: "Continue with Google",
+    orEmail: "Or send a sign-in link",
     email: "Email",
     send: "Send sign-in link",
     linkSent: "If this email is eligible, a sign-in link has been sent.",
@@ -35,9 +37,9 @@ const en = {
     participantId: "Your participant id is",
     participantIdNote: "This id is shown in the app; your email is not.",
     errorSignedOut:
-      "You are not signed in. Open the sign-in link from your email inbox, then agree.",
+      "You are not signed in. Use Participant login, then agree.",
     errorNotInvited: "This email is not in the invited-tester list.",
-    errorSave: "Consent could not be saved. Try the email link again.",
+    errorSave: "Consent could not be saved. Try Participant login again.",
   },
   auth: {
     title: "Participant sign-in",
@@ -239,7 +241,9 @@ const my: UiCopy = {
   },
   login: {
     title: "ပါဝင်သူ ဝင်ရောက်ရန်",
-    body: "ဖိတ်ကြားထားသော စမ်းသပ်သူများသာ ဆိုင်းအင်လင့်ခ် ရရှိပါမည်။ ဧည့်သည် လေ့ကျင့်မှုသည် အစစာမျက်နှာတွင်သာ ရှိပြီး လေ့လာမှုထဲ မပေါင်းပါ။",
+    body: "ဖိတ်ကြားစာရင်းရှိ အီးမေးလ်ဖြင့် Google ဆိုင်းအင်ဝင်ပါ။ ဧည့်သည် လေ့ကျင့်မှုသည် အစစာမျက်နှာတွင်သာ ရှိပြီး လေ့လာမှုထဲ မပေါင်းပါ။",
+    google: "Google ဖြင့် ဆက်ရန်",
+    orEmail: "သို့မဟုတ် ဆိုင်းအင်လင့်ခ် ပို့ရန်",
     email: "အီးမေးလ်",
     send: "ဆိုင်းအင်လင့်ခ် ပို့ရန်",
     linkSent: "ဤအီးမေးလ် ပါဝင်ခွင့်ရှိပါက ဆိုင်းအင်လင့်ခ် ပို့ပြီးဖြစ်သည်။",
@@ -255,9 +259,9 @@ const my: UiCopy = {
     participantId: "သင့်ပါဝင်သူ id မှာ",
     participantIdNote: "ဤ id ကို အက်ပ်တွင် ပြပါသည်။ အီးမေးလ် မပြပါ။",
     errorSignedOut:
-      "သင် ဆိုင်းအင် မဝင်ရသေးပါ။ အီးမေးလ်ထဲက ဆိုင်းအင်လင့်ခ်ကို ဖွင့်ပြီးမှ သဘောတူပါ။",
+      "သင် ဆိုင်းအင် မဝင်ရသေးပါ။ ပါဝင်သူ ဝင်ရောက်ရန်ကို သုံးပြီးမှ သဘောတူပါ။",
     errorNotInvited: "ဤအီးမေးလ်သည် ဖိတ်ကြားစာရင်းတွင် မရှိပါ။",
-    errorSave: "သဘောတူညီချက် မသိမ်းနိုင်ပါ။ အီးမေးလ်လင့်ခ်ကို ထပ်ကြိုးစားပါ။",
+    errorSave: "သဘောတူညီချက် မသိမ်းနိုင်ပါ။ ပါဝင်သူ ဝင်ရောက်ရန်ကို ထပ်ကြိုးစားပါ။",
   },
   auth: {
     title: "ပါဝင်သူ ဆိုင်းအင်",

@@ -12,6 +12,25 @@ export default function LoginPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  async function startGoogle() {
+    if (pending) return;
+    setPending(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/auth/login-google", { method: "POST" });
+      const data = (await res.json()) as { url?: string | null };
+      if (data.url) {
+        window.location.assign(data.url);
+        return;
+      }
+      setMessage(copy.auth.notConfigured);
+    } catch {
+      setMessage(copy.auth.notConfigured);
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setPending(true);
@@ -37,6 +56,15 @@ export default function LoginPage() {
       <main className="flex w-full max-w-md flex-col gap-6">
         <h1 className="text-3xl font-semibold tracking-tight">{copy.login.title}</h1>
         <p className="text-sm text-ink/70">{copy.login.body}</p>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => void startGoogle()}
+          className="rounded-full bg-indigo px-5 py-3 font-medium text-paper disabled:opacity-60"
+        >
+          {copy.login.google}
+        </button>
+        <p className="text-sm font-medium text-ink/50">{copy.login.orEmail}</p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <label className="flex flex-col gap-2 text-left text-sm font-medium">
             {copy.login.email}
@@ -52,7 +80,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={pending}
-            className="rounded-full bg-indigo px-5 py-3 font-medium text-paper disabled:opacity-60"
+            className="rounded-full border border-ink/15 bg-paper px-5 py-3 font-medium text-ink disabled:opacity-60"
           >
             {copy.login.send}
           </button>

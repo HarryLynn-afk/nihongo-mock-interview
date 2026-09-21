@@ -99,14 +99,16 @@ Safe to run once. The `create table if not exists` statements will not wipe data
 
 ### 3. Allowlist testers
 
-Participant login only sends a magic link if the email is in `invited_emails`. In SQL Editor:
+Participant login (`/login`) lets an invited tester **Continue with Google** only if that Google email is already in `invited_emails`. Consent then creates `P001`…. A Gmail that is not on the list signs in to Google but **does not** become a Participant.
+
+The magic-link form on `/login` still sends mail only for allowlisted emails. In SQL Editor:
 
 ```sql
 insert into invited_emails (email)
-values ('tester@example.com');
+values ('tester@gmail.com');
 ```
 
-Use a real invited address, lowercase. Public sign-up is not supported.
+Use the real Google address, lowercase. Public sign-up is not supported. `/join?from=CODE` is a separate capped Google path for classmates you have not listed yet.
 
 ### 4. Auth URLs
 
@@ -117,7 +119,7 @@ In the same project: **Authentication** → **URL Configuration**.
 
 Dashboard **Invite user** is not the same as `/login` magic link. Invite emails redirect to the Site URL. If Site URL is only `/`, click the invite, wait to be sent to Study consent, then Agree. Do not type `/consent` yourself.
 
-Leave **Email** provider enabled (magic link). After a Participant clicks the email, they land on `/consent`, then Join.
+Leave **Email** provider enabled (magic link). Enable **Google** under **Authentication** → **Providers** (same OAuth client as `/join`). After Google or a magic-link click, testers land on `/consent`, then Join. Google Cloud’s authorized redirect is `https://<project-ref>.supabase.co/auth/v1/callback`, not this app’s `/login`.
 
 Without step 2, `/login` still shows the same “if eligible…” copy, but nothing is stored and returning testers will not get a `P001`… id.
 

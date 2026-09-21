@@ -1,10 +1,32 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import LoginPage from "./page";
 import { MAGIC_LINK_COPY } from "@/lib/content/studyAuth";
 
 describe("Login page", () => {
+  it("starts allowlisted Google through POST /api/auth/login-google", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: async () => ({ url: "https://accounts.google.com/oauth" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const assign = vi.fn();
+    vi.stubGlobal("location", { assign });
+    const user = userEvent.setup();
+    render(<LoginPage />);
+
+    await user.click(screen.getByRole("button", { name: "Continue with Google" }));
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/auth/login-google",
+      expect.objectContaining({ method: "POST" }),
+    );
+    await waitFor(() => {
+      expect(assign).toHaveBeenCalledWith("https://accounts.google.com/oauth");
+    });
+    vi.unstubAllGlobals();
+  });
+
   it("always shows the eligible-copy after submit, never a listed-or-not split", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       json: async () => ({ message: MAGIC_LINK_COPY }),
