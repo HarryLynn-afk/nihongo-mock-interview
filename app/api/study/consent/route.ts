@@ -1,9 +1,20 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import {
+  applyJoinClaim,
+  JOIN_FROM_COOKIE,
+  readJoinFrom,
+} from "@/lib/content/joinLink";
 import {
   CONSENT_VERSION,
   nextParticipantId,
 } from "@/lib/content/studyAuth";
 import { createStudyAdminClient } from "@/lib/server/study/adminClients";
+import {
+  addInvitedEmail,
+  consumeInviteSlot,
+  lookupJoinLink,
+} from "@/lib/server/study/lookupJoinLink";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
 
 export async function POST() {
@@ -32,10 +43,33 @@ export async function POST() {
     return NextResponse.json({ participantId: existing.data.participant_id });
   }
 
+  const email = user.email.toLowerCase();
+  const from = readJoinFrom(
+    `?from=${encodeURIComponent(
+      (await cookies()).get(JOIN_FROM_COOKIE)?.value ?? "",
+    )}`,
+  );
+  if (from) {
+    const claim = await applyJoinClaim({
+      from,
+      email,
+      alreadyParticipant: false,
+      lookup: lookupJoinLink,
+      addToWaitlist: addInvitedEmail,
+      consumeSlot: consumeInviteSlot,
+    });
+    if (!claim.ok) {
+      return NextResponse.json(
+        { error: claim.status === "full" ? "join_full" : "not_invited" },
+        { status: 403 },
+      );
+    }
+  }
+
   const listed = await admin
     .from("invited_emails")
     .select("email")
-    .eq("email", user.email.toLowerCase())
+    .eq("email", email)
     .maybeSingle();
   if (!listed.data) {
     return NextResponse.json({ error: "not_invited" }, { status: 403 });
@@ -48,7 +82,7 @@ export async function POST() {
 
   const { error } = await admin.from("participants").insert({
     id: user.id,
-    email: user.email.toLowerCase(),
+    email,
     participant_id: participantId,
     consent_version: CONSENT_VERSION,
     consent_at: new Date().toISOString(),

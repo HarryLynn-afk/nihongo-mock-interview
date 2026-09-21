@@ -64,6 +64,14 @@ const en = {
   join: {
     joinInterview: "Join interview",
   },
+  joinLink: {
+    title: "Join NihonGo",
+    body: "Sign in with Google to join this tester's practice group.",
+    google: "Continue with Google",
+    unknown: "This sign-up link isn't available.",
+    full: "This sign-up link is full.",
+    footer: "This page is not linked from the app. Use the link your tester sent.",
+  },
   lobby: {
     readyToJoin: "Ready to join",
     heading: "Japanese interview with Tanaka-sensei",
@@ -275,6 +283,14 @@ const my: UiCopy = {
   },
   join: {
     joinInterview: "အင်တာဗျူးတက်ရန်",
+  },
+  joinLink: {
+    title: "NihonGo ဝင်ရောက်ရန်",
+    body: "ဤစမ်းသပ်သူ၏ လေ့ကျင့်အဖွဲ့သို့ ဝင်ရန် Google ဖြင့် ဆိုင်းအင်ဝင်ပါ။",
+    google: "Google ဖြင့် ဆက်ရန်",
+    unknown: "ဤဆိုင်းအပ်လင့်ခ်ကို အသုံးပြု၍ မရပါ။",
+    full: "ဤဆိုင်းအပ်လင့်ခ် ပြည့်သွားပါပြီ။",
+    footer: "ဤစာမျက်နှာကို အက်ပ်ထဲမှ လင့်ခ်မချိတ်ပါ။ စမ်းသပ်သူပို့သော လင့်ခ်ကို သုံးပါ။",
   },
   lobby: {
     readyToJoin: "ဝင်ရန် အဆင်သင့်",

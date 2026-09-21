@@ -63,4 +63,26 @@ describe("Study consent page", () => {
       expect.objectContaining({ method: "POST" }),
     );
   });
+
+  it("shows the join-link full copy when consent is rejected as join_full", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: async () => ({ error: "join_full" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<ConsentPage />);
+
+    await user.click(
+      screen.getByRole("checkbox", {
+        name: /I agree to take part and to save this session/,
+      }),
+    );
+    await user.click(screen.getByRole("button", { name: "Agree and continue" }));
+
+    expect(
+      await screen.findByText("This sign-up link is full."),
+    ).toBeInTheDocument();
+  });
 });

@@ -26,6 +26,8 @@ export default function ConsentPage() {
       if (!res.ok || !data.participantId) {
         if (res.status === 401) {
           setError(copy.consent.errorSignedOut);
+        } else if (data.error === "join_full") {
+          setError(copy.joinLink.full);
         } else if (data.error === "not_invited" || res.status === 403) {
           setError(copy.consent.errorNotInvited);
         } else {

@@ -68,6 +68,7 @@ export const config = {
     "/call",
     "/pitch",
     "/login",
+    "/join",
     "/consent",
     "/auth/callback",
     "/auth/continue",
