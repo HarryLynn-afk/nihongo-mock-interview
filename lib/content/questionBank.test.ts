@@ -46,9 +46,15 @@ describe("questionBank", () => {
     expect(picked[0].topic).toBe("selfIntroduction");
   });
 
+  it("does not store Burmese on bank or follow-up Questions", () => {
+    for (const question of [...questionBank, ...followUpBank]) {
+      expect("burmeseTranslation" in question).toBe(false);
+    }
+  });
+
   it("never contains forbidden exam terms", () => {
     const allText = [...questionBank, ...followUpBank]
-      .map((q) => `${q.japanese} ${q.englishTranslation} ${q.burmeseTranslation}`)
+      .map((q) => `${q.japanese} ${q.englishTranslation}`)
       .join(" ");
     for (const term of FORBIDDEN_TERMS) {
       expect(allText).not.toMatch(term);

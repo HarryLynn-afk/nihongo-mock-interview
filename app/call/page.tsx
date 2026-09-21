@@ -345,8 +345,7 @@ export default function CallPage() {
                       }
                       burmese={
                         phase === "studentAnswering"
-                          ? (pitchCaptions?.burmese ??
-                            currentQuestion.burmeseTranslation)
+                          ? (pitchCaptions?.burmese ?? null)
                           : null
                       }
                     />

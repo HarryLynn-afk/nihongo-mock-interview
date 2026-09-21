@@ -13,16 +13,19 @@ describe("questions", () => {
     expect(questions[2].japanese).toBe("日本語学校を卒業した後は、何をする予定ですか。");
   });
 
-  it("gives every sensei question a non-empty English and Burmese translation", () => {
+  it("gives every sensei question a non-empty English translation", () => {
     for (const question of questions) {
       expect(question.englishTranslation.length).toBeGreaterThan(0);
-      expect(question.burmeseTranslation.length).toBeGreaterThan(0);
+      expect(
+        "burmeseTranslation" in question,
+        "Burmese stays off Questions until the Eng/MM toggle",
+      ).toBe(false);
     }
   });
 
   it("never contains forbidden exam/verdict terms in any question field", () => {
     const allText = questions
-      .map((q) => `${q.japanese} ${q.englishTranslation} ${q.burmeseTranslation}`)
+      .map((q) => `${q.japanese} ${q.englishTranslation}`)
       .join(" ");
 
     for (const term of FORBIDDEN_TERMS) {

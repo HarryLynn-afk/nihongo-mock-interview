@@ -92,6 +92,7 @@ describe("Call screen", () => {
     fetchMock.mockReset();
     audioPlay.mockReset();
     window.history.replaceState({}, "", "/");
+    sessionStorage.clear();
   });
 
   async function startStudentTurn(user = userEvent.setup()) {
@@ -308,11 +309,11 @@ describe("Call screen", () => {
       expect(screen.getByTestId("language-hud")).toBeInTheDocument();
     });
     expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
+    expect(screen.getByTestId("sensei-stage")).toContainElement(
+      screen.getByTestId("language-hud"),
+    );
     expect(
       screen.queryByText(questions[0].englishTranslation),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText(questions[0].burmeseTranslation),
     ).not.toBeInTheDocument();
   });
 
@@ -321,6 +322,12 @@ describe("Call screen", () => {
 
     expect(screen.getByTestId("waveform")).toHaveClass("bg-indigo");
     expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
+    expect(
+      hud().getByText(questions[0].englishTranslation),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("language-hud").textContent).not.toMatch(
+      /[\u1000-\u109F]/,
+    );
   });
 
   it("during the student turn, Speak answer is shown and Submit is not until Speak is chosen", async () => {
@@ -337,6 +344,7 @@ describe("Call screen", () => {
     ).not.toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(screen.queryByText("Interview complete")).not.toBeInTheDocument();
+    expect(screen.getByTestId("answer-dock")).toHaveClass("shrink-0");
   });
 
   it("Speak answer becomes a recording control after it is chosen", async () => {

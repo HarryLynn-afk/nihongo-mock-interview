@@ -40,6 +40,11 @@ describe("LanguageHud", () => {
     expect(
       screen.getByText("はじめに、簡単に自己紹介をお願いします。"),
     ).toHaveClass("text-xl");
+    expect(screen.getByTestId("language-hud")).toHaveClass(
+      "absolute",
+      "inset-x-0",
+      "bottom-0",
+    );
   });
 
   it("keeps the Question caption and shows a live student line underneath", () => {
