@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { JOIN_FROM_COOKIE } from "@/lib/content/joinLink";
-import { startLoginGoogle } from "@/lib/content/studyAuth";
+import { consentGateCookie, startLoginGoogle } from "@/lib/content/studyAuth";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
 
 function clearJoinCookie(response: NextResponse) {
@@ -11,6 +11,11 @@ function clearJoinCookie(response: NextResponse) {
     path: "/",
     maxAge: 0,
   });
+}
+
+function clearConsentGate(response: NextResponse) {
+  const gate = consentGateCookie(false);
+  response.cookies.set(gate.name, gate.value, gate.options);
 }
 
 export async function POST(request: Request) {
@@ -44,5 +49,6 @@ export async function POST(request: Request) {
     : null;
   const response = NextResponse.json({ url });
   clearJoinCookie(response);
+  clearConsentGate(response);
   return response;
 }

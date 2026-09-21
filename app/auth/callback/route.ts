@@ -1,7 +1,11 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { JOIN_FROM_COOKIE, readJoinFrom } from "@/lib/content/joinLink";
-import { allowlistedLoginGate, normalizeEmail } from "@/lib/content/studyAuth";
+import {
+  allowlistedLoginGate,
+  consentGateCookie,
+  normalizeEmail,
+} from "@/lib/content/studyAuth";
 import { createStudyAdminClient } from "@/lib/server/study/adminClients";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
 
@@ -20,7 +24,16 @@ function isOtpType(value: string | null): value is EmailOtpType {
   return Boolean(value && OTP_TYPES.has(value as EmailOtpType));
 }
 
-function redirectWithJoinFrom(url: URL, from: string | null) {
+function applyConsentGate(response: NextResponse, open: boolean) {
+  const gate = consentGateCookie(open);
+  response.cookies.set(gate.name, gate.value, gate.options);
+}
+
+function redirectWithJoinFrom(
+  url: URL,
+  from: string | null,
+  openConsentGate: boolean,
+) {
   const response = NextResponse.redirect(url);
   if (from) {
     response.cookies.set(JOIN_FROM_COOKIE, from, {
@@ -30,6 +43,9 @@ function redirectWithJoinFrom(url: URL, from: string | null) {
       path: "/",
       maxAge: JOIN_COOKIE_MAX_AGE_SECONDS,
     });
+  }
+  if (openConsentGate) {
+    applyConsentGate(response, true);
   }
   return response;
 }
@@ -45,6 +61,7 @@ function redirectLoginNotInvited(origin: string) {
     path: "/",
     maxAge: 0,
   });
+  applyConsentGate(response, false);
   return response;
 }
 
@@ -94,7 +111,7 @@ export async function GET(request: Request) {
       await supabase.auth.signOut();
       return redirectLoginNotInvited(origin);
     }
-    return redirectWithJoinFrom(new URL("/consent", origin), from);
+    return redirectWithJoinFrom(new URL("/consent", origin), from, true);
   }
 
   if (supabase && tokenHash && isOtpType(type)) {
@@ -104,11 +121,11 @@ export async function GET(request: Request) {
       await supabase.auth.signOut();
       return redirectLoginNotInvited(origin);
     }
-    return redirectWithJoinFrom(new URL("/consent", origin), from);
+    return redirectWithJoinFrom(new URL("/consent", origin), from, true);
   }
 
   // Hash tokens live in the URL fragment, which this server route never
   // receives. Middleware rewrites this request to /auth/continue without
   // changing the browser URL, so HashSessionCatcher can still read #access_token.
-  return redirectWithJoinFrom(new URL("/auth/continue", origin), from);
+  return redirectWithJoinFrom(new URL("/auth/continue", origin), from, false);
 }

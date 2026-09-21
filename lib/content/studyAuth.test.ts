@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   MAGIC_LINK_COPY,
   MAGIC_LINK_EXPIRED_COPY,
+  CONSENT_GATE_COOKIE,
+  consentGateCookie,
+  consentGateIsOpen,
   maybeSendMagicLink,
   nextParticipantId,
   normalizeEmail,
@@ -102,6 +105,19 @@ describe("studyAuth", () => {
         allowlisted: false,
       }),
     ).toEqual({ destination: "/consent", reject: false });
+  });
+
+  it("treats only the callback-set consent gate value as open", () => {
+    expect(consentGateIsOpen("ok")).toBe(true);
+    expect(consentGateIsOpen(undefined)).toBe(false);
+    expect(consentGateIsOpen("")).toBe(false);
+    const open = consentGateCookie(true);
+    expect(open.name).toBe(CONSENT_GATE_COOKIE);
+    expect(open.value).toBe("ok");
+    expect(open.options.maxAge).toBeUndefined();
+    const closed = consentGateCookie(false);
+    expect(closed.value).toBe("");
+    expect(closed.options.maxAge).toBe(0);
   });
 
   it("rewrites hash-only callback clicks so the fragment is not dropped", () => {

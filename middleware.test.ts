@@ -49,3 +49,39 @@ describe("middleware Pitch gate", () => {
     expect(landing.headers.get("location")).toBeNull();
   });
 });
+
+describe("middleware consent gate", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...ORIGINAL_ENV };
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  });
+
+  afterEach(() => {
+    process.env = { ...ORIGINAL_ENV };
+  });
+
+  it("sends leftover /consent visits to /login", async () => {
+    const { middleware } = await import("./middleware");
+    const { CONSENT_GATE_COOKIE } = await import("@/lib/content/studyAuth");
+    const res = await middleware(request("/consent"));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe("http://localhost/login");
+    const setCookie = res.headers.get("set-cookie") ?? "";
+    expect(setCookie).toContain(CONSENT_GATE_COOKIE);
+    expect(setCookie.toLowerCase()).toMatch(/max-age=0/);
+  });
+
+  it("lets /consent through after a fresh sign-in cookie", async () => {
+    const { middleware } = await import("./middleware");
+    const { CONSENT_GATE_COOKIE } = await import("@/lib/content/studyAuth");
+    const headers = new Headers();
+    headers.set("cookie", `${CONSENT_GATE_COOKIE}=ok`);
+    const res = await middleware(
+      new NextRequest("http://localhost/consent", { headers }),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("location")).toBeNull();
+  });
+});

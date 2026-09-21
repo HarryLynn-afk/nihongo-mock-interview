@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { JOIN_FROM_COOKIE } from "@/lib/content/joinLink";
+import { CONSENT_GATE_COOKIE } from "@/lib/content/studyAuth";
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -11,6 +12,7 @@ const {
   rpc,
   upsert,
   joinCookie,
+  consentGate,
 } = vi.hoisted(() => ({
   getUser: vi.fn(),
   participantMaybeSingle: vi.fn(),
@@ -19,14 +21,20 @@ const {
   rpc: vi.fn(),
   upsert: vi.fn(),
   joinCookie: { value: "T1" as string | undefined },
+  consentGate: { value: "ok" as string | undefined },
 }));
 
 vi.mock("next/headers", () => ({
   cookies: async () => ({
-    get: (name: string) =>
-      name === JOIN_FROM_COOKIE && joinCookie.value
-        ? { value: joinCookie.value }
-        : undefined,
+    get: (name: string) => {
+      if (name === JOIN_FROM_COOKIE && joinCookie.value) {
+        return { value: joinCookie.value };
+      }
+      if (name === CONSENT_GATE_COOKIE && consentGate.value) {
+        return { value: consentGate.value };
+      }
+      return undefined;
+    },
   }),
 }));
 
@@ -99,6 +107,7 @@ describe("POST /api/study/consent join link", () => {
     rpc.mockResolvedValue({ data: true, error: null });
     upsert.mockResolvedValue({ error: null });
     joinCookie.value = "T1";
+    consentGate.value = "ok";
   });
 
   it("lets a join-link Google user consent and become a Participant", async () => {
@@ -133,5 +142,17 @@ describe("POST /api/study/consent join link", () => {
     expect(res.status).toBe(403);
     expect(body.error).toBe("not_invited");
     expect(insertParticipant).not.toHaveBeenCalled();
+  });
+
+  it("rejects consent when this visit did not come from a fresh sign-in", async () => {
+    consentGate.value = undefined;
+    vi.resetModules();
+    const { POST } = await import("./route");
+    const res = await POST();
+    const body = (await res.json()) as { error?: string };
+    expect(res.status).toBe(401);
+    expect(body.error).toBe("unauthorized");
+    expect(insertParticipant).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

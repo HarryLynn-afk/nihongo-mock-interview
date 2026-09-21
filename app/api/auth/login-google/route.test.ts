@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { JOIN_FROM_COOKIE } from "@/lib/content/joinLink";
+import { CONSENT_GATE_COOKIE } from "@/lib/content/studyAuth";
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -67,6 +68,7 @@ describe("POST /api/auth/login-google", () => {
     });
     const setCookie = res.headers.get("set-cookie") ?? "";
     expect(setCookie).toContain(JOIN_FROM_COOKIE);
+    expect(setCookie).toContain(CONSENT_GATE_COOKIE);
     expect(setCookie.toLowerCase()).toMatch(/max-age=0/);
     expect(setCookie).not.toMatch(new RegExp(`${JOIN_FROM_COOKIE}=[^;]+`));
   });

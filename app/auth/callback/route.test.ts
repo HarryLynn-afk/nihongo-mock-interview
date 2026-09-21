@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { JOIN_FROM_COOKIE } from "@/lib/content/joinLink";
+import { CONSENT_GATE_COOKIE } from "@/lib/content/studyAuth";
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -59,6 +60,8 @@ describe("GET /auth/callback", () => {
     const res = await GET(new Request("http://localhost:3000/auth/callback"));
     expect(res.status).toBe(307);
     expect(res.headers.get("location")).toBe("http://localhost:3000/auth/continue");
+    const setCookie = res.headers.get("set-cookie") ?? "";
+    expect(setCookie).not.toContain(`${CONSENT_GATE_COOKIE}=ok`);
   });
 
   it("keeps join from on the callback so consent can claim the slot", async () => {
@@ -121,5 +124,8 @@ describe("GET /auth/callback", () => {
     );
     expect(res.headers.get("location")).toBe("http://localhost:3000/consent");
     expect(signOut).not.toHaveBeenCalled();
+    const setCookie = res.headers.get("set-cookie") ?? "";
+    expect(setCookie).toContain(`${CONSENT_GATE_COOKIE}=ok`);
+    expect(setCookie.toLowerCase()).toContain("httponly");
   });
 });

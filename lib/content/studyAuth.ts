@@ -9,6 +9,37 @@ export const MAGIC_LINK_EXPIRED_COPY =
 export const MAGIC_LINK_MISSING_COPY =
   "No sign-in token was in this link. Request a new one from Participant login.";
 
+/** Set only after a successful /auth/callback (or hash catcher). Session cookie. */
+export const CONSENT_GATE_COOKIE = "nihongo_consent_gate";
+
+export function consentGateIsOpen(value: string | undefined): boolean {
+  return value === "ok";
+}
+
+export function consentGateCookie(open: boolean): {
+  name: string;
+  value: string;
+  options: {
+    httpOnly: true;
+    sameSite: "lax";
+    secure: boolean;
+    path: "/";
+    maxAge?: number;
+  };
+} {
+  return {
+    name: CONSENT_GATE_COOKIE,
+    value: open ? "ok" : "",
+    options: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      ...(open ? {} : { maxAge: 0 }),
+    },
+  };
+}
+
 export type AuthCallbackIntent =
   | { kind: "code"; code: string }
   | { kind: "otp"; tokenHash: string; type: string }

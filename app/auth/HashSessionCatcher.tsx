@@ -51,7 +51,12 @@ export function HashSessionCatcher({
       if (settled || !session) return;
       settled = true;
       if (expireTimerId !== undefined) clearTimeout(expireTimerId);
-      router.replace(redirectTo);
+      void (async () => {
+        if (redirectTo === "/consent") {
+          await fetch("/api/auth/consent-gate", { method: "POST" });
+        }
+        router.replace(redirectTo);
+      })();
     }
 
     function fail(message: string) {

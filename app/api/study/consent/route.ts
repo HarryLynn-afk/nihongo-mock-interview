@@ -6,7 +6,9 @@ import {
   readJoinFrom,
 } from "@/lib/content/joinLink";
 import {
+  CONSENT_GATE_COOKIE,
   CONSENT_VERSION,
+  consentGateIsOpen,
   nextParticipantId,
 } from "@/lib/content/studyAuth";
 import { createStudyAdminClient } from "@/lib/server/study/adminClients";
@@ -29,6 +31,11 @@ export async function POST() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  const jar = await cookies();
+  if (!consentGateIsOpen(jar.get(CONSENT_GATE_COOKIE)?.value)) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   const admin = createStudyAdminClient();
   if (!admin) {
     return NextResponse.json({ error: "unavailable" }, { status: 503 });
@@ -46,7 +53,7 @@ export async function POST() {
   const email = user.email.toLowerCase();
   const from = readJoinFrom(
     `?from=${encodeURIComponent(
-      (await cookies()).get(JOIN_FROM_COOKIE)?.value ?? "",
+      jar.get(JOIN_FROM_COOKIE)?.value ?? "",
     )}`,
   );
   if (from) {
