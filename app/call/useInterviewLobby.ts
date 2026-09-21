@@ -44,7 +44,7 @@ export function useInterviewLobby({
   }, []);
 
   return {
-    devicesVisible: step === "devices",
+    devicesVisible: step === "devices" || step === "reminder",
     reminderVisible: step === "reminder",
     interviewStarted,
     secondsLeft,

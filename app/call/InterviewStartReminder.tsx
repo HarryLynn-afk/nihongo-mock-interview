@@ -9,11 +9,14 @@ export function InterviewStartReminder({
 }: InterviewStartReminderProps) {
   return (
     <div
-      role="dialog"
-      aria-label="Interview will start soon"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink p-6 text-paper"
+      data-testid="start-reminder-backdrop"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/80 p-6"
     >
-      <div className="flex w-full max-w-md flex-col items-center text-center">
+      <div
+        role="dialog"
+        aria-label="Interview will start soon"
+        className="flex w-full max-w-md flex-col items-center rounded-2xl border border-paper/10 bg-ink p-8 text-center text-paper"
+      >
         <p className="text-sm tracking-wide text-paper/60">
           Japanese interview with Tanaka-sensei
         </p>

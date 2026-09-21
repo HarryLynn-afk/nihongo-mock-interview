@@ -16,7 +16,7 @@ type JoinInterviewProps = {
 };
 
 /**
- * Practice-mode Join: device check → 15s reminder → `/call`.
+ * Practice-mode Join: device check → 15s popup on this page → `/call`.
  * Pitch mode has its own entry point at `/pitch` and never goes through
  * this lobby (see `app/pitch/page.tsx`).
  */

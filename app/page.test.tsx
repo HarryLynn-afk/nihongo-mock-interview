@@ -25,6 +25,7 @@ describe("Home (start screen)", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     getUserMedia.mockReset();
+    sessionStorage.clear();
     window.history.replaceState({}, "", "/");
   });
 
@@ -114,16 +115,30 @@ describe("Home (start screen)", () => {
     expect(screen.getByRole("checkbox", { name: /camera/i })).toBeChecked();
   });
 
-  it("Enter classroom then Skip navigates to the call screen", async () => {
+  it("Enter classroom keeps the lobby and shows the start popup", async () => {
     const user = userEvent.setup();
     render(<Home />);
 
     await user.click(screen.getByRole("button", { name: "Try as guest" }));
     await user.click(screen.getByRole("button", { name: /enter classroom/i }));
+
+    expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
     expect(
       screen.getByRole("dialog", { name: /interview will start soon/i }),
     ).toBeInTheDocument();
+    expect(screen.getByTestId("start-reminder-backdrop")).toHaveClass(
+      "bg-ink/80",
+    );
+    expect(screen.getByText("NihonGo")).toBeInTheDocument();
+    expect(pushMock).not.toHaveBeenCalled();
+  });
 
+  it("Skip on the start popup navigates to the call screen", async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.click(screen.getByRole("button", { name: "Try as guest" }));
+    await user.click(screen.getByRole("button", { name: /enter classroom/i }));
     await user.click(screen.getByRole("button", { name: /^skip$/i }));
 
     expect(

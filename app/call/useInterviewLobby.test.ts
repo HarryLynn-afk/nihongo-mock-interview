@@ -48,14 +48,14 @@ describe("useInterviewLobby", () => {
     expect(result.current.interviewStarted).toBe(false);
   });
 
-  it("Continue shows the 15s reminder; the interview starts when it reaches 0", () => {
+  it("Enter classroom keeps the lobby and shows the 15s popup; start waits for 0", () => {
     const { result } = renderHook(() => useInterviewLobby({ skipLobby: false }));
 
     act(() => {
       result.current.continueFromDevices();
     });
 
-    expect(result.current.devicesVisible).toBe(false);
+    expect(result.current.devicesVisible).toBe(true);
     expect(result.current.reminderVisible).toBe(true);
     expect(result.current.secondsLeft).toBe(15);
     expect(result.current.interviewStarted).toBe(false);
@@ -65,15 +65,17 @@ describe("useInterviewLobby", () => {
     });
     expect(result.current.secondsLeft).toBe(1);
     expect(result.current.interviewStarted).toBe(false);
+    expect(result.current.devicesVisible).toBe(true);
 
     act(() => {
       vi.advanceTimersByTime(1_000);
     });
     expect(result.current.reminderVisible).toBe(true);
+    expect(result.current.devicesVisible).toBe(true);
     expect(result.current.interviewStarted).toBe(true);
   });
 
-  it("Skip on the reminder starts the interview immediately", () => {
+  it("Skip on the reminder starts the interview without leaving the lobby page", () => {
     const { result } = renderHook(() => useInterviewLobby({ skipLobby: false }));
 
     act(() => {
@@ -84,6 +86,7 @@ describe("useInterviewLobby", () => {
     });
 
     expect(result.current.reminderVisible).toBe(true);
+    expect(result.current.devicesVisible).toBe(true);
     expect(result.current.interviewStarted).toBe(true);
   });
 });
