@@ -6,6 +6,7 @@ import {
   consentGateCookie,
   normalizeEmail,
 } from "@/lib/content/studyAuth";
+import { nextAfterAuth } from "@/lib/content/visitPolicy";
 import { createStudyAdminClient } from "@/lib/server/study/adminClients";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
 
@@ -51,10 +52,8 @@ function redirectWithJoinFrom(
 }
 
 function redirectAuthFailed(origin: string, from: string | null) {
-  const target = from
-    ? new URL(`/join?from=${encodeURIComponent(from)}`, origin)
-    : new URL("/login", origin);
-  const response = NextResponse.redirect(target);
+  const path = nextAfterAuth({ from, ok: false });
+  const response = NextResponse.redirect(new URL(path, origin));
   applyConsentGate(response, false);
   return response;
 }

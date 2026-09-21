@@ -17,9 +17,31 @@ export default function ConsentPage() {
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [ready, setReady] = useState(false);
   const [debugEmail, setDebugEmail] = useState<string | null | "loading">(
     SHOW_DEBUG_WHOAMI ? "loading" : null,
   );
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch("/api/study/me");
+        const data = res?.ok
+          ? ((await res.json()) as {
+              participantId?: string | null;
+              consented?: boolean;
+            })
+          : null;
+        if (data?.consented && data.participantId) {
+          setParticipantId(data.participantId);
+        }
+      } catch {
+        // Fresh visit: keep the checkbox until Agree.
+      } finally {
+        setReady(true);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (!SHOW_DEBUG_WHOAMI) return;
@@ -84,7 +106,7 @@ export default function ConsentPage() {
             </p>
             <JoinInterview />
           </>
-        ) : (
+        ) : ready ? (
           <>
             <p className="text-sm text-ink/70">
               {fillTemplate(copy.consent.body, { version: CONSENT_VERSION })}
@@ -115,7 +137,7 @@ export default function ConsentPage() {
               {copy.consent.guestInstead}
             </button>
           </>
-        )}
+        ) : null}
       </main>
     </div>
   );

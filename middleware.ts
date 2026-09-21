@@ -1,17 +1,44 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { pitchCallRedirectPath, PITCH_GATE_COOKIE } from "@/lib/content/pitchGate";
+import { consentGateCookie, shouldRewriteAuthCallback } from "@/lib/content/studyAuth";
 import {
   CONSENT_GATE_COOKIE,
-  consentGateCookie,
-  consentGateIsOpen,
-  shouldRewriteAuthCallback,
-} from "@/lib/content/studyAuth";
+  mustSignIn,
+} from "@/lib/content/visitPolicy";
 import { getPitchAccessKey } from "@/lib/server/env/pitchAccess";
 
-function forgetConsentGate(response: NextResponse) {
+function forgetVisit(response: NextResponse) {
   const gate = consentGateCookie(false);
   response.cookies.set(gate.name, gate.value, gate.options);
+}
+
+async function redirectToLoginAndSignOut(
+  request: NextRequest,
+  url: string | undefined,
+  anon: string | undefined,
+) {
+  const login = request.nextUrl.clone();
+  login.pathname = "/login";
+  login.search = "";
+  let response = NextResponse.redirect(login);
+  forgetVisit(response);
+  if (url && anon) {
+    const supabase = createServerClient(url, anon, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    });
+    await supabase.auth.signOut();
+  }
+  return response;
 }
 
 export async function middleware(request: NextRequest) {
@@ -31,45 +58,18 @@ export async function middleware(request: NextRequest) {
   }
 
   const pathname = request.nextUrl.pathname;
+  const search = request.nextUrl.search;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const visitCookie = request.cookies.get(CONSENT_GATE_COOKIE)?.value;
 
-  if (pathname === "/consent" && !consentGateIsOpen(request.cookies.get(CONSENT_GATE_COOKIE)?.value)) {
-    const login = request.nextUrl.clone();
-    login.pathname = "/login";
-    login.search = "";
-    let response = NextResponse.redirect(login);
-    forgetConsentGate(response);
-    if (url && anon) {
-      const supabase = createServerClient(url, anon, {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll();
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options);
-            });
-          },
-        },
-      });
-      await supabase.auth.signOut();
-    }
-    return response;
+  // Visit cookie is required for /consent and Participant /call.
+  // / does not clear it — only /login and /join replace a visit via OAuth sign-out.
+  if (mustSignIn(pathname, search, visitCookie)) {
+    return redirectToLoginAndSignOut(request, url, anon);
   }
 
-  if (pathname === "/" || pathname === "/login" || pathname === "/join") {
-    if (consentGateIsOpen(request.cookies.get(CONSENT_GATE_COOKIE)?.value)) {
-      const response = NextResponse.next({ request });
-      forgetConsentGate(response);
-      return response;
-    }
-  }
-
-  const rewriteCallback = shouldRewriteAuthCallback(
-    request.nextUrl.pathname,
-    request.nextUrl.search,
-  );
+  const rewriteCallback = shouldRewriteAuthCallback(pathname, search);
   const destination = request.nextUrl.clone();
   if (rewriteCallback) {
     destination.pathname = "/auth/continue";
