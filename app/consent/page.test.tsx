@@ -19,6 +19,18 @@ describe("Study consent page", () => {
     pushMock.mockReset();
   });
 
+  it("shows a dev-only signed-in-as line from /api/study/debug-whoami", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ email: "tester@gmail.com" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ConsentPage />);
+
+    expect(await screen.findByText(/tester@gmail\.com/)).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith("/api/study/debug-whoami");
+  });
+
   it("keeps Agree disabled until the checkbox is ticked", () => {
     vi.stubGlobal("fetch", vi.fn());
     render(<ConsentPage />);
@@ -31,7 +43,10 @@ describe("Study consent page", () => {
     expect(
       screen.queryByRole("button", { name: "Join interview" }),
     ).not.toBeInTheDocument();
-    expect(fetch).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalledWith(
+      "/api/study/consent",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 
   it("shows Join only after the checkbox and Agree and continue", async () => {
