@@ -7,11 +7,13 @@
 
 This is not a hackathon or event-day demo. The 29 Aug Launch Pack rebuild is void.
 
-A student joins a mock admission interview with Tanaka-sensei (Tokyo Pathway Japanese School), answers by voice or type, and sees an **Interview Readiness** report on `/call` (no `/report` route).
+A student joins a mock admission interview with Tanaka-sensei (Tokyo Pathway Japanese School), answers **by voice**, and sees an **Interview Readiness** report on `/call` (no `/report` route). Typing is not offered.
 
-- **Guest** (Join on `/`): practice in the browser. Not saved. Not counted in the study.
-- **Participant** (`/login`): allowlisted invited tester after magic-link login and consent. Shown as `P001`…, never the email. Study N.
-- **Pitch mode** (`/?pitch=1`): CSC 492 oral-exam / presentation demo path. Skips lobby overlays, uses canned English/Burmese captions, always shows the live InterviewReport. Sample report is only when Groq grading misses. No Usefulness step.
+- **Guest** (**Try as guest** on `/` → `/call?guest=1`): practice in the browser. Not saved. Help the study still appears after the report if `RESEARCH_FORM_URL` is set.
+- **Participant** (`/login` → `/consent` → **Join interview** → `/call`): allowlisted invited tester after magic-link login and consent this visit. Shown as `P001`…, never the email. Study N.
+- **Pitch mode** (`/pitch` → `/call?pitch=1`): CSC 492 oral-exam / presentation demo path. Locked until `PITCH_ACCESS_KEY` matches. Skips lobby overlays, uses canned English/Burmese captions, always shows the live InterviewReport. Sample report is only when Groq grading misses. No Usefulness step. Not linked from `/`.
+
+On `/call`, Tanaka-sensei plays committed `public/question-{id}.mp3`. The student Speaks Japanese (Deepgram live captions, or browser SpeechRecognition if Deepgram is unset). **Hear again** (speaker left of the Japanese headline) replays the Question while idle or paused. **Answer again** (**1 retry**, left of the mic) is one content redo before Submit, per Question. Empty or no-kana takes get two more Speak attempts, then the Question is skipped. Camera is optional; mic is required.
 
 Do not print N5, JLPT, A1, Pass, or Fail on the splash, call, or report Headline.
 
@@ -48,15 +50,16 @@ Fill `.env.local`. Each key is one purpose — do not reuse a Groq or ElevenLabs
 | Variable | Purpose |
 | --- | --- |
 | `ELEVENLABS_TTS_API_KEY` | Generate-time only (`scripts/generate-fallback-audio.ts`). Sensei plays committed `public/question-{id}.mp3` |
-| `DEEPGRAM_STT_API_KEY` | Live Japanese captions |
+| `DEEPGRAM_STT_API_KEY` | Live Japanese captions. Needs a Deepgram **Member** (or higher) key — usage-only keys cannot mint a listen JWT. Missing or 403 fail-opens to browser captions |
 | `WISPR_API_KEY` | Alternate live captions |
 | `ELEVENLABS_SCRIBE_API_KEY` | Unused after Groq Whisper; safe to leave blank |
-| `RESEARCH_FORM_URL` | Usefulness step after the report (hidden if unset; hidden on Pitch) |
+| `PITCH_ACCESS_KEY` | Pitch demo gate. Missing key fail-closes `/pitch` and `/call?pitch=1`. Not a paid API |
+| `RESEARCH_FORM_URL` | Help the study after the report (hidden if unset; hidden on Pitch). Guest and Participant both POST |
 | `NEXT_PUBLIC_SUPABASE_URL` | Study project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Study browser/server auth |
 | `SUPABASE_SERVICE_ROLE_KEY` | Study server writes. Never expose to the client |
 
-Guest Join and Pitch work with no Supabase vars.
+Guest Join works with no Supabase vars. Pitch needs `PITCH_ACCESS_KEY` to unlock.
 
 ## Run
 
@@ -70,9 +73,9 @@ npm run lint
 
 Desktop browser only. Phone visitors see “Open on a computer.”
 
-- Practice: http://localhost:3000
-- Participant login: http://localhost:3000/login
-- Pitch: http://localhost:3000/?pitch=1
+- Practice: http://localhost:3000 (**Try as guest** → device check → 15s lobby popup → `/call?guest=1`)
+- Participant login: http://localhost:3000/login (then `/consent`, then Join)
+- Pitch: http://localhost:3000/pitch (access key, then **Start demo** → `/call?pitch=1`)
 
 ## Optional study database (Supabase)
 
@@ -140,19 +143,20 @@ Set **Site URL** to `http://localhost:3000` for this to resolve locally (and to 
 
 `POST /api/score` is the only client grading entry. Groq emits raw 1–5 scores; weights, Gates, Headline, and Stamp are computed in `lib/content/rubric.ts` (`scoreReport`). Speaking is not a Gate and is omitted from `/100`.
 
-- **Interview Answer Quality** — transcript radar / bars / `/100` (Answer relevance, grammar, Motivation, Study plan, Consistency)
-- **Speech Delivery Signals** — browser clip timing on voice Interviews only (not a speaking grade). Typed Interviews hide this section.
+- **Interview Answer Quality** — transcript radar / bars / `/100` (Answer relevance, grammar, Motivation, Study plan, Consistency) for answered Questions. A skipped Question gets a no-answer card. If every Question was skipped, `/call` shows mic-troubleshooting copy instead of the report and never POSTs `/api/score`.
+- **Speech Delivery Signals** — browser clip timing from the spoken take (practice uses the same PCM sent to Deepgram). Not a speaking grade. Hidden when no spoken clip was captured.
 
 If Groq misses (timeout, bad JSON, or 429/503/529 capacity skip), the last screen is the locked sample InterviewReport plus a scoring-unavailable banner.
 
 ## Project layout
 
 ```text
-app/                 Routes + API handlers (`/`, `/call`, `/login`, `/consent`)
+app/                 Routes + API handlers (`/`, `/pitch`, `/call`, `/login`, `/consent`)
 lib/server/          Secrets — never import from a "use client" file
 lib/content/         Locked questions, rubric, sample report (safe anywhere)
+public/              Sensei clips (`question-{id}.mp3`) and tile image
 supabase/migrations/ Study SQL — paste in the dashboard, not auto-applied
-scripts/             prebuild env check
+scripts/             prebuild env check; generate-time TTS
 docs/                PRD, issues, ubiquitous language, rubric snapshot
 mocks/               sample-report-ready.json (`banner` stays null)
 ```
