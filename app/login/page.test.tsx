@@ -27,6 +27,19 @@ describe("Login page", () => {
     vi.unstubAllGlobals();
   });
 
+  it("shows an error message when Google sign-in is rejected as not invited", async () => {
+    vi.stubGlobal("location", {
+      assign: vi.fn(),
+      search: "?error=not_invited",
+    });
+    render(<LoginPage />);
+
+    expect(
+      await screen.findByText("This Google account is not in the invited-tester list."),
+    ).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
   it("always shows the eligible-copy after submit, never a listed-or-not split", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       json: async () => ({ message: MAGIC_LINK_COPY }),

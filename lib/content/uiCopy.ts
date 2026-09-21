@@ -24,6 +24,7 @@ const en = {
     email: "Email",
     send: "Send sign-in link",
     linkSent: "If this email is eligible, a sign-in link has been sent.",
+    errorNotInvited: "This Google account is not in the invited-tester list.",
     tryAsGuest: "Try as guest",
   },
   consent: {
@@ -247,6 +248,7 @@ const my: UiCopy = {
     email: "အီးမေးလ်",
     send: "ဆိုင်းအင်လင့်ခ် ပို့ရန်",
     linkSent: "ဤအီးမေးလ် ပါဝင်ခွင့်ရှိပါက ဆိုင်းအင်လင့်ခ် ပို့ပြီးဖြစ်သည်။",
+    errorNotInvited: "ဤ Google အကောင့်သည် ဖိတ်ကြားစာရင်းတွင် မရှိပါ။",
     tryAsGuest: "ဧည့်သည်အဖြစ် စမ်းကြည့်ရန်",
   },
   consent: {

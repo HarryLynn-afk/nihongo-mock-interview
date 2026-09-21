@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { MAGIC_LINK_COPY } from "@/lib/content/studyAuth";
 import { localizeAuthMessage } from "@/lib/content/uiCopy";
 import { LanguageBar } from "../components/LanguageBar";
@@ -11,6 +11,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    const error = new URLSearchParams(window.location.search).get("error");
+    if (error === "not_invited") {
+      setMessage(copy.login.errorNotInvited);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function startGoogle() {
     if (pending) return;
