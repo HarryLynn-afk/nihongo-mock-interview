@@ -1,27 +1,52 @@
 import { describe, expect, it, vi } from "vitest";
-import { MAGIC_LINK_COPY } from "@/lib/content/studyAuth";
 
 const ORIGINAL_ENV = { ...process.env };
 
+const { signInWithOtp } = vi.hoisted(() => ({
+  signInWithOtp: vi.fn(),
+}));
+
+vi.mock("@/lib/server/study/adminClients", () => ({
+  createStudyAdminClient: () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({
+            data: { email: "tester@school.org" },
+            error: null,
+          }),
+        }),
+      }),
+    }),
+  }),
+  createStudyAnonClient: () => ({
+    auth: { signInWithOtp },
+  }),
+}));
+
 describe("POST /api/auth/magic-link", () => {
-  it("returns the same eligible copy without sending when Supabase is unset", async () => {
+  it("fails closed without sending a sign-in link", async () => {
     vi.resetModules();
-    process.env = { ...ORIGINAL_ENV };
-    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
-    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    process.env = {
+      ...ORIGINAL_ENV,
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
+      SUPABASE_SERVICE_ROLE_KEY: "service",
+    };
+    signInWithOtp.mockReset();
 
     const { POST } = await import("./route");
     const res = await POST(
       new Request("http://localhost/api/auth/magic-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "anyone@example.com" }),
+        body: JSON.stringify({ email: "tester@school.org" }),
       }),
     );
-    const body = (await res.json()) as { message: string };
-    expect(res.status).toBe(200);
-    expect(body.message).toBe(MAGIC_LINK_COPY);
+    const body = (await res.json()) as { error?: string };
+    expect(res.status).toBe(410);
+    expect(body.error).toBe("gone");
+    expect(signInWithOtp).not.toHaveBeenCalled();
     process.env = { ...ORIGINAL_ENV };
   });
 });

@@ -115,21 +115,6 @@ export function nextParticipantId(existing: readonly string[]): string {
   return `P${String(max + 1).padStart(3, "0")}`;
 }
 
-export async function maybeSendMagicLink({
-  email,
-  allowlisted,
-  send,
-}: {
-  email: string;
-  allowlisted: boolean;
-  send: (email: string) => Promise<void>;
-}): Promise<{ message: string }> {
-  if (allowlisted) {
-    await send(normalizeEmail(email));
-  }
-  return { message: MAGIC_LINK_COPY };
-}
-
 /** Allowlisted Participant Google: callback has no join `from`. */
 export async function startLoginGoogle({
   origin,
