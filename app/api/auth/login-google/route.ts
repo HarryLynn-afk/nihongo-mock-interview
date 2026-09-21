@@ -29,6 +29,7 @@ export async function POST(request: Request) {
         await startLoginGoogle({
           origin,
           createOAuthUrl: async (redirectTo) => {
+            await supabase.auth.signOut({ scope: "local" });
             const { data, error } = await supabase.auth.signInWithOAuth({
               provider: "google",
               options: {

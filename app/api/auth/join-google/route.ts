@@ -32,6 +32,10 @@ export async function POST(request: Request) {
     lookup: lookupJoinLink,
     createOAuthUrl: async (redirectTo) => {
       if (!supabase) return null;
+      // Forget the leftover session in this browser first. Otherwise the
+      // callback can keep the earlier Google account and /consent shows
+      // that user even after a new join-link click.
+      await supabase.auth.signOut({ scope: "local" });
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {

@@ -128,4 +128,29 @@ describe("GET /auth/callback", () => {
     expect(setCookie).toContain(`${CONSENT_GATE_COOKIE}=ok`);
     expect(setCookie.toLowerCase()).toContain("httponly");
   });
+
+  it("does not keep a leftover session when the join Google exchange misses", async () => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
+      SUPABASE_SERVICE_ROLE_KEY: "service",
+    };
+    exchangeCodeForSession.mockResolvedValue({ error: { message: "invalid" } });
+    signOut.mockResolvedValue({ error: null });
+    vi.resetModules();
+    const { GET } = await import("./route");
+    const res = await GET(
+      new Request(
+        "http://localhost:3000/auth/callback?code=pkce&from=rsu-k7m2",
+      ),
+    );
+    expect(res.headers.get("location")).toBe(
+      "http://localhost:3000/join?from=rsu-k7m2",
+    );
+    expect(signOut).toHaveBeenCalled();
+    expect(res.headers.get("set-cookie") ?? "").not.toContain(
+      `${CONSENT_GATE_COOKIE}=ok`,
+    );
+  });
 });

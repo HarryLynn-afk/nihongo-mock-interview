@@ -50,6 +50,15 @@ function redirectWithJoinFrom(
   return response;
 }
 
+function redirectAuthFailed(origin: string, from: string | null) {
+  const target = from
+    ? new URL(`/join?from=${encodeURIComponent(from)}`, origin)
+    : new URL("/login", origin);
+  const response = NextResponse.redirect(target);
+  applyConsentGate(response, false);
+  return response;
+}
+
 function redirectLoginNotInvited(origin: string) {
   const login = new URL("/login", origin);
   login.searchParams.set("error", "not_invited");
@@ -105,7 +114,11 @@ export async function GET(request: Request) {
   const supabase = await createStudyServerClient();
 
   if (supabase && code) {
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      await supabase.auth.signOut();
+      return redirectAuthFailed(origin, from);
+    }
     const gate = await gateSession(from);
     if (gate.reject) {
       await supabase.auth.signOut();
@@ -115,7 +128,14 @@ export async function GET(request: Request) {
   }
 
   if (supabase && tokenHash && isOtpType(type)) {
-    await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+    const { error } = await supabase.auth.verifyOtp({
+      type,
+      token_hash: tokenHash,
+    });
+    if (error) {
+      await supabase.auth.signOut();
+      return redirectAuthFailed(origin, from);
+    }
     const gate = await gateSession(from);
     if (gate.reject) {
       await supabase.auth.signOut();

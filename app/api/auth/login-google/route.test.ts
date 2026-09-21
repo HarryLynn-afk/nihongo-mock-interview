@@ -4,8 +4,9 @@ import { CONSENT_GATE_COOKIE } from "@/lib/content/studyAuth";
 
 const ORIGINAL_ENV = { ...process.env };
 
-const { signInWithOAuth } = vi.hoisted(() => ({
+const { signInWithOAuth, signOut } = vi.hoisted(() => ({
   signInWithOAuth: vi.fn(),
+  signOut: vi.fn(),
 }));
 
 vi.mock("@/lib/server/study/serverClient", () => ({
@@ -13,7 +14,7 @@ vi.mock("@/lib/server/study/serverClient", () => ({
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return null;
     }
-    return { auth: { signInWithOAuth } };
+    return { auth: { signInWithOAuth, signOut } };
   },
 }));
 
@@ -21,6 +22,8 @@ describe("POST /api/auth/login-google", () => {
   afterEach(() => {
     process.env = { ...ORIGINAL_ENV };
     signInWithOAuth.mockReset();
+    signOut.mockReset();
+    signOut.mockResolvedValue({ error: null });
   });
 
   it("returns no Google URL when Supabase is unset", async () => {
@@ -51,6 +54,7 @@ describe("POST /api/auth/login-google", () => {
       data: { url: "https://accounts.google.com/oauth" },
       error: null,
     });
+    signOut.mockResolvedValue({ error: null });
 
     const { POST } = await import("./route");
     const res = await POST(
@@ -58,6 +62,7 @@ describe("POST /api/auth/login-google", () => {
     );
     const body = (await res.json()) as { url: string | null };
     expect(body.url).toBe("https://accounts.google.com/oauth");
+    expect(signOut).toHaveBeenCalledWith({ scope: "local" });
     expect(signInWithOAuth).toHaveBeenCalledWith({
       provider: "google",
       options: {
