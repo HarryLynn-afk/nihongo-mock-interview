@@ -374,14 +374,15 @@ describe("Call screen", () => {
     const user = await startStudentTurn();
 
     await user.click(screen.getByRole("button", { name: /speak answer/i }));
-    expect(
-      within(screen.getByTestId("answer-dock")).getByRole("button", {
-        name: /answer again/i,
-      }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("1 retry")).toBeInTheDocument();
+    const redo = within(screen.getByTestId("answer-dock")).getByRole(
+      "button",
+      { name: /answer again/i },
+    );
+    expect(redo).toBeInTheDocument();
+    expect(redo).toHaveTextContent(/answer again/i);
+    expect(screen.queryByText("1 retry")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /answer again/i }));
+    await user.click(redo);
 
     expect(
       screen.getByRole("button", { name: /speak answer/i }),

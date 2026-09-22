@@ -123,7 +123,6 @@ const en = {
     paused: "Paused",
     submitAnswer: "Submit answer",
     answerAgain: "Answer again",
-    oneRetry: "1 retry",
   },
   report: {
     title: "AI Interview Practice Feedback",
@@ -374,7 +373,6 @@ const my: UiCopy = {
     paused: "ခဏရပ်ထားသည်",
     submitAnswer: "အဖြေပို့ရန်",
     answerAgain: "ထပ်ဖြေရန်",
-    oneRetry: "၁ ကြိမ်",
   },
   report: {
     title: "AI အင်တာဗျူး လေ့ကျင့်မှု အကြံပြုချက်",
