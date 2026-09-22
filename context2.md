@@ -26,9 +26,11 @@ Do not plan a 29 Aug Launch Pack rebuild.
 - Participant entry is Google only: allowlisted `/login`, or an open `/join?from=CODE`. Consent is required this visit. Magic-link login is gone.
 - Sensei audio is committed `/question-{id}.mp3`. No runtime TTS.
 - Eng/MM picks one helper language. Japanese stays on the HUD. Do not stack EN and MY.
-- Grade is Groq on the confirmed transcript. Speaking is not a score. Speech Delivery Signals are browser timing on answered Questions. Sample report is the Groq-miss fallback only.
+- Grade is Groq on the Speak Submit transcript (live caption the student confirmed). ASR-aware rubric prompt: grade meaning, do not punish caption glitches, do not invent a cleaner transcript. No Whisper overwrite. Speaking is not a score. Speech Delivery Signals are browser timing on answered Questions. Sample report is the Groq-miss fallback only.
+- InterviewReport is Overview (stamp / radar / delivery) then Review (question nav + one card). No guest practice banner on `/call`.
 - Help the study is for Participant reports only. A Try as guest report (`/call?guest=1`) does not show the button or the dialog. Session codes are `G-` / `P-`.
 - Desktop-first. No shadcn/ui. No extra database beyond optional Supabase for study login.
+- Build requires `GROQ_GRADE_API_KEY` only. Optional Deepgram, generate-time ElevenLabs TTS, research form URL, Supabase. No runtime translate / Wispr / Whisper / Pitch access key.
 
 ## Voided — do not reopen
 
@@ -48,7 +50,7 @@ None that reopen a locked branch. Next step is pasting `003_full_session_request
 
 ## Explicitly not this version unless reopened
 
-- Live Burmese of tester answers via `/api/translate`
+- Live Burmese of tester answers via `/api/translate` (route removed; would need a new path)
 - One Groq critique per rubric category
 - Gemini as a second grader, or removing the sample last screen
 - Interview resume after tab close
@@ -56,3 +58,4 @@ None that reopen a locked branch. Next step is pasting `003_full_session_request
 - Scoring-fallback UI (Retry vs sample) until that decision is chosen
 - Google account-chooser brand name (“to continue to NihonGo”). The Supabase project URL on that screen stays until brand verification, after a public site exists.
 - A cap on how many Guest sessions can run. Try as guest stays open until that cap is chosen.
+- Background Whisper / `/api/scribe` / preferring a second ASR over Speak Submit text
