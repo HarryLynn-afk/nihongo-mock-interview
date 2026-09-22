@@ -8,8 +8,7 @@ export type InterviewQuestion = {
 /**
  * Tanaka-sensei's 3 locked interview questions. Japanese stays on the HUD.
  * The Eng/MM toggle picks English or Burmese on the student turn — never
- * both at once. This is the interviewer's own question — not the student's
- * pitch-mode answer captions, see pitchAnswers.ts for those.
+ * both at once.
  *
  * NOTE: englishTranslation/burmeseTranslation were authored for this build
  * (the PRD locks the Japanese; it does not supply exact EN/MY wording).

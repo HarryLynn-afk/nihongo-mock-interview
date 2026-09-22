@@ -1,13 +1,12 @@
 /**
  * Route / session matrix — locks the visit policy so one-route patches
- * cannot silently change Guest, Participant, or Pitch entry.
+ * cannot silently change Guest or Participant entry.
  * Join Google signOut-before-OAuth is also asserted in
  * app/api/auth/join-google/route.test.ts.
  */
 /** @vitest-environment node */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { PITCH_GATE_COOKIE, signPitchGateToken } from "@/lib/content/pitchGate";
 import { CONSENT_GATE_COOKIE } from "@/lib/content/studyAuth";
 import { mustSignIn, nextAfterAuth } from "@/lib/content/visitPolicy";
 
@@ -25,7 +24,6 @@ describe("visit route / session matrix", () => {
     process.env = { ...ORIGINAL_ENV };
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    delete process.env.PITCH_ACCESS_KEY;
   });
 
   afterEach(() => {
@@ -54,16 +52,18 @@ describe("visit route / session matrix", () => {
     expect(res.headers.get("location")).toBeNull();
   });
 
-  it("Pitch /call?pitch=1 with pitch cookie stays without a visit", async () => {
-    process.env.PITCH_ACCESS_KEY = "oral-exam-demo-key";
-    expect(mustSignIn("/call", "?pitch=1", undefined)).toBe(false);
-    const token = await signPitchGateToken("oral-exam-demo-key");
+  it("old pitch URLs are handed to Next as a missing page", async () => {
     const { middleware } = await import("../../middleware");
-    const res = await middleware(
-      request("/call?pitch=1", `${PITCH_GATE_COOKIE}=${token}`),
+    const call = await middleware(request("/call?pitch=1"));
+    const landing = await middleware(request("/pitch"));
+    expect(call.headers.get("x-middleware-rewrite")).toBe(
+      "http://localhost/pitch",
     );
-    expect(res.status).toBe(200);
-    expect(res.headers.get("location")).toBeNull();
+    expect(landing.headers.get("x-middleware-rewrite")).toBe(
+      "http://localhost/pitch",
+    );
+    expect(call.headers.get("location")).toBeNull();
+    expect(landing.headers.get("location")).toBeNull();
   });
 
   it("home does not drop the visit cookie", async () => {

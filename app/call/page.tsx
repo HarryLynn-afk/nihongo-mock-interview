@@ -18,7 +18,12 @@ import { useCameraStream } from "./useCameraStream";
 import { useInterviewScore } from "./useInterviewScore";
 import { useMicToggle } from "./useMicToggle";
 import { useQuestionFlow, type StoredAnswer } from "./useQuestionFlow";
-import { getPitchCaptions } from "@/lib/content/pitchAnswers";
+import {
+  callSessionKind,
+  followUpsForCallSession,
+  questionsForCallSession,
+  type CallSessionKind,
+} from "@/lib/content/callSession";
 import { questions } from "@/lib/content/questions";
 import { pickSessionQuestions } from "@/lib/content/questionBank";
 import type { InterviewQuestion } from "@/lib/content/questions";
@@ -61,7 +66,7 @@ const DEBUG_PREVIEW_ANSWERS: StoredAnswer[] = questions.map(
 
 export default function CallPage() {
   const [devicePrefs, setDevicePrefs] = useState(DEFAULT_DEVICE_PREFS);
-  const [isPitchMode, setIsPitchMode] = useState(false);
+  const [sessionKind, setSessionKind] = useState<CallSessionKind>("participant");
   const [sessionQuestions, setSessionQuestions] = useState<
     readonly InterviewQuestion[] | null
   >(null);
@@ -79,22 +84,20 @@ export default function CallPage() {
 
   useEffect(() => {
     setDevicePrefs(loadDevicePrefs());
-    const pitch =
-      new URLSearchParams(window.location.search).get("pitch") === "1";
-    setIsPitchMode(pitch);
-    if (pitch) {
-      setSessionQuestions(questions);
-      return;
-    }
-    const seen = loadSeenQuestionIds();
-    const picked = pickSessionQuestions(Math.random, seen);
-    saveSeenQuestionIds([...seen, ...picked.map((item) => item.id)]);
-    setSessionQuestions(picked);
+    const kind = callSessionKind(window.location.search);
+    setSessionKind(kind);
+    setSessionQuestions(
+      questionsForCallSession(kind, () => {
+        const seen = loadSeenQuestionIds();
+        const picked = pickSessionQuestions(Math.random, seen);
+        saveSeenQuestionIds([...seen, ...picked.map((item) => item.id)]);
+        return picked;
+      }),
+    );
   }, []);
 
   useEffect(() => {
-    const guestJoin =
-      new URLSearchParams(window.location.search).get("guest") === "1";
+    const guestJoin = callSessionKind(window.location.search) === "guest";
     if (guestJoin) {
       setStudyReady(true);
       return;
@@ -114,8 +117,11 @@ export default function CallPage() {
     startOn: devicePrefs.cameraOn,
   });
   const { micOn, toggleMic } = useMicToggle({ initialOn: devicePrefs.micOn });
-  const { phase, currentQuestion, questionIndex, answers, sessionQuestions: flowQuestions, endSenseiTurn, submitAnswer } =
-    useQuestionFlow(sessionQuestions, { enableFollowUps: !isPitchMode && sessionQuestions !== null });
+  const { phase, currentQuestion, answers, sessionQuestions: flowQuestions, endSenseiTurn, submitAnswer } =
+    useQuestionFlow(sessionQuestions, {
+      enableFollowUps:
+        followUpsForCallSession(sessionKind) && sessionQuestions !== null,
+    });
   const scribe = useBackgroundScribe({ answers, phase });
   const delivery = useDeliverySignals({ answers, phase });
   const { report: scoredReport } = useInterviewScore(scribe);
@@ -189,8 +195,7 @@ export default function CallPage() {
   } = useAnswerCapture({
     active: phase === "studentAnswering" && !previewing,
     micOn,
-    autoSpeak: isPitchMode,
-    liveStt: !isPitchMode,
+    liveStt: true,
     onSubmit: (submission) => {
       submitAnswer(submission);
     },
@@ -254,19 +259,12 @@ export default function CallPage() {
     onAnswerAgain();
   }
 
-  const pitchCaptions =
-    isPitchMode && phase === "studentAnswering" && questionIndex !== null
-      ? getPitchCaptions(questionIndex)
-      : null;
   const helperLines =
     phase === "studentAnswering" && currentQuestion
-      ? helperLinesForLocale(
-          locale,
-          pitchCaptions ?? {
-            english: currentQuestion.englishTranslation,
-            burmese: currentQuestion.burmeseTranslation,
-          },
-        )
+      ? helperLinesForLocale(locale, {
+          english: currentQuestion.englishTranslation,
+          burmese: currentQuestion.burmeseTranslation,
+        })
       : { english: null, burmese: null };
   const allSkipped =
     displayPhase === "done" &&
@@ -276,7 +274,6 @@ export default function CallPage() {
     sessionId === null
       ? null
       : buildUsefulnessView({
-          isPitchMode,
           formEnabled,
           sessionId,
         });
@@ -300,10 +297,7 @@ export default function CallPage() {
         }
       >
         <div className="flex w-full shrink-0 items-center justify-end gap-3">
-          {SHOW_SKIP_INTERVIEW &&
-          !isPitchMode &&
-          !previewing &&
-          phase !== "done" ? (
+          {SHOW_SKIP_INTERVIEW && !previewing && phase !== "done" ? (
             <button
               type="button"
               onClick={() => {
@@ -321,7 +315,7 @@ export default function CallPage() {
             variant="dark"
           />
         </div>
-        {!isPitchMode && !participantId ? (
+        {!participantId ? (
           <p className="w-full shrink-0 rounded-xl border border-paper/15 bg-paper/5 px-4 py-2 text-center text-sm text-paper/80">
             {copy.call.guestBanner}
           </p>

@@ -4,20 +4,9 @@ import { getSampleReport } from "./sampleReport";
 import { buildSurveyPayload, buildUsefulnessView, createSessionId } from "./survey";
 
 describe("buildUsefulnessView", () => {
-  it("returns null in Pitch mode even when the form is enabled", () => {
-    expect(
-      buildUsefulnessView({
-        isPitchMode: true,
-        formEnabled: true,
-        sessionId: "11111111-1111-4111-8111-111111111111",
-      }),
-    ).toBeNull();
-  });
-
   it("returns a view with the session id when the form is enabled", () => {
     const sessionId = "11111111-1111-4111-8111-111111111111";
     const view = buildUsefulnessView({
-      isPitchMode: false,
       formEnabled: true,
       sessionId,
     });
@@ -28,7 +17,6 @@ describe("buildUsefulnessView", () => {
   it("returns null when the form URL is missing", () => {
     expect(
       buildUsefulnessView({
-        isPitchMode: false,
         formEnabled: false,
         sessionId: "11111111-1111-4111-8111-111111111111",
       }),
@@ -37,7 +25,6 @@ describe("buildUsefulnessView", () => {
 
   it("includes the locked EN and MY survey copy", () => {
     const view = buildUsefulnessView({
-      isPitchMode: false,
       formEnabled: true,
       sessionId: "11111111-1111-4111-8111-111111111111",
     });

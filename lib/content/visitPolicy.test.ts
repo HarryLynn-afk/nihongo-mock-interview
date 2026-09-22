@@ -3,10 +3,22 @@ import { CONSENT_GATE_COOKIE } from "./studyAuth";
 import {
   isGuestCall,
   isParticipantCall,
+  isRemovedPitchUrl,
   mustSignIn,
   nextAfterAuth,
   routeRole,
 } from "./visitPolicy";
+
+describe("isRemovedPitchUrl", () => {
+  it("rejects the old presentation URLs and leaves Guest and Participant calls alone", () => {
+    expect(isRemovedPitchUrl("/pitch", "")).toBe(true);
+    expect(isRemovedPitchUrl("/call", "?pitch=1")).toBe(true);
+    expect(isRemovedPitchUrl("/call", "?guest=1&pitch=1")).toBe(true);
+    expect(isRemovedPitchUrl("/call", "?guest=1")).toBe(false);
+    expect(isRemovedPitchUrl("/call", "")).toBe(false);
+    expect(isRemovedPitchUrl("/", "?pitch=1")).toBe(false);
+  });
+});
 
 describe("routeRole", () => {
   it("maps learner entry points", () => {
@@ -15,13 +27,13 @@ describe("routeRole", () => {
     expect(routeRole("/join")).toBe("participantEntry");
     expect(routeRole("/consent")).toBe("consent");
     expect(routeRole("/call")).toBe("call");
-    expect(routeRole("/pitch")).toBe("pitch");
+    expect(routeRole("/pitch")).toBe("other");
     expect(routeRole("/auth/callback")).toBe("auth");
   });
 });
 
 describe("isParticipantCall", () => {
-  it("is true only for practice /call without guest or pitch", () => {
+  it("is true only for practice /call without the guest flag", () => {
     expect(isParticipantCall("/call", "")).toBe(true);
     expect(isParticipantCall("/call", "?")).toBe(true);
     expect(isParticipantCall("/call", "?guest=1")).toBe(false);
@@ -49,9 +61,8 @@ describe("mustSignIn", () => {
     expect(mustSignIn("/call", "", "ok")).toBe(false);
   });
 
-  it("lets Guest and Pitch /call through without a visit cookie", () => {
+  it("lets a Guest call through without a visit cookie", () => {
     expect(mustSignIn("/call", "?guest=1", undefined)).toBe(false);
-    expect(mustSignIn("/call", "?pitch=1", undefined)).toBe(false);
   });
 
   it("does not gate home, login, or join", () => {

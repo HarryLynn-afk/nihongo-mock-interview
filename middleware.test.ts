@@ -1,7 +1,6 @@
 /** @vitest-environment node */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { PITCH_GATE_COOKIE, signPitchGateToken } from "@/lib/content/pitchGate";
 import { CONSENT_GATE_COOKIE } from "@/lib/content/studyAuth";
 
 const ORIGINAL_ENV = { ...process.env };
@@ -12,13 +11,10 @@ function request(path: string, cookieHeader?: string) {
   return new NextRequest(`http://localhost${path}`, { headers });
 }
 
-describe("middleware Pitch gate", () => {
+describe("middleware removed pitch URLs", () => {
   beforeEach(() => {
     vi.resetModules();
-    process.env = {
-      ...ORIGINAL_ENV,
-      PITCH_ACCESS_KEY: "oral-exam-demo-key",
-    };
+    process.env = { ...ORIGINAL_ENV };
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   });
@@ -27,31 +23,28 @@ describe("middleware Pitch gate", () => {
     process.env = { ...ORIGINAL_ENV };
   });
 
-  it("redirects /call?pitch=1 to /pitch when the gate cookie is missing", async () => {
+  it("sends removed pitch URLs to a page Next can mark not found", async () => {
     const { middleware } = await import("./middleware");
-    const res = await middleware(request("/call?pitch=1"));
-    expect(res.status).toBe(307);
-    expect(res.headers.get("location")).toBe("http://localhost/pitch");
-  });
-
-  it("lets /call?pitch=1 through when the gate cookie is valid", async () => {
-    const token = await signPitchGateToken("oral-exam-demo-key");
-    const { middleware } = await import("./middleware");
-    const res = await middleware(
-      request("/call?pitch=1", `${PITCH_GATE_COOKIE}=${token}`),
+    const landing = await middleware(request("/pitch"));
+    const call = await middleware(request("/call?pitch=1"));
+    expect(landing.headers.get("x-middleware-rewrite")).toBe(
+      "http://localhost/pitch",
     );
-    expect(res.status).toBe(200);
-    expect(res.headers.get("location")).toBeNull();
+    expect(call.headers.get("x-middleware-rewrite")).toBe(
+      "http://localhost/pitch",
+    );
+    expect(landing.headers.get("location")).toBeNull();
+    expect(call.headers.get("location")).toBeNull();
   });
 
-  it("does not redirect practice /call with a visit or /pitch itself", async () => {
+  it("does not redirect a Guest or Participant call", async () => {
     const { middleware } = await import("./middleware");
+    const guest = await middleware(request("/call?guest=1"));
     const practice = await middleware(
       request("/call", `${CONSENT_GATE_COOKIE}=ok`),
     );
-    const landing = await middleware(request("/pitch"));
+    expect(guest.headers.get("location")).toBeNull();
     expect(practice.headers.get("location")).toBeNull();
-    expect(landing.headers.get("location")).toBeNull();
   });
 });
 

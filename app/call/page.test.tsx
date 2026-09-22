@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { pickSessionQuestions } from "@/lib/content/questionBank";
 import { questions } from "@/lib/content/questions";
 import { GUEST_BANNER } from "@/lib/content/studyAuth";
 import { PUSHBACK_TRY_AGAIN } from "@/lib/content/pushbackCopy";
 import * as liveTranscription from "./startLiveTranscription";
-import { pitchAnswers } from "@/lib/content/pitchAnswers";
 import {
   getSampleReport,
   SCORING_UNAVAILABLE_BANNER,
@@ -17,11 +17,12 @@ vi.mock("@/lib/content/questionBank", async (importOriginal) => {
   const { questions: locked } = await import("@/lib/content/questions");
   return {
     ...actual,
-    pickSessionQuestions: () =>
+    pickSessionQuestions: vi.fn(() =>
       locked.map((question, index) => ({
         ...question,
         topic: actual.SESSION_TOPIC_ORDER[index],
       })),
+    ),
   };
 });
 
@@ -136,26 +137,6 @@ describe("Call screen", () => {
       });
       await speakAndSubmit(user, `答え${question.id}`);
     }
-  }
-
-  /**
-   * Pitch mode auto-enters Speak for every student turn, so there is no
-   * idle Speak answer button to press — just deliver a transcript and submit.
-   */
-  async function pitchSpeakAndSubmit(
-    user: ReturnType<typeof userEvent.setup>,
-    transcript: string,
-  ) {
-    await waitFor(() => {
-      expect(recognitionInstances.length).toBeGreaterThan(0);
-    });
-    act(() => {
-      const spoken = Object.assign([{ transcript }], { isFinal: true });
-      recognitionInstances[recognitionInstances.length - 1]?.onresult?.({
-        results: [spoken],
-      });
-    });
-    await user.click(screen.getByRole("button", { name: /submit answer/i }));
   }
 
   function hud() {
@@ -761,132 +742,6 @@ describe("Call screen", () => {
     ).toBe(false);
   });
 
-  it("never shows the lobby and never calls /api/translate when ?pitch=1 is present", async () => {
-    window.history.pushState({}, "", "/call?pitch=1");
-
-    const user = userEvent.setup();
-    render(<CallPage />);
-
-    expect(screen.queryByRole("dialog", { name: /ready to join/i })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("dialog", { name: /interview will start soon/i }),
-    ).not.toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(capturedAudioSrcs).toContain("/question-1.mp3");
-    });
-    await act(async () => {
-      endedHandlers.splice(0).forEach((handler) => handler());
-    });
-
-    // Pitch mode auto-enters Speak; deliver a transcript and submit.
-    await waitFor(() => {
-      expect(recognitionInstances.length).toBeGreaterThan(0);
-    });
-    act(() => {
-      const spoken = Object.assign([{ transcript: "はじめまして" }], {
-        isFinal: true,
-      });
-      recognitionInstances[recognitionInstances.length - 1]?.onresult?.({
-        results: [spoken],
-      });
-    });
-    await user.click(screen.getByRole("button", { name: /submit answer/i }));
-
-    expect(
-      fetchMock.mock.calls.some((call) => String(call[0]).includes("/api/translate")),
-    ).toBe(false);
-  });
-
-  it("with ?pitch=1 shows locked English for the current question index, not the live transcript", async () => {
-    window.history.pushState({}, "", "/call?pitch=1");
-
-    render(<CallPage />);
-
-    await waitFor(() => {
-      expect(capturedAudioSrcs).toContain("/question-1.mp3");
-    });
-    await act(async () => {
-      endedHandlers.splice(0).forEach((handler) => handler());
-    });
-
-    expect(hud().getByText(pitchAnswers[0].english)).toBeInTheDocument();
-    expect(hud().queryByText(pitchAnswers[0].burmese)).not.toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(recognitionInstances.length).toBeGreaterThan(0);
-    });
-    act(() => {
-      const spoken = Object.assign(
-        [{ transcript: "garbage transcript that must not be matched" }],
-        { isFinal: false },
-      );
-      recognitionInstances[recognitionInstances.length - 1]?.onresult?.({
-        results: [spoken],
-      });
-    });
-
-    expect(hud().getByText(pitchAnswers[0].english)).toBeInTheDocument();
-    expect(hud().queryByText(pitchAnswers[0].burmese)).not.toBeInTheDocument();
-    expect(
-      hud().queryByText("garbage transcript that must not be matched"),
-    ).not.toBeInTheDocument();
-  });
-
-  it("with ?pitch=1, MM shows locked Burmese instead of English", async () => {
-    window.history.pushState({}, "", "/call?pitch=1");
-    const user = userEvent.setup();
-    render(<CallPage />);
-
-    await waitFor(() => {
-      expect(capturedAudioSrcs).toContain("/question-1.mp3");
-    });
-    await act(async () => {
-      endedHandlers.splice(0).forEach((handler) => handler());
-    });
-
-    await user.click(screen.getByRole("button", { name: "MM" }));
-
-    expect(hud().getByText(pitchAnswers[0].burmese)).toBeInTheDocument();
-    expect(hud().queryByText(pitchAnswers[0].english)).not.toBeInTheDocument();
-  });
-
-  it("with ?pitch=1 shows Q2 locked English after Q1, not Q1 captions", async () => {
-    window.history.pushState({}, "", "/call?pitch=1");
-
-    const user = userEvent.setup();
-    render(<CallPage />);
-
-    await waitFor(() => {
-      expect(capturedAudioSrcs).toContain("/question-1.mp3");
-    });
-    await act(async () => {
-      endedHandlers.splice(0).forEach((handler) => handler());
-    });
-
-    await waitFor(() => {
-      expect(recognitionInstances.length).toBeGreaterThan(0);
-    });
-    act(() => {
-      const spoken = Object.assign([{ transcript: "答え1" }], { isFinal: true });
-      recognitionInstances[recognitionInstances.length - 1]?.onresult?.({
-        results: [spoken],
-      });
-    });
-    await user.click(screen.getByRole("button", { name: /submit answer/i }));
-
-    await waitFor(() => {
-      expect(capturedAudioSrcs).toContain("/question-2.mp3");
-    });
-    await act(async () => {
-      endedHandlers.splice(0).forEach((handler) => handler());
-    });
-
-    expect(hud().getByText(pitchAnswers[1].english)).toBeInTheDocument();
-    expect(hud().queryByText(pitchAnswers[1].burmese)).not.toBeInTheDocument();
-    expect(hud().queryByText(pitchAnswers[0].english)).not.toBeInTheDocument();
-  });
-
   it("POSTs /api/scribe after spoken submit with no waiting state, then shows Q2", async () => {
     const recorded = new Blob([new Uint8Array([7, 7, 7])], { type: "audio/webm" });
     class FakeMediaRecorder {
@@ -1063,45 +918,6 @@ describe("Call screen", () => {
     expect(screen.getByText("準備OK")).toBeInTheDocument();
   });
 
-  it("with ?pitch=1 still shows the scoring-unavailable banner when /api/score returns the sample report", async () => {
-    window.history.pushState({}, "", "/call?pitch=1");
-    fetchMock.mockImplementation((input: RequestInfo | URL) => {
-      if (String(input).includes("/api/score")) {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              report: getSampleReport(SCORING_UNAVAILABLE_BANNER),
-            }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          ),
-        );
-      }
-      return Promise.resolve(new Response(null, { status: 202 }));
-    });
-
-    const user = userEvent.setup();
-    render(<CallPage />);
-
-    for (const question of questions) {
-      await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
-      });
-      await act(async () => {
-        endedHandlers.splice(0).forEach((handler) => handler());
-      });
-      await pitchSpeakAndSubmit(user, `答え${question.id}`);
-    }
-
-    await waitFor(() => {
-      expect(
-        screen.getByText("Scoring unavailable — sample report."),
-      ).toBeInTheDocument();
-    });
-    expect(screen.getByTestId("interview-report")).toBeInTheDocument();
-    expect(screen.getByText("準備OK")).toBeInTheDocument();
-    expect(window.location.search).toBe("?pitch=1");
-  });
-
   it("does not show the scoring-unavailable banner when /api/score returns a live report", async () => {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       if (String(input).includes("/api/score")) {
@@ -1230,207 +1046,7 @@ describe("Call screen", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("with ?pitch=1 and a live AlmostReady headline shows that live report", async () => {
-    window.history.pushState({}, "", "/call?pitch=1");
-    fetchMock.mockImplementation((input: RequestInfo | URL) => {
-      if (String(input).includes("/api/score")) {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              report: {
-                headline: "AlmostReady",
-                stamp: "もう少し",
-                total: 70,
-                scores: {
-                  speaking: { raw: 4, weight: 20, points: 16 },
-                  listening: { raw: 3, weight: 15, points: 9 },
-                  grammarPoliteness: { raw: 3, weight: 15, points: 9 },
-                  motivation: { raw: 4, weight: 20, points: 16 },
-                  studyPlan: { raw: 4, weight: 20, points: 16 },
-                  consistency: { raw: 4, weight: 10, points: 8 },
-                },
-                gatesFired: [],
-                critiques: [
-                  {
-                    questionIndex: 0,
-                    quote: "はじめまして",
-                    explanation: "Add one concrete study hour.",
-                    rewrite: "はじめまして。",
-                    category: "studyPlan",
-                  },
-                ],
-                profileName: "Aung Min Khant",
-                source: "grade",
-                banner: null,
-              },
-            }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          ),
-        );
-      }
-      return Promise.resolve(new Response(null, { status: 202 }));
-    });
-
-    const user = userEvent.setup();
-    render(<CallPage />);
-
-    for (const question of questions) {
-      await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
-      });
-      await act(async () => {
-        endedHandlers.splice(0).forEach((handler) => handler());
-      });
-      await pitchSpeakAndSubmit(user, `答え${question.id}`);
-    }
-
-    await waitFor(() => {
-      expect(screen.getByTestId("interview-report")).toBeInTheDocument();
-    });
-    expect(screen.getByText("もう少し")).toBeInTheDocument();
-    expect(screen.getByText("73/100")).toBeInTheDocument();
-    expect(screen.getByText("はじめまして")).toBeInTheDocument();
-    expect(screen.queryByText("準備OK")).not.toBeInTheDocument();
-    expect(screen.queryByText("90/100")).not.toBeInTheDocument();
-    expect(screen.queryByText("アウン・ミン・タントです")).not.toBeInTheDocument();
-    expect(
-      screen.queryByText("Scoring unavailable — sample report."),
-    ).not.toBeInTheDocument();
-    expect(window.location.pathname).toBe("/call");
-    expect(window.location.search).toBe("?pitch=1");
-  });
-
-  it("with ?pitch=1 and a live KeepPracticing headline shows that live report", async () => {
-    window.history.pushState({}, "", "/call?pitch=1");
-    fetchMock.mockImplementation((input: RequestInfo | URL) => {
-      if (String(input).includes("/api/score")) {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              report: {
-                headline: "KeepPracticing",
-                stamp: "要練習",
-                total: 70,
-                scores: {
-                  speaking: { raw: 4, weight: 20, points: 16 },
-                  listening: { raw: 3, weight: 15, points: 9 },
-                  grammarPoliteness: { raw: 3, weight: 15, points: 9 },
-                  motivation: { raw: 4, weight: 20, points: 16 },
-                  studyPlan: { raw: 4, weight: 20, points: 16 },
-                  consistency: { raw: 4, weight: 10, points: 8 },
-                },
-                gatesFired: ["speaking"],
-                critiques: [
-                  {
-                    questionIndex: 0,
-                    quote: "はじめまして",
-                    explanation: "Add one concrete study hour.",
-                    rewrite: "はじめまして。",
-                    category: "studyPlan",
-                  },
-                ],
-                profileName: "Aung Min Khant",
-                source: "grade",
-                banner: null,
-              },
-            }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          ),
-        );
-      }
-      return Promise.resolve(new Response(null, { status: 202 }));
-    });
-
-    const user = userEvent.setup();
-    render(<CallPage />);
-
-    for (const question of questions) {
-      await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
-      });
-      await act(async () => {
-        endedHandlers.splice(0).forEach((handler) => handler());
-      });
-      await pitchSpeakAndSubmit(user, `答え${question.id}`);
-    }
-
-    await waitFor(() => {
-      expect(screen.getByTestId("interview-report")).toBeInTheDocument();
-    });
-    expect(screen.getByText("要練習")).toBeInTheDocument();
-    expect(screen.getByText("73/100")).toBeInTheDocument();
-    expect(screen.getByText("はじめまして")).toBeInTheDocument();
-    expect(screen.queryByText("準備OK")).not.toBeInTheDocument();
-    expect(screen.queryByText("90/100")).not.toBeInTheDocument();
-    expect(screen.queryByText("アウン・ミン・タントです")).not.toBeInTheDocument();
-    expect(
-      screen.queryByText("Scoring unavailable — sample report."),
-    ).not.toBeInTheDocument();
-  });
-
-  it("with ?pitch=1 and a live Ready headline shows the live report", async () => {
-    window.history.pushState({}, "", "/call?pitch=1");
-    fetchMock.mockImplementation((input: RequestInfo | URL) => {
-      if (String(input).includes("/api/score")) {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              report: {
-                headline: "Ready",
-                stamp: "準備OK",
-                total: 88,
-                scores: {
-                  speaking: { raw: 5, weight: 20, points: 20 },
-                  listening: { raw: 4, weight: 15, points: 12 },
-                  grammarPoliteness: { raw: 4, weight: 15, points: 12 },
-                  motivation: { raw: 5, weight: 20, points: 20 },
-                  studyPlan: { raw: 4, weight: 20, points: 16 },
-                  consistency: { raw: 4, weight: 10, points: 8 },
-                },
-                gatesFired: [],
-                critiques: [
-                  {
-                    questionIndex: 0,
-                    quote: "はじめまして",
-                    explanation: "Use です/ます all the way through.",
-                    rewrite: "はじめまして。",
-                    category: "speaking",
-                  },
-                ],
-                profileName: "Aung Min Khant",
-                source: "grade",
-                banner: null,
-              },
-            }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          ),
-        );
-      }
-      return Promise.resolve(new Response(null, { status: 202 }));
-    });
-
-    const user = userEvent.setup();
-    render(<CallPage />);
-
-    for (const question of questions) {
-      await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
-      });
-      await act(async () => {
-        endedHandlers.splice(0).forEach((handler) => handler());
-      });
-      await pitchSpeakAndSubmit(user, `答え${question.id}`);
-    }
-
-    await waitFor(() => {
-      expect(screen.getByTestId("interview-report")).toBeInTheDocument();
-    });
-    expect(screen.getByText("準備OK")).toBeInTheDocument();
-    expect(screen.getByText("85/100")).toBeInTheDocument();
-    expect(screen.queryByText("90/100")).not.toBeInTheDocument();
-  });
-
-  it("without ?pitch=1 shows the honest AlmostReady live report", async () => {
+  it("shows the honest AlmostReady live report", async () => {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       if (String(input).includes("/api/score")) {
         return Promise.resolve(
@@ -1604,6 +1220,29 @@ describe("Call screen", () => {
     );
   });
 
+  it("gives a Guest the 3 locked Questions and does not draw the topic bank", async () => {
+    vi.mocked(pickSessionQuestions).mockClear();
+    window.history.pushState({}, "", "/call?guest=1");
+
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Question 1 of 3")).toBeInTheDocument();
+    });
+    expect(pickSessionQuestions).not.toHaveBeenCalled();
+  });
+
+  it("draws the topic bank for a Participant classroom", async () => {
+    vi.mocked(pickSessionQuestions).mockClear();
+    window.history.pushState({}, "", "/call");
+
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(pickSessionQuestions).toHaveBeenCalled();
+    });
+  });
+
   it("keeps Try as guest as Guest even if a leftover Participant session exists", async () => {
     mockLiveGradeAndSurvey("P001");
     window.history.pushState({}, "", "/call?guest=1");
@@ -1750,32 +1389,4 @@ describe("Call screen", () => {
     ).toBeInTheDocument();
   });
 
-  it("never shows the Usefulness step on ?pitch=1 even when the form is enabled", async () => {
-    window.history.pushState({}, "", "/call?pitch=1");
-    mockLiveGradeAndSurvey();
-
-    const user = userEvent.setup();
-    render(<CallPage />);
-
-    for (const question of questions) {
-      await waitFor(() => {
-        expect(capturedAudioSrcs).toContain(`/question-${question.id}.mp3`);
-      });
-      await act(async () => {
-        endedHandlers.splice(0).forEach((handler) => handler());
-      });
-      await pitchSpeakAndSubmit(user, `答え${question.id}`);
-    }
-
-    await waitFor(() => {
-      expect(screen.getByTestId("interview-report")).toBeInTheDocument();
-    });
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-    });
-    expect(screen.queryByTestId("usefulness-step")).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /help the study/i }),
-    ).not.toBeInTheDocument();
-  });
 });

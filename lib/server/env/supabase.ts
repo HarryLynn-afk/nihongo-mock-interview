@@ -1,5 +1,5 @@
 /**
- * Supabase (study testers). Optional — guests and Pitch work without it,
+ * Supabase (study testers). Optional — guests work without it,
  * so we do NOT `requireEnv` these.
  */
 export function getSupabaseUrl(): string | null {

@@ -128,20 +128,4 @@ describe("lib/server/env/* per-purpose modules", () => {
       "https://docs.google.com/forms/d/e/test/formResponse",
     );
   });
-
-  it("Pitch access key is optional — missing var returns null and does not throw", async () => {
-    setAllRequiredEnv();
-    delete process.env.PITCH_ACCESS_KEY;
-
-    const { getPitchAccessKey } = await import("./pitchAccess");
-    expect(getPitchAccessKey()).toBeNull();
-  });
-
-  it("Pitch access key getter returns the key when set", async () => {
-    setAllRequiredEnv();
-    process.env.PITCH_ACCESS_KEY = "oral-exam-demo-key";
-
-    const { getPitchAccessKey } = await import("./pitchAccess");
-    expect(getPitchAccessKey()).toBe("oral-exam-demo-key");
-  });
 });

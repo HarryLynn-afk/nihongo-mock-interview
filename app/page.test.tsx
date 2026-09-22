@@ -47,7 +47,9 @@ describe("Home (start screen)", () => {
     expect(
       screen.getByRole("button", { name: "Try as guest" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Guest practice isn't saved.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Three questions. Guest practice isn't saved."),
+    ).toBeInTheDocument();
     const loginLink = screen.getByRole("link", {
       name: "Participant login",
     });

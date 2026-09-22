@@ -3,8 +3,8 @@
  *
  * Visit cookie (`nihongo_consent_gate`, session-only):
  * - Set after a successful /auth/callback (or hash catcher).
- * - Required for /consent and Participant /call (no guest, no pitch).
- * - Not required for /call?guest=1 or /call?pitch=1.
+ * - Required for /consent and Participant /call (no guest).
+ * - Not required for /call?guest=1.
  * - / does not clear it. /login and /join replace a visit via local sign-out
  *   before OAuth (not by middleware clearing this cookie on page load).
  *
@@ -14,14 +14,12 @@
  */
 
 import { CONSENT_GATE_COOKIE, consentGateIsOpen } from "./studyAuth";
-import { isPitchCallPath } from "./pitchGate";
 
 export type RouteRole =
   | "guestHome"
   | "participantEntry"
   | "consent"
   | "call"
-  | "pitch"
   | "auth"
   | "other";
 
@@ -30,9 +28,17 @@ export function routeRole(pathname: string): RouteRole {
   if (pathname === "/login" || pathname === "/join") return "participantEntry";
   if (pathname === "/consent") return "consent";
   if (pathname === "/call") return "call";
-  if (pathname === "/pitch") return "pitch";
   if (pathname.startsWith("/auth/")) return "auth";
   return "other";
+}
+
+/** `/pitch` and `/call?pitch=1` are not routes. */
+export function isRemovedPitchUrl(pathname: string, search: string): boolean {
+  if (pathname === "/pitch") return true;
+  const query = search.startsWith("?") ? search.slice(1) : search;
+  return (
+    pathname === "/call" && new URLSearchParams(query).get("pitch") === "1"
+  );
 }
 
 export function isGuestCall(search: string): boolean {
@@ -40,11 +46,11 @@ export function isGuestCall(search: string): boolean {
   return new URLSearchParams(query).get("guest") === "1";
 }
 
-/** Practice Participant classroom — not Guest, not Pitch. */
+/** Practice Participant classroom — not Guest. */
 export function isParticipantCall(pathname: string, search: string): boolean {
   if (pathname !== "/call") return false;
   if (isGuestCall(search)) return false;
-  if (isPitchCallPath(pathname, search)) return false;
+  if (isRemovedPitchUrl(pathname, search)) return false;
   return true;
 }
 

@@ -19,9 +19,9 @@ type JoinInterviewProps = {
 };
 
 /**
- * Practice-mode Join: device check → 15s popup on this page → `/call`.
- * Pitch mode has its own entry point at `/pitch` and never goes through
- * this lobby (see `app/pitch/page.tsx`).
+ * Practice Join: device check → 15s popup on this page → `/call`.
+ * Guest (`guest`) lands on `/call?guest=1`, the 3 locked Questions.
+ * A consented Participant lands on `/call`, the topic bank.
  */
 export function JoinInterview({
   label,

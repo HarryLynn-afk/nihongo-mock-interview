@@ -1,12 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { pitchCallRedirectPath, PITCH_GATE_COOKIE } from "@/lib/content/pitchGate";
 import { consentGateCookie, shouldRewriteAuthCallback } from "@/lib/content/studyAuth";
 import {
   CONSENT_GATE_COOKIE,
   mustSignIn,
+  isRemovedPitchUrl,
 } from "@/lib/content/visitPolicy";
-import { getPitchAccessKey } from "@/lib/server/env/pitchAccess";
 
 function forgetVisit(response: NextResponse) {
   const gate = consentGateCookie(false);
@@ -42,19 +41,13 @@ async function redirectToLoginAndSignOut(
 }
 
 export async function middleware(request: NextRequest) {
-  // Next.js Edge only inlines env keys statically referenced here.
-  void process.env.PITCH_ACCESS_KEY;
-  const pitchRedirect = await pitchCallRedirectPath(
-    request.nextUrl.pathname,
-    request.nextUrl.search,
-    request.cookies.get(PITCH_GATE_COOKIE)?.value,
-    getPitchAccessKey(),
-  );
-  if (pitchRedirect) {
-    const locked = request.nextUrl.clone();
-    locked.pathname = pitchRedirect;
-    locked.search = "";
-    return NextResponse.redirect(locked);
+  if (
+    isRemovedPitchUrl(request.nextUrl.pathname, request.nextUrl.search)
+  ) {
+    const missing = request.nextUrl.clone();
+    missing.pathname = "/pitch";
+    missing.search = "";
+    return NextResponse.rewrite(missing);
   }
 
   const pathname = request.nextUrl.pathname;
@@ -110,7 +103,6 @@ export const config = {
   matcher: [
     "/",
     "/call",
-    "/pitch",
     "/login",
     "/join",
     "/consent",

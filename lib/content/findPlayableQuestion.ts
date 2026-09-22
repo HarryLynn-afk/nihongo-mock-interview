@@ -10,7 +10,7 @@ export function findPlayableQuestion(id: number): InterviewQuestion | undefined 
   return questions.find((item) => item.id === id) ?? getBankQuestionById(id);
 }
 
-/** Unique Pitch + bank + follow-up rows that need a committed sensei clip. */
+/** Unique locked, bank, and follow-up rows that need a committed sensei clip. */
 export function allPlayableQuestions(): InterviewQuestion[] {
   const byId = new Map<number, InterviewQuestion>();
   for (const question of [...questions, ...questionBank, ...followUpBank]) {
