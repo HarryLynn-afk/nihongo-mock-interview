@@ -8,14 +8,14 @@
 
 ## Current State
 - CSC 485 = research later. CSC 492 = working app. Not a hackathon. The presentation path is **Try as guest**, the three locked Questions. There is no `/pitch` route.
-- `main` HEAD `dd20428`. **35 commits ahead of `origin/main`**. **509/509** tests passing. Not deployed to Netlify.
-- Built and still current: Issues 1–14, Direct Join 16–17, Pushback 22–24, quoted critique 25–26, Usefulness step 28, form-field map 29, coaching report (Overview then Review), Interview Answer Quality vs Speech Delivery Signals (Deepgram PCM), voice-only, committed sensei mp3s, consent-this-visit, 15s lobby popup, guest-first `/`, Deepgram listen, lobby camera retry, one-store Submit, try-again banner, `G-`/`P-` codes, Guest 3 locked Questions, spotlight classroom, Answer again / Hear again, Eng/MM, join-links, Google login PKCE + account chooser, guest email request, grade on Speak Submit text (no Whisper).
-- **This session:** Groq primary + **DeepSeek Flash** grade fallback (`thinking` off); both miss → `ScoringUnavailableScreen` (no live sample Ready). Skip interview still local `getSampleReport(null)`. Answer again dock shows **Answer again** (not “1 retry”); cap still 1. Speak auto-pauses after **10s** idle with no new live transcript (no popup).
+- `main` HEAD `f838b80`. **37 commits ahead of `origin/main`**. **513/513** tests passing. Not deployed to Netlify.
+- Built and still current: Issues 1–14, Direct Join 16–17, Pushback 22–24, quoted critique 25–26, Usefulness step 28, form-field map 29, coaching report (Overview then Review), Interview Answer Quality vs Speech Delivery Signals (Deepgram PCM), voice-only, committed sensei mp3s, consent-this-visit, 15s lobby popup, guest-first `/`, Deepgram listen, lobby camera retry, one-store Submit, try-again banner, `G-`/`P-` codes, Guest 3 locked Questions, spotlight classroom, Answer again / Hear again, Eng/MM, join-links, Google login PKCE + account chooser, guest email request, grade on Speak Submit text (no Whisper), Groq→DeepSeek grade fallback, Speak idle auto-pause.
+- **This session:** Fixed black **You** tile while the camera LED stayed on (`f838b80`). Lobby now releases the webcam when the Interview starts (and on unmount). Call-screen `useCameraStream` uses a callback ref, calls `play()`, and starts/stops the stream with the Camera toggle so a remounted `<video>` is not left empty.
 - `/`: Poppins guest-first hero, **Try as guest** → choice (continue / leave email / already-sent). Lobby → 15s → `/call?guest=1`. Header **Participant login** → Google dialog on `/login`.
 - `/call`: Guest 3Q; Participant bank + follow-ups. No guest banner. Help the study Participant-only. Dev Skip interview still present.
 - Scoring: `POST /api/score` → Groq → DeepSeek → `report: null`. Optional `DEEPSEEK_GRADE_API_KEY`. `check-env` still requires only `GROQ_GRADE_API_KEY`.
 - Untracked on purpose: learning-map, scoring/session notes, ui-ux-review, prototype HTMLs, `personal.md`.
-- Live DeepSeek / full Guest Interview not browser-verified this session (paid APIs not approved for an agent run).
+- Join→lobby Camera on→Skip→`/call` preview path browser-checked (live stream, `videoWidth` 640). Paid Deepgram/Groq/DeepSeek full Interview not agent-run this session.
 
 ---
 
@@ -54,6 +54,7 @@
 - **Speak idle:** auto-pause after 10s with no new transcript; no popup.
 - **Report chrome:** Overview then Review. No guest banner on `/call`.
 - **Dead routes removed:** `/api/translate`, `/api/stt`, Scribe env. `check-env` = `GROQ_GRADE_API_KEY` only.
+- **Lobby camera:** stop lobby tracks when Interview starts / on unmount; do not leave a second live getUserMedia against `/call`. Call Camera toggle must stop/restart the stream and reattach + `play()` on remount.
 
 ---
 
@@ -70,3 +71,4 @@ Rows before 2026-09-22 stay in `CLAUDE.md`. Append new rows here only.
 | 2026-09-22 | Closed the session (`361b123`, 525 tests) | Help the study stays off Guest reports. Email request is saved here; the other project sends the mail. Guest session cap and Google brand name stay later. |
 | 2026-09-22 | Report Overview/Review; already-sent email; drop guest banner; grade Submit text + ASR prompt; remove Whisper/translate/Wispr (`dffc946`, 502 tests) | Score Speak Submit only. No `/api/scribe`. `check-env` = grade key only. Do not restore Whisper as preferred grade input. |
 | 2026-09-22 | Groq→DeepSeek grade fallback; hide Answer again count; Speak idle auto-pause (`a3fe96c`…`dd20428`, 509 tests) | DeepSeek Flash, thinking off. Both miss → unavailable (not sample Ready). Answer again cap 1, label only. Idle 10s → Pause; no popup. Do not force browser STT on redo. |
+| 2026-09-22 | Fix black You tile while camera still open (`f838b80`, 513 tests) | Lobby releases webcam before `/call`; call hook reattaches + `play()` on remount; Camera toggle stops/restarts stream. Continuity/closed-lid miss stays a device note, not this leak. |
