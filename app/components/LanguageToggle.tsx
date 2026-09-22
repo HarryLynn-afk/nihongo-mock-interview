@@ -6,10 +6,12 @@ export function LanguageToggle({
   locale,
   onChange,
   variant = "dark",
+  tone = "indigo",
 }: {
   locale: UiLocale;
   onChange: (locale: UiLocale) => void;
   variant?: "light" | "dark";
+  tone?: "indigo" | "feather";
 }) {
   const frame =
     variant === "light"
@@ -18,7 +20,7 @@ export function LanguageToggle({
   const idle =
     variant === "light" ? "text-ink/55 hover:text-ink" : "text-paper/55 hover:text-paper";
   const active =
-    variant === "light" ? "bg-indigo text-paper" : "bg-indigo text-paper";
+    tone === "feather" ? "bg-feather text-white" : "bg-indigo text-paper";
 
   return (
     <div
