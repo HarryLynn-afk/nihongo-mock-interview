@@ -15,15 +15,21 @@ const en = {
       report: "Coaching report",
       duration: "10–15 min",
     },
-    navPractice: "Practice",
-    navHowItWorks: "How it works",
     howItWorks: {
       title: "How it works",
-      bodies: {
-        camera: "Video is optional. You can continue with voice.",
-        speak: "Answer Tanaka-sensei's Questions out loud in Japanese.",
-        report: "After the Interview, read a coaching report on this screen.",
-        duration: "Most sessions take about 10–15 minutes.",
+      steps: {
+        join: {
+          title: "Join the classroom",
+          body: "Video is optional. You can continue with voice.",
+        },
+        speak: {
+          title: "Answer out loud",
+          body: "Answer Tanaka-sensei's Questions out loud in Japanese.",
+        },
+        report: {
+          title: "Read the report",
+          body: "After the Interview, read a coaching report on this screen.",
+        },
       },
     },
   },
@@ -247,15 +253,21 @@ const my: UiCopy = {
       report: "အကြံပြုချက် report",
       duration: "၁၀–၁၅ မိနစ်",
     },
-    navPractice: "လေ့ကျင့်ရန်",
-    navHowItWorks: "အလုပ်လုပ်ပုံ",
     howItWorks: {
       title: "အလုပ်လုပ်ပုံ",
-      bodies: {
-        camera: "ဗီဒီယို မလိုအပ်ပါ။ အသံဖြင့် ဆက်လက် လေ့ကျင့်နိုင်ပါသည်။",
-        speak: "Tanaka-sensei ၏ မေးခွန်းများကို ဂျပန်လို ကျယ်ကျယ် ဖြေပါ။",
-        report: "အင်တာဗျူးအပြီးတွင် ဤစာမျက်နှာပေါ်တွင် coaching report ကို ဖတ်ပါ။",
-        duration: "များသောအားဖြင့် ၁၀–၁၅ မိနစ် ကြာပါသည်။",
+      steps: {
+        join: {
+          title: "စာသင်ခန်းထဲ ဝင်ရန်",
+          body: "ဗီဒီယို မလိုအပ်ပါ။ အသံဖြင့် ဆက်လက် လေ့ကျင့်နိုင်ပါသည်။",
+        },
+        speak: {
+          title: "ကျယ်ကျယ် ဖြေရန်",
+          body: "Tanaka-sensei ၏ မေးခွန်းများကို ဂျပန်လို ကျယ်ကျယ် ဖြေပါ။",
+        },
+        report: {
+          title: "report ကို ဖတ်ရန်",
+          body: "အင်တာဗျူးအပြီးတွင် ဤစာမျက်နှာပေါ်တွင် coaching report ကို ဖတ်ပါ။",
+        },
       },
     },
   },
