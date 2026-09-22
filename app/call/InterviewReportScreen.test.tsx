@@ -291,6 +291,26 @@ describe("InterviewReportScreen", () => {
     expect(onHelpStudy).toHaveBeenCalledTimes(1);
   });
 
+  it("shows Request the full interview when that action is provided", async () => {
+    const onRequestFullSession = vi.fn();
+    render(
+      <InterviewReportScreen
+        view={voiceView}
+        onRequestFullSession={onRequestFullSession}
+      />,
+    );
+
+    const request = screen.getByRole("button", {
+      name: /request the full interview/i,
+    });
+    expect(request.className).toMatch(/absolute/);
+    await userEvent.setup().click(request);
+    expect(onRequestFullSession).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("button", { name: /help the study/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it("does not show Help the study when onHelpStudy is omitted", () => {
     render(<InterviewReportScreen view={voiceView} />);
 

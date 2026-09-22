@@ -207,6 +207,26 @@ const en = {
         "Audio was clear enough for basic timing analysis. These are timing signals, not a Japanese proficiency score.",
     },
   },
+  fullSessionRequest: {
+    choiceTitle: "How do you want to practice?",
+    choiceBody:
+      "Guest practice is three Questions. Leave your email to ask for the full Interview.",
+    continueAsGuest: "Continue as guest",
+    leaveEmail: "Leave an email",
+    formTitle: "Ask for the full Interview",
+    formBody:
+      "Leave the Google email you want to use. You will get an email once it is added.",
+    emailLabel: "Email",
+    send: "Send",
+    close: "Close",
+    savedTitle: "You will get an email",
+    savedBody:
+      "Once this address is added, you will get an email. You can keep practicing as a guest.",
+    saveError:
+      "That email could not be saved. You can still continue as a guest.",
+    invalidEmail: "Enter a valid email address.",
+    reportButton: "Request the full interview",
+  },
   usefulness: {
     title: "Help the study",
     close: "Close",
@@ -430,6 +450,26 @@ const my: UiCopy = {
       clearEnough:
         "အခြေခံ အချိန် သုံးသပ်မှုအတွက် အသံ ရှင်းပါသည်။ ဂျပန်စာ အဆင့် အမှတ် မဟုတ်ပါ။",
     },
+  },
+  fullSessionRequest: {
+    choiceTitle: "ဘယ်လို လေ့ကျင့်မလဲ။",
+    choiceBody:
+      "ဧည့်သည် လေ့ကျင့်မှုတွင် မေးခွန်း ၃ ခု ပါသည်။ အင်တာဗျူးအပြည့်အစုံ တောင်းရန် အီးမေးလ် ထားခဲ့ပါ။",
+    continueAsGuest: "ဧည့်သည်အဖြစ် ဆက်ရန်",
+    leaveEmail: "အီးမေးလ် ထားခဲ့ရန်",
+    formTitle: "အင်တာဗျူးအပြည့်အစုံ တောင်းရန်",
+    formBody:
+      "သုံးလိုသော Google အီးမေးလ်ကို ထားခဲ့ပါ။ ထည့်သွင်းပြီးမှ အီးမေးလ် ရရှိပါမည်။",
+    emailLabel: "အီးမေးလ်",
+    send: "ပို့ရန်",
+    close: "ပိတ်ရန်",
+    savedTitle: "အီးမေးလ် ရရှိပါမည်",
+    savedBody:
+      "ဤလိပ်စာကို ထည့်သွင်းပြီးမှ အီးမေးလ် ရရှိပါမည်။ ဧည့်သည်အဖြစ် ဆက်လက် လေ့ကျင့်နိုင်ပါသည်။",
+    saveError:
+      "ဤအီးမေးလ်ကို မသိမ်းနိုင်ပါ။ ဧည့်သည်အဖြစ် ဆက်လက် လေ့ကျင့်နိုင်ပါသည်။",
+    invalidEmail: "မှန်ကန်သော အီးမေးလ် ထည့်ပါ။",
+    reportButton: "အင်တာဗျူးအပြည့်အစုံ တောင်းရန်",
   },
   usefulness: {
     title: "လေ့လာမှုကို ကူညီရန်",

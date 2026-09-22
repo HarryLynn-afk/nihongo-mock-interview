@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { InterviewLobby } from "../call/InterviewLobby";
 import { InterviewStartReminder } from "../call/InterviewStartReminder";
 import { useInterviewLobby } from "../call/useInterviewLobby";
 import { useLobbyDevices } from "../call/useLobbyDevices";
+import { readFullSessionRequestSent } from "@/lib/content/fullSessionRequest";
 import { saveDevicePrefs } from "./devicePrefs";
+import {
+  FullSessionRequestDialog,
+  type FullSessionRequestStep,
+} from "./FullSessionRequestDialog";
 import { useCopy } from "./useUiLocale";
 
 type JoinInterviewProps = {
@@ -33,6 +38,9 @@ export function JoinInterview({
   const router = useRouter();
   const { copy } = useCopy();
   const buttonLabel = label ?? copy.join.joinInterview;
+  const [requestStep, setRequestStep] = useState<FullSessionRequestStep | null>(
+    null,
+  );
 
   const {
     devicesVisible,
@@ -66,7 +74,10 @@ export function JoinInterview({
     <>
       <button
         type="button"
-        onClick={openDevices}
+        onClick={() => {
+          if (guest) setRequestStep("choice");
+          else openDevices();
+        }}
         className={`inline-flex items-center justify-center gap-2.5 rounded-full px-5 text-lg font-medium ${
           tone === "feather"
             ? "min-h-[60px] w-auto px-8 bg-feather py-3 text-white shadow-[0_14px_30px_-10px_rgba(88,204,2,0.55)] transition-[transform,box-shadow,background-color] hover:-translate-y-0.5 hover:bg-feather-dark hover:shadow-[0_18px_34px_-10px_rgba(88,204,2,0.65)]"
@@ -77,6 +88,21 @@ export function JoinInterview({
         {trailing}
       </button>
 
+      {requestStep ? (
+        <FullSessionRequestDialog
+          step={requestStep}
+          showContinue
+          onClose={() => setRequestStep(null)}
+          onContinueAsGuest={() => {
+            setRequestStep(null);
+            openDevices();
+          }}
+          onLeaveEmail={() => {
+            setRequestStep(readFullSessionRequestSent() ? "saved" : "form");
+          }}
+          onSent={() => setRequestStep("saved")}
+        />
+      ) : null}
       {devicesVisible ? (
         <InterviewLobby
           cameraEnabled={cameraOn}

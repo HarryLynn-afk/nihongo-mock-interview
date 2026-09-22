@@ -9,6 +9,7 @@ import { SpeakAnswerButton } from "./SpeakAnswerButton";
 import { SenseiTile } from "./SenseiTile";
 import { StudentTile } from "./StudentTile";
 import { UsefulnessStep } from "./UsefulnessStep";
+import { FullSessionRequestDialog } from "../components/FullSessionRequestDialog";
 import { buildReportView } from "./buildReportView";
 import { playQuestionAudio } from "./playQuestionAudio";
 import { useAnswerCapture } from "./useAnswerCapture";
@@ -39,6 +40,7 @@ import {
 } from "@/lib/content/survey";
 import { useUsefulnessNudge } from "./useUsefulnessNudge";
 import { loadDevicePrefs, type DevicePrefs } from "../components/devicePrefs";
+import { readFullSessionRequestSent } from "@/lib/content/fullSessionRequest";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { useCopy } from "../components/useUiLocale";
 import { helperLinesForLocale } from "@/lib/content/locale";
@@ -74,6 +76,11 @@ export default function CallPage() {
   const [formEnabled, setFormEnabled] = useState(false);
   const [revealDone, setRevealDone] = useState(false);
   const [usefulnessSubmitted, setUsefulnessSubmitted] = useState(false);
+  const [fullSessionSent, setFullSessionSent] = useState(false);
+  const [fullSessionChecked, setFullSessionChecked] = useState(false);
+  const [fullSessionStep, setFullSessionStep] = useState<"form" | "saved" | null>(
+    null,
+  );
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [studyReady, setStudyReady] = useState(false);
   const [previewReport, setPreviewReport] = useState<InterviewReport | null>(
@@ -84,6 +91,8 @@ export default function CallPage() {
 
   useEffect(() => {
     setDevicePrefs(loadDevicePrefs());
+    setFullSessionSent(readFullSessionRequestSent());
+    setFullSessionChecked(true);
     const kind = callSessionKind(window.location.search);
     setSessionKind(kind);
     setSessionQuestions(
@@ -279,6 +288,24 @@ export default function CallPage() {
         });
   const { open: usefulnessOpen, openNow: openUsefulness, close: closeUsefulness } =
     useUsefulnessNudge(Boolean(usefulnessView && revealDone));
+  const askForFullSession =
+    sessionKind === "guest" &&
+    fullSessionChecked &&
+    !fullSessionSent &&
+    displayPhase === "done" &&
+    Boolean(report) &&
+    !allSkipped;
+  const {
+    open: requestOpen,
+    openNow: openRequest,
+    close: closeRequest,
+  } = useUsefulnessNudge(Boolean(askForFullSession && revealDone));
+  const requestDialogStep =
+    fullSessionStep === "saved"
+      ? "saved"
+      : requestOpen || fullSessionStep === "form"
+        ? "form"
+        : null;
   const classroomLocked = displayPhase !== "done";
   return (
     <div
@@ -369,6 +396,14 @@ export default function CallPage() {
                   ? openUsefulness
                   : undefined
               }
+              onRequestFullSession={
+                askForFullSession
+                  ? () => {
+                      setFullSessionStep("form");
+                      openRequest();
+                    }
+                  : undefined
+              }
               locale={locale}
             />
           ) : (
@@ -423,6 +458,22 @@ export default function CallPage() {
             </>
           )}
         </div>
+
+        {requestDialogStep ? (
+          <FullSessionRequestDialog
+            step={requestDialogStep}
+            showContinue={false}
+            onClose={() => {
+              setFullSessionStep(null);
+              closeRequest();
+            }}
+            onSent={() => {
+              setFullSessionSent(true);
+              setFullSessionStep("saved");
+              closeRequest();
+            }}
+          />
+        ) : null}
 
         {usefulnessView && report && !allSkipped && usefulnessOpen ? (
           <UsefulnessStep

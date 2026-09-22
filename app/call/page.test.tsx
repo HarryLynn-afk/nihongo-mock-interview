@@ -1290,6 +1290,56 @@ describe("Call screen", () => {
     expect(
       fetchMock.mock.calls.some((call) => String(call[0]).includes("/api/survey")),
     ).toBe(false);
+    expect(
+      screen.getByRole("button", { name: /request the full interview/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("full-session-request")).not.toBeInTheDocument();
+  });
+
+  it("asks for an email from the Guest report and stays quiet after a send this visit", async () => {
+    window.history.pushState({}, "", "/call?guest=1");
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    await user.click(screen.getByRole("button", { name: /skip interview/i }));
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /request the full interview/i }),
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("full-session-request")).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: /request the full interview/i }),
+    );
+    expect(
+      screen.getByRole("dialog", { name: /ask for the full interview/i }),
+    ).toBeInTheDocument();
+    await user.type(screen.getByRole("textbox", { name: /email/i }), "ada@example.com");
+    await user.click(screen.getByRole("button", { name: /^send$/i }));
+
+    expect(
+      screen.getByRole("dialog", { name: /you will get an email/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /request the full interview/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("skips the Guest report email ask when this visit already sent", async () => {
+    sessionStorage.setItem("nihongo-full-session-request", "sent");
+    window.history.pushState({}, "", "/call?guest=1");
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    await user.click(screen.getByRole("button", { name: /skip interview/i }));
+    await waitFor(() => {
+      expect(screen.getByTestId("interview-report")).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByRole("button", { name: /request the full interview/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("full-session-request")).not.toBeInTheDocument();
   });
 
   it("tags a Guest Interview with a G- session code even if study/me still has P001", async () => {

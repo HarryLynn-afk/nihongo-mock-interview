@@ -43,4 +43,36 @@ describe("JoinInterview", () => {
     await user.click(screen.getByRole("button", { name: /^skip$/i }));
     expect(pushMock).toHaveBeenCalledWith("/call");
   });
+
+  it("asks a Guest to continue or leave an email before the lobby", async () => {
+    const user = userEvent.setup();
+    render(<JoinInterview guest label="Try as guest" />);
+
+    await user.click(screen.getByRole("button", { name: /try as guest/i }));
+    expect(
+      screen.getByRole("dialog", { name: /how do you want to practice/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: /ready to join/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /continue as guest/i }));
+    expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
+  });
+
+  it("lets a Guest continue after leaving an email", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<JoinInterview guest label="Try as guest" />);
+
+    await user.click(screen.getByRole("button", { name: /try as guest/i }));
+    await user.click(screen.getByRole("button", { name: /leave an email/i }));
+    await user.type(screen.getByRole("textbox", { name: /email/i }), "ada@example.com");
+    await user.click(screen.getByRole("button", { name: /^send$/i }));
+
+    expect(
+      screen.getByRole("dialog", { name: /you will get an email/i }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /continue as guest/i }));
+    expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
+  });
 });

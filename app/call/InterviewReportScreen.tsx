@@ -189,12 +189,14 @@ export function InterviewReportScreen({
   locale = "en",
   onRevealComplete,
   onHelpStudy,
+  onRequestFullSession,
 }: {
   view: ReportView;
   sessionId?: string;
   locale?: UiLocale;
   onRevealComplete?: () => void;
   onHelpStudy?: () => void;
+  onRequestFullSession?: () => void;
 }) {
   const copy = uiCopy(locale);
   const [stage, setStage] = useState(0);
@@ -214,6 +216,7 @@ export function InterviewReportScreen({
 
   const radarScores = view.scores.filter((score) => score.assessed);
   const selected = view.questions[selectedIndex] ?? view.questions[0];
+  const hasTopAction = Boolean(onHelpStudy || onRequestFullSession);
 
   return (
     <section
@@ -229,9 +232,18 @@ export function InterviewReportScreen({
           {copy.report.helpTheStudy}
         </button>
       ) : null}
+      {onRequestFullSession ? (
+        <button
+          type="button"
+          onClick={onRequestFullSession}
+          className="absolute right-4 top-4 z-10 rounded-full bg-indigo px-4 py-2 text-sm font-medium text-paper md:right-5 md:top-5"
+        >
+          {copy.fullSessionRequest.reportButton}
+        </button>
+      ) : null}
       <div
         className={`flex min-h-0 flex-1 flex-col gap-4 md:flex-row md:items-stretch ${
-          onHelpStudy ? "pt-12 md:pt-0" : ""
+          hasTopAction ? "pt-12 md:pt-0" : ""
         }`}
       >
       <aside
@@ -275,7 +287,7 @@ export function InterviewReportScreen({
       <div className="flex min-w-0 flex-1 flex-col gap-4">
         <header
           className={`flex flex-wrap items-end justify-between gap-3 ${
-            onHelpStudy ? "md:pr-40" : ""
+            hasTopAction ? "md:pr-40" : ""
           }`}
         >
           <div>
