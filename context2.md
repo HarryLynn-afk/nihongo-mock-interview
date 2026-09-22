@@ -1,0 +1,59 @@
+# NihonGo product context
+> `/end-session` updates this file when a product-direction change voids a lock.
+> Do not open `context.md`. That file is the frozen 2026-08-28 grill archive. Later builds superseded parts of it (voice-only, Groq-only grade, no n8n, no Profile card, no school name on learner UI, committed mp3s, Guest / Participant / Pitch split).
+
+---
+
+## Academic target
+
+**NihonGo** is a CSC 485 research evaluation and a CSC 492 working web app (code, test, deploy, docs, oral exam, presentation). The 29 Aug Launch Pack rebuild is void. The presentation path is **Try as guest**: the three locked Questions, then the coaching report.
+
+## How to continue
+
+```text
+Continue NihonGo as a CSC 485 + CSC 492 project, not a hackathon.
+Use the locked product decisions in context2.md.
+Do not reopen resolved branches unless I explicitly ask.
+Do not plan a 29 Aug Launch Pack rebuild.
+```
+
+## Locked now
+
+- Product option A: one student, one track, Language School Interview. No agency, no COE decision, no Job Interview track. Coaching aid, not an admissions or immigration authority.
+- Interviewer: Tanaka-sensei. School name Tokyo Pathway Japanese School stays in the locked profile fixture only. Learner UI does not show the school name.
+- Three Questions, then the practice report on `/call`. Voice-only. A failed Speak retries up to 3 times, then the Question is skipped. No typing.
+- `/` is Guest practice: **Try as guest** → device lobby → 15s popup → `/call?guest=1`, the 3 locked Questions only. No topic bank and no follow-ups. **Participant login** is a header pill that opens a dialog on `/login` over the start screen. The URL is still `/login`. The dialog is Google-only: no Try as guest and no guest-practice note. `/consent` Join stays **Join interview** and goes to `/call`, the 10-topic bank plus follow-ups.
+- Participant entry is Google only: allowlisted `/login`, or an open `/join?from=CODE`. Consent is required this visit. Magic-link login is gone.
+- Sensei audio is committed `/question-{id}.mp3`. No runtime TTS.
+- Eng/MM picks one helper language. Japanese stays on the HUD. Do not stack EN and MY.
+- Grade is Groq on the confirmed transcript. Speaking is not a score. Speech Delivery Signals are browser timing on answered Questions. Sample report is the Groq-miss fallback only.
+- Help the study is for Participant reports only. A Try as guest report (`/call?guest=1`) does not show the button or the dialog. Session codes are `G-` / `P-`.
+- Desktop-first. No shadcn/ui. No extra database beyond optional Supabase for study login.
+
+## Voided — do not reopen
+
+- Hackathon, Launch Pack, 29 Aug, 18:00 pitch-as-submission
+- Option B (agency, COE, Job Interview, Zaw Lin Htet, HanGo!)
+- Typing, Speak or type, Profile card on `/`, `?pitch=1` on `/`
+- Separate pitch route: `/pitch`, access key, scripted sample answers, `/call?pitch=1` as a classroom. Those URLs show the Next.js not-found page.
+- n8n grade webhook, warm ping, Gemini as the live grader
+- Magic-link / SMTP login
+- Pitch last-screen swap to a canned Ready report
+- Printing N5, JLPT, or A1 on the splash, call bar, or report headline
+- Phone-first layout, in-app Play answer, sign-up built only to inflate a user count
+
+## Last unresolved
+
+None that reopen a locked branch. Next engineering is in `claude2.md` Open Tasks (join-link live check, then Issue 15 deploy). CSC 485 research question is later.
+
+## Explicitly not this version unless reopened
+
+- Live Burmese of tester answers via `/api/translate`
+- One Groq critique per rubric category
+- Gemini as a second grader, or removing the sample last screen
+- Interview resume after tab close
+- Guest 2-Interview cap
+- Guest email form that asks to be added for the full topic-bank session
+- Scoring-fallback UI (Retry vs sample) until that decision is chosen
+- Google account-chooser brand name (“to continue to NihonGo”). The Supabase project URL on that screen stays until brand verification, after a public site exists.
+- A cap on how many Guest sessions can run. Try as guest stays open until that cap is chosen.
