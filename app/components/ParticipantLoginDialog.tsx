@@ -190,9 +190,6 @@ export function ParticipantLoginDialog({
         >
           {copy.login.title}
         </h2>
-        <p className="mx-auto mt-2 max-w-[34ch] text-[0.92rem] leading-relaxed text-wolf">
-          {copy.login.body}
-        </p>
 
         <button
           type="button"
@@ -208,6 +205,9 @@ export function ParticipantLoginDialog({
             {localizeAuthMessage(message, locale)}
           </p>
         ) : null}
+        <p className="mx-auto mt-4 max-w-[34ch] text-[0.92rem] leading-relaxed text-wolf">
+          {copy.login.body}
+        </p>
       </div>
     </div>
   );
