@@ -97,14 +97,16 @@ describe("Home (start screen)", () => {
     expect(guest.parentElement).toHaveClass("justify-center");
   });
 
-  it("Continue as guest leaves the landing for /guest, with no Ready to join overlay", async () => {
+  it("Try as guest leaves the landing for /guest, with no email dialog", async () => {
     const user = userEvent.setup();
     render(<Home />);
 
     await user.click(screen.getByRole("button", { name: "Try as guest" }));
-    await user.click(screen.getByRole("button", { name: /continue as guest/i }));
 
     expect(screen.getByText("NihonGo")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: /how do you want to practice/i }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("dialog", { name: /ready to join/i }),
     ).not.toBeInTheDocument();
@@ -159,9 +161,9 @@ describe("Home (start screen)", () => {
     await user.click(
       screen.getByRole("button", { name: "ဧည့်သည်အဖြစ် စမ်းကြည့်ရန်" }),
     );
-    await user.click(
-      screen.getByRole("button", { name: "ဧည့်သည်အဖြစ် ဆက်ရန်" }),
-    );
+    expect(
+      screen.queryByRole("dialog", { name: "ဘယ်လို လေ့ကျင့်မလဲ။" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("dialog", { name: "ဝင်ရန် အဆင်သင့်" }),
     ).not.toBeInTheDocument();

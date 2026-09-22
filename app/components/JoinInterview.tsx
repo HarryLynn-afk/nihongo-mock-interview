@@ -1,17 +1,12 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { InterviewLobby } from "../call/InterviewLobby";
 import { InterviewStartReminder } from "../call/InterviewStartReminder";
 import { useInterviewLobby } from "../call/useInterviewLobby";
 import { useLobbyDevices } from "../call/useLobbyDevices";
-import { readFullSessionRequestSent } from "@/lib/content/fullSessionRequest";
 import { saveDevicePrefs } from "./devicePrefs";
-import {
-  FullSessionRequestDialog,
-  type FullSessionRequestStep,
-} from "./FullSessionRequestDialog";
 import { useCopy } from "./useUiLocale";
 
 type JoinInterviewProps = {
@@ -24,7 +19,7 @@ type JoinInterviewProps = {
 };
 
 /**
- * Practice Join CTA. Guest (`guest`) asks how to practice, then `/guest`.
+ * Practice Join CTA. Guest (`guest`) opens `/guest`.
  * A consented Participant opens the device lobby on this page, then `/call`.
  */
 export function JoinInterview({
@@ -37,9 +32,6 @@ export function JoinInterview({
   const router = useRouter();
   const { copy } = useCopy();
   const buttonLabel = label ?? copy.join.joinInterview;
-  const [requestStep, setRequestStep] = useState<FullSessionRequestStep | null>(
-    null,
-  );
 
   const {
     devicesVisible,
@@ -76,7 +68,7 @@ export function JoinInterview({
       <button
         type="button"
         onClick={() => {
-          if (guest) setRequestStep("choice");
+          if (guest) router.push("/guest");
           else openDevices();
         }}
         className={`inline-flex items-center justify-center gap-2.5 rounded-full px-5 text-lg font-medium ${
@@ -89,27 +81,6 @@ export function JoinInterview({
         {trailing}
       </button>
 
-      {requestStep ? (
-        <FullSessionRequestDialog
-          step={requestStep}
-          showContinue
-          onClose={() => setRequestStep(null)}
-          onContinueAsGuest={() => {
-            setRequestStep(null);
-            if (guest) {
-              router.push("/guest");
-              return;
-            }
-            openDevices();
-          }}
-          onLeaveEmail={() => {
-            setRequestStep(
-              readFullSessionRequestSent() ? "alreadySent" : "form",
-            );
-          }}
-          onSent={() => setRequestStep("saved")}
-        />
-      ) : null}
       {devicesVisible ? (
         <div
           role="dialog"

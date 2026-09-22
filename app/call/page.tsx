@@ -463,7 +463,6 @@ export default function CallPage() {
         {requestDialogStep ? (
           <FullSessionRequestDialog
             step={requestDialogStep}
-            showContinue={false}
             onClose={() => {
               setFullSessionStep(null);
               closeRequest();

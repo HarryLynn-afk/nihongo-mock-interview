@@ -7,25 +7,14 @@ import {
 } from "@/lib/content/fullSessionRequest";
 import { useCopy } from "./useUiLocale";
 
-export type FullSessionRequestStep =
-  | "choice"
-  | "form"
-  | "saved"
-  | "alreadySent";
+export type FullSessionRequestStep = "form" | "saved";
 
 export function FullSessionRequestDialog({
   step,
-  showContinue,
-  onContinueAsGuest,
-  onLeaveEmail,
   onClose,
   onSent,
 }: {
   step: FullSessionRequestStep;
-  /** Start-page dialog can still enter the Guest classroom. */
-  showContinue: boolean;
-  onContinueAsGuest?: () => void;
-  onLeaveEmail?: () => void;
   onClose: () => void;
   onSent?: () => void;
 }) {
@@ -43,12 +32,7 @@ export function FullSessionRequestDialog({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
-  const title =
-    step === "choice"
-      ? text.choiceTitle
-      : step === "form"
-        ? text.formTitle
-        : text.savedTitle;
+  const title = step === "form" ? text.formTitle : text.savedTitle;
 
   async function sendEmail() {
     const normalized = normalizeRequestEmail(email);
@@ -91,43 +75,17 @@ export function FullSessionRequestDialog({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
-          {step === "alreadySent" ? null : (
-            <h2 id="full-session-request-title" className="text-lg font-medium">
-              {title}
-            </h2>
-          )}
+          <h2 id="full-session-request-title" className="text-lg font-medium">
+            {title}
+          </h2>
           <button
             type="button"
             onClick={onClose}
-            className={`rounded-full px-3 py-1 text-sm text-paper/80 ${
-              step === "alreadySent" ? "ml-auto" : ""
-            }`}
+            className="rounded-full px-3 py-1 text-sm text-paper/80"
           >
             {text.close}
           </button>
         </div>
-        {step === "choice" ? (
-          <>
-            <p className="text-sm leading-relaxed text-paper/80">
-              {text.choiceBody}
-            </p>
-            <button
-              type="button"
-              onClick={onContinueAsGuest}
-              className="rounded-full bg-feather px-5 py-3 font-medium text-white"
-            >
-              {text.continueAsGuest}
-            </button>
-            <button
-              type="button"
-              onClick={onLeaveEmail}
-              className="rounded-full border border-paper/20 px-5 py-3 text-sm font-medium"
-            >
-              {text.leaveEmail}
-            </button>
-          </>
-        ) : null}
-
         {step === "form" ? (
           <>
             <p className="text-sm leading-relaxed text-paper/80">
@@ -165,45 +123,9 @@ export function FullSessionRequestDialog({
         ) : null}
 
         {step === "saved" ? (
-          <>
-            <p className="text-sm leading-relaxed text-paper/80">
-              {text.savedBody}
-            </p>
-            {showContinue ? (
-              <button
-                type="button"
-                onClick={onContinueAsGuest}
-                className="rounded-full bg-feather px-5 py-3 font-medium text-white"
-              >
-                {text.continueAsGuest}
-              </button>
-            ) : null}
-          </>
-        ) : null}
-
-        {step === "alreadySent" ? (
-          <>
-            <p
-              id="full-session-request-title"
-              role="alert"
-              data-testid="full-session-already-sent"
-              className="w-full rounded-xl border border-amber-300/40 bg-amber-500/10 px-4 py-3 text-center text-sm font-medium text-amber-100"
-            >
-              {text.alreadySentTitle}
-            </p>
-            <p className="text-sm leading-relaxed text-paper/80">
-              {text.alreadySentBody}
-            </p>
-            {showContinue ? (
-              <button
-                type="button"
-                onClick={onContinueAsGuest}
-                className="rounded-full bg-feather px-5 py-3 font-medium text-white"
-              >
-                {text.continueAsGuest}
-              </button>
-            ) : null}
-          </>
+          <p className="text-sm leading-relaxed text-paper/80">
+            {text.savedBody}
+          </p>
         ) : null}
       </section>
     </div>

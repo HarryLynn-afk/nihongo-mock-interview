@@ -73,58 +73,17 @@ describe("JoinInterview", () => {
     expect(stop).toHaveBeenCalled();
   });
 
-  it("asks a Guest to continue or leave an email before /guest", async () => {
+  it("opens /guest when a Guest clicks Try as guest, with no email dialog", async () => {
     const user = userEvent.setup();
     render(<JoinInterview guest label="Try as guest" />);
 
     await user.click(screen.getByRole("button", { name: /try as guest/i }));
-    expect(
-      screen.getByRole("dialog", { name: /how do you want to practice/i }),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("dialog", { name: /ready to join/i })).not.toBeInTheDocument();
-    expect(pushMock).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: /continue as guest/i }));
-    expect(screen.queryByRole("dialog", { name: /ready to join/i })).not.toBeInTheDocument();
     expect(pushMock).toHaveBeenCalledWith("/guest");
-  });
-
-  it("lets a Guest continue after leaving an email", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
-    vi.stubGlobal("fetch", fetchMock);
-    const user = userEvent.setup();
-    render(<JoinInterview guest label="Try as guest" />);
-
-    await user.click(screen.getByRole("button", { name: /try as guest/i }));
-    await user.click(screen.getByRole("button", { name: /leave an email/i }));
-    await user.type(screen.getByRole("textbox", { name: /email/i }), "ada@example.com");
-    await user.click(screen.getByRole("button", { name: /^send$/i }));
-
     expect(
-      screen.getByRole("dialog", { name: /you will get an email/i }),
-    ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /continue as guest/i }));
-    expect(screen.queryByRole("dialog", { name: /ready to join/i })).not.toBeInTheDocument();
-    expect(pushMock).toHaveBeenCalledWith("/guest");
-  });
-
-  it("tells a Guest they already sent when Leave an email is clicked again", async () => {
-    sessionStorage.setItem("nihongo-full-session-request", "sent");
-    const user = userEvent.setup();
-    render(<JoinInterview guest label="Try as guest" />);
-
-    await user.click(screen.getByRole("button", { name: /try as guest/i }));
-    await user.click(screen.getByRole("button", { name: /leave an email/i }));
-
-    expect(
-      screen.getByRole("dialog", { name: /you already sent an email/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      /you already sent an email/i,
-    );
-    expect(
-      screen.getByRole("button", { name: /continue as guest/i }),
-    ).toBeInTheDocument();
+      screen.queryByRole("dialog", { name: /how do you want to practice/i }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: /email/i })).not.toBeInTheDocument();
   });
+
 });

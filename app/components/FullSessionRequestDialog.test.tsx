@@ -17,12 +17,7 @@ describe("FullSessionRequestDialog", () => {
     const user = userEvent.setup();
 
     const { rerender } = render(
-      <FullSessionRequestDialog
-        step="form"
-        showContinue
-        onClose={vi.fn()}
-        onSent={onSent}
-      />,
+      <FullSessionRequestDialog step="form" onClose={vi.fn()} onSent={onSent} />,
     );
 
     await user.type(screen.getByRole("textbox", { name: /email/i }), "Ada@Example.com");
@@ -38,18 +33,20 @@ describe("FullSessionRequestDialog", () => {
     expect(body.email).toBe("ada@example.com");
     expect(sessionStorage.getItem(FULL_SESSION_REQUEST_KEY)).toBe("sent");
     expect(onSent).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("button", { name: /leave an email/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /how do you want to practice/i }),
+    ).not.toBeInTheDocument();
 
-    rerender(
-      <FullSessionRequestDialog
-        step="saved"
-        showContinue
-        onClose={vi.fn()}
-        onContinueAsGuest={vi.fn()}
-      />,
-    );
+    rerender(<FullSessionRequestDialog step="saved" onClose={vi.fn()} />);
     expect(
       screen.getByRole("dialog", { name: /you will get an email/i }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /continue as guest/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the form open when the save fails", async () => {
@@ -60,13 +57,7 @@ describe("FullSessionRequestDialog", () => {
     const onSent = vi.fn();
     const user = userEvent.setup();
     render(
-      <FullSessionRequestDialog
-        step="form"
-        showContinue
-        onClose={vi.fn()}
-        onSent={onSent}
-        onContinueAsGuest={vi.fn()}
-      />,
+      <FullSessionRequestDialog step="form" onClose={vi.fn()} onSent={onSent} />,
     );
 
     await user.type(screen.getByRole("textbox", { name: /email/i }), "ada@example.com");
@@ -75,43 +66,14 @@ describe("FullSessionRequestDialog", () => {
     expect(onSent).not.toHaveBeenCalled();
     expect(sessionStorage.getItem(FULL_SESSION_REQUEST_KEY)).toBeNull();
     expect(screen.getByText(/could not be saved/i)).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /continue as guest/i }),
-    ).not.toBeInTheDocument();
   });
 
   it("closes from the backdrop without saving", async () => {
     const onClose = vi.fn();
     const user = userEvent.setup();
-    render(
-      <FullSessionRequestDialog step="choice" showContinue onClose={onClose} />,
-    );
+    render(<FullSessionRequestDialog step="form" onClose={onClose} />);
 
     await user.click(screen.getByTestId("full-session-request-backdrop"));
     expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it("shows already sent as an alert with Continue as guest", () => {
-    render(
-      <FullSessionRequestDialog
-        step="alreadySent"
-        showContinue
-        onClose={vi.fn()}
-        onContinueAsGuest={vi.fn()}
-      />,
-    );
-
-    expect(
-      screen.getByRole("dialog", { name: /you already sent an email/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      /you already sent an email/i,
-    );
-    expect(
-      screen.getByText(/this visit already left an address/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /continue as guest/i }),
-    ).toBeInTheDocument();
   });
 });
