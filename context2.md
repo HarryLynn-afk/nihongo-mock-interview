@@ -22,7 +22,7 @@ Do not plan a 29 Aug Launch Pack rebuild.
 - Product option A: one student, one track, Language School Interview. No agency, no COE decision, no Job Interview track. Coaching aid, not an admissions or immigration authority.
 - Interviewer: Tanaka-sensei. School name Tokyo Pathway Japanese School stays in the locked profile fixture only. Learner UI does not show the school name.
 - Three Questions, then the practice report on `/call`. Voice-only. A failed Speak retries up to 3 times, then the Question is skipped. No typing.
-- `/` is Guest practice: **Try as guest** → device lobby → 15s popup → `/call?guest=1`, the 3 locked Questions only. No topic bank and no follow-ups. **Participant login** is a header pill that opens a dialog on `/login` over the start screen. The URL is still `/login`. The dialog is Google-only: no Try as guest and no guest-practice note. `/consent` Join stays **Join interview** and goes to `/call`, the 10-topic bank plus follow-ups.
+- `/` is Guest practice: **Try as guest** opens a choice — continue as Guest, or leave an email to ask for the full Interview. Continue as Guest → device lobby → 15s popup → `/call?guest=1`, the 3 locked Questions only. After a send they can still continue as Guest. The Guest report asks again unless this visit already sent. This app saves the address in `full_session_requests` only. No admin route and no mail from this app. No topic bank and no follow-ups. **Participant login** is a header pill that opens a dialog on `/login` over the start screen. The URL is still `/login`. The dialog is Google-only: no Try as guest and no guest-practice note. `/consent` Join stays **Join interview** and goes to `/call`, the 10-topic bank plus follow-ups.
 - Participant entry is Google only: allowlisted `/login`, or an open `/join?from=CODE`. Consent is required this visit. Magic-link login is gone.
 - Sensei audio is committed `/question-{id}.mp3`. No runtime TTS.
 - Eng/MM picks one helper language. Japanese stays on the HUD. Do not stack EN and MY.
@@ -44,7 +44,7 @@ Do not plan a 29 Aug Launch Pack rebuild.
 
 ## Last unresolved
 
-None that reopen a locked branch. Next engineering is in `claude2.md` Open Tasks (join-link live check, then Issue 15 deploy). CSC 485 research question is later.
+None that reopen a locked branch. Next step is pasting `003_full_session_requests.sql`, then the open tasks in `claude2.md` (join-link live check, then Issue 15 deploy). CSC 485 research question is later. The Guest session cap stays later.
 
 ## Explicitly not this version unless reopened
 
@@ -53,7 +53,6 @@ None that reopen a locked branch. Next engineering is in `claude2.md` Open Tasks
 - Gemini as a second grader, or removing the sample last screen
 - Interview resume after tab close
 - Guest 2-Interview cap
-- Guest email form that asks to be added for the full topic-bank session
 - Scoring-fallback UI (Retry vs sample) until that decision is chosen
 - Google account-chooser brand name (“to continue to NihonGo”). The Supabase project URL on that screen stays until brand verification, after a public site exists.
 - A cap on how many Guest sessions can run. Try as guest stays open until that cap is chosen.
