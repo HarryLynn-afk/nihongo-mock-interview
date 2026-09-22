@@ -48,13 +48,37 @@ describe("Home (start screen)", () => {
       screen.getByRole("button", { name: "Try as guest" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Guest practice isn't saved.")).toBeInTheDocument();
+    const loginLinks = screen.getAllByRole("link", {
+      name: "Participant login",
+    });
+    expect(loginLinks).toHaveLength(2);
+    for (const link of loginLinks) {
+      expect(link).toHaveAttribute("href", "/login");
+    }
+    expect(screen.getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Practice" })).toHaveAttribute(
+      "href",
+      "/",
+    );
+    expect(screen.getByRole("link", { name: "How it works" })).toHaveAttribute(
+      "href",
+      "#how-it-works",
+    );
     expect(
-      screen.getByRole("link", { name: "Participant login" }),
-    ).toHaveAttribute("href", "/login");
-    expect(screen.getByText("Camera optional")).toHaveClass("rounded-full");
-    expect(screen.getByText("Speak in Japanese")).toHaveClass("rounded-full");
-    expect(screen.getByText("Coaching report")).toHaveClass("rounded-full");
-    expect(screen.getByText("10–15 min")).toHaveClass("rounded-full");
+      screen.getByRole("heading", { name: "How it works" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Camera optional", { selector: "span" })).toHaveClass(
+      "rounded-full",
+    );
+    expect(screen.getByText("Speak in Japanese", { selector: "span" })).toHaveClass(
+      "rounded-full",
+    );
+    expect(screen.getByText("Coaching report", { selector: "span" })).toHaveClass(
+      "rounded-full",
+    );
+    expect(screen.getByText("10–15 min", { selector: "span" })).toHaveClass(
+      "rounded-full",
+    );
     expect(screen.getByText("Tanaka-sensei")).toBeInTheDocument();
     expect(
       screen.queryByText("Tokyo Pathway Japanese School"),
@@ -81,12 +105,15 @@ describe("Home (start screen)", () => {
     render(<Home />);
 
     const guest = screen.getByRole("button", { name: "Try as guest" });
-    const login = screen.getByRole("link", { name: "Participant login" });
+    const heroLogin = screen
+      .getAllByRole("link", { name: "Participant login" })
+      .find((link) => link.className.includes("md:flex-1"));
 
-    expect(guest.parentElement).toBe(login.parentElement);
+    expect(heroLogin).toBeDefined();
+    expect(guest.parentElement).toBe(heroLogin?.parentElement);
     expect(guest.parentElement).toHaveClass("md:flex-row");
     expect(guest).toHaveClass("md:flex-1");
-    expect(login).toHaveClass("md:flex-1");
+    expect(heroLogin).toHaveClass("md:flex-1");
   });
 
   it("opens the device popup on the start screen after Try as guest, with no timer", async () => {
@@ -190,8 +217,10 @@ describe("Home (start screen)", () => {
       screen.getByRole("button", { name: "ဧည့်သည်အဖြစ် စမ်းကြည့်ရန်" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "ပါဝင်သူ ဝင်ရောက်ရန်" }),
-    ).toBeInTheDocument();
+      screen.getAllByRole("link", { name: "ပါဝင်သူ ဝင်ရောက်ရန်" }).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: "လေ့ကျင့်ရန်" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "အလုပ်လုပ်ပုံ" })).toBeInTheDocument();
     expect(sessionStorage.getItem(UI_LOCALE_STORAGE_KEY)).toBe("my");
 
     await user.click(

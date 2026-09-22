@@ -15,6 +15,17 @@ const en = {
       report: "Coaching report",
       duration: "10–15 min",
     },
+    navPractice: "Practice",
+    navHowItWorks: "How it works",
+    howItWorks: {
+      title: "How it works",
+      bodies: {
+        camera: "Video is optional. You can continue with voice.",
+        speak: "Answer Tanaka-sensei's Questions out loud in Japanese.",
+        report: "After the Interview, read a coaching report on this screen.",
+        duration: "Most sessions take about 10–15 minutes.",
+      },
+    },
   },
   login: {
     title: "Participant login",
@@ -235,6 +246,17 @@ const my: UiCopy = {
       speak: "ဂျပန်လို ပြောရန်",
       report: "အကြံပြုချက် report",
       duration: "၁၀–၁၅ မိနစ်",
+    },
+    navPractice: "လေ့ကျင့်ရန်",
+    navHowItWorks: "အလုပ်လုပ်ပုံ",
+    howItWorks: {
+      title: "အလုပ်လုပ်ပုံ",
+      bodies: {
+        camera: "ဗီဒီယို မလိုအပ်ပါ။ အသံဖြင့် ဆက်လက် လေ့ကျင့်နိုင်ပါသည်။",
+        speak: "Tanaka-sensei ၏ မေးခွန်းများကို ဂျပန်လို ကျယ်ကျယ် ဖြေပါ။",
+        report: "အင်တာဗျူးအပြီးတွင် ဤစာမျက်နှာပေါ်တွင် coaching report ကို ဖတ်ပါ။",
+        duration: "များသောအားဖြင့် ၁၀–၁၅ မိနစ် ကြာပါသည်။",
+      },
     },
   },
   login: {
