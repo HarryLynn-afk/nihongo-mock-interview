@@ -112,6 +112,7 @@ describe("Home (start screen)", () => {
     render(<Home />);
 
     await user.click(screen.getByRole("button", { name: "Try as guest" }));
+    await user.click(screen.getByRole("button", { name: /continue as guest/i }));
 
     expect(screen.getByText("NihonGo")).toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
@@ -136,6 +137,7 @@ describe("Home (start screen)", () => {
     render(<Home />);
 
     await user.click(screen.getByRole("button", { name: "Try as guest" }));
+    await user.click(screen.getByRole("button", { name: /continue as guest/i }));
     await user.click(screen.getByRole("checkbox", { name: /camera/i }));
 
     expect(getUserMedia).toHaveBeenCalledWith({ video: true });
@@ -148,6 +150,7 @@ describe("Home (start screen)", () => {
     render(<Home />);
 
     await user.click(screen.getByRole("button", { name: "Try as guest" }));
+    await user.click(screen.getByRole("button", { name: /continue as guest/i }));
     await user.click(screen.getByRole("button", { name: /enter classroom/i }));
 
     expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
@@ -166,6 +169,7 @@ describe("Home (start screen)", () => {
     render(<Home />);
 
     await user.click(screen.getByRole("button", { name: "Try as guest" }));
+    await user.click(screen.getByRole("button", { name: /continue as guest/i }));
     await user.click(screen.getByRole("button", { name: /enter classroom/i }));
     await user.click(screen.getByRole("button", { name: /^skip$/i }));
 
@@ -221,6 +225,9 @@ describe("Home (start screen)", () => {
 
     await user.click(
       screen.getByRole("button", { name: "ဧည့်သည်အဖြစ် စမ်းကြည့်ရန်" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "ဧည့်သည်အဖြစ် ဆက်ရန်" }),
     );
     expect(
       screen.getByRole("dialog", { name: "ဝင်ရန် အဆင်သင့်" }),
