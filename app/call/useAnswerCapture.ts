@@ -7,6 +7,8 @@ import { joinJapanese } from "./transcriptionEvents";
 import { floatToWavBlob } from "./pcmAudio";
 
 export const MAX_SPEAK_ATTEMPTS = 3;
+/** Auto-pause Speak after this long with no new live transcript. */
+export const SPEAK_IDLE_PAUSE_MS = 10_000;
 
 type AnswerMode = "speak" | null;
 
@@ -99,6 +101,14 @@ export function useAnswerCapture({
     : answerMode === "speak"
       ? "speak"
       : "idle";
+
+  useEffect(() => {
+    if (!listening) return;
+    const idle = window.setTimeout(() => {
+      setSpeakPaused(true);
+    }, SPEAK_IDLE_PAUSE_MS);
+    return () => window.clearTimeout(idle);
+  }, [listening, spokenCaption]);
 
   useEffect(() => {
     if (!listening) return;

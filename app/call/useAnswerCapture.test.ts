@@ -1,11 +1,102 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
-import { useAnswerCapture } from "./useAnswerCapture";
+import {
+  SPEAK_IDLE_PAUSE_MS,
+  useAnswerCapture,
+} from "./useAnswerCapture";
 import * as liveTranscription from "./startLiveTranscription";
 
 describe("useAnswerCapture", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it("auto-pauses Speak after idle silence with no new transcript", () => {
+    vi.useFakeTimers();
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult = null;
+      onend = null;
+      onerror = null;
+      start = vi.fn();
+      stop = vi.fn();
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
+
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit: vi.fn(),
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    expect(result.current.speakPaused).toBe(false);
+
+    act(() => {
+      vi.advanceTimersByTime(SPEAK_IDLE_PAUSE_MS);
+    });
+
+    expect(result.current.speakPaused).toBe(true);
+  });
+
+  it("resets the idle pause timer when live transcript updates", () => {
+    vi.useFakeTimers();
+    const created: Array<{
+      onresult: ((event: { results: unknown[] }) => void) | null;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      onend = null;
+      onerror = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
+
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit: vi.fn(),
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+
+    act(() => {
+      vi.advanceTimersByTime(SPEAK_IDLE_PAUSE_MS - 1_000);
+    });
+    act(() => {
+      created[0]?.onresult?.({
+        results: [
+          Object.assign([{ transcript: "こんにちは" }], { isFinal: true }),
+        ],
+      });
+    });
+    act(() => {
+      vi.advanceTimersByTime(SPEAK_IDLE_PAUSE_MS - 1_000);
+    });
+
+    expect(result.current.speakPaused).toBe(false);
+
+    act(() => {
+      vi.advanceTimersByTime(1_000);
+    });
+
+    expect(result.current.speakPaused).toBe(true);
   });
 
   it("shows Speak answer while idle, before any choice is made", () => {
