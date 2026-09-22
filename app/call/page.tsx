@@ -5,6 +5,7 @@ import { InterviewSidebar } from "./InterviewSidebar";
 import { InterviewReportScreen } from "./InterviewReportScreen";
 import { LanguageHud } from "./LanguageHud";
 import { MicTroubleScreen } from "./MicTroubleScreen";
+import { ScoringUnavailableScreen } from "./ScoringUnavailableScreen";
 import { SpeakAnswerButton } from "./SpeakAnswerButton";
 import { SenseiTile } from "./SenseiTile";
 import { StudentTile } from "./StudentTile";
@@ -133,9 +134,12 @@ export default function CallPage() {
     });
   const gradeAnswers = useGradeAnswers({ answers, phase });
   const delivery = useDeliverySignals({ answers, phase });
-  const { report: scoredReport } = useInterviewScore(gradeAnswers);
+  const { report: scoredReport, scoringFailed } =
+    useInterviewScore(gradeAnswers);
   const previewing = previewReport !== null;
   const report = previewReport ?? scoredReport;
+  const showScoringUnavailable =
+    !previewing && scoringFailed && !scoredReport;
   const displayAnswers = previewing ? DEBUG_PREVIEW_ANSWERS : answers;
   const displayQuestions = previewing ? questions : flowQuestions;
   const displayPhase = previewing ? "done" : phase;
@@ -360,6 +364,8 @@ export default function CallPage() {
         >
           {displayPhase === "done" && allSkipped ? (
             <MicTroubleScreen />
+          ) : displayPhase === "done" && showScoringUnavailable ? (
+            <ScoringUnavailableScreen />
           ) : displayPhase === "done" && report ? (
             <InterviewReportScreen
               view={buildReportView({

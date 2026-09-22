@@ -239,6 +239,10 @@ const en = {
     title: "We couldn't hear you",
     body: "None of your answers were captured this session. Check that your microphone is connected and not muted by your browser or operating system, then try the interview again.",
   },
+  scoringUnavailable: {
+    title: "Scoring unavailable",
+    body: "We couldn't build your coaching report this time. Your answers were saved for this session, but feedback is temporarily unavailable. Please try the interview again later.",
+  },
   cameraMiss: {
     title: "Camera isn't available",
     steps: "You can continue with voice. This Interview does not need video.",
@@ -484,6 +488,10 @@ const my: UiCopy = {
   micTrouble: {
     title: "သင့်အသံ မကြားရပါ",
     body: "ဤစက်ရှင်တွင် အဖြေ တစ်ခုမှ မရရှိပါ။ မိုက်ခရိုဖုန်း ချိတ်ထားခြင်း၊ ဘရောက်ဆာ သို့မဟုတ် စနစ်က ပိတ်မထားခြင်းကို စစ်ဆေးပြီး အင်တာဗျူးကို ထပ်ကြိုးစားပါ။",
+  },
+  scoringUnavailable: {
+    title: "အမှတ်ပေး၍ မရပါ",
+    body: "ယခုအချိန်တွင် coaching report တည်ဆောက်၍ မရပါ။ ဤစက်ရှင်အတွက် အဖြေများ ရှိသော်လည်း အကြံပြုချက် ယာယီ မရနိုင်ပါ။ နောက်မှ အင်တာဗျူးကို ထပ်ကြိုးစားပါ။",
   },
   cameraMiss: {
     title: "ကင်မရာ မရနိုင်ပါ",

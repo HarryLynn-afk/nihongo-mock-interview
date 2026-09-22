@@ -72,6 +72,14 @@ describe("lib/server/env/* per-purpose modules", () => {
     expect(isSupabaseConfigured()).toBe(false);
   });
 
+  it("DeepSeek grade key is optional — missing var returns null and does not throw", async () => {
+    setAllRequiredEnv();
+    delete process.env.DEEPSEEK_GRADE_API_KEY;
+
+    const { getDeepseekGradeKey } = await import("./deepseekGrade");
+    expect(getDeepseekGradeKey()).toBeNull();
+  });
+
   it("research form URL is optional — missing var returns null and does not throw", async () => {
     setAllRequiredEnv();
     delete process.env.RESEARCH_FORM_URL;

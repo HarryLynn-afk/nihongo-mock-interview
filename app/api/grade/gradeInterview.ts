@@ -1,13 +1,13 @@
-import {
-  getSampleReport,
-  SCORING_UNAVAILABLE_BANNER,
-} from "@/lib/content/sampleReport";
 import type { InterviewReport } from "./runGroqGrade";
 
+type GradeAttempt = () => Promise<InterviewReport | null>;
+
 export async function gradeInterview({
-  fallback,
+  primary,
+  secondary,
 }: {
-  fallback: () => Promise<InterviewReport | null>;
-}): Promise<InterviewReport> {
-  return (await fallback()) ?? getSampleReport(SCORING_UNAVAILABLE_BANNER);
+  primary: GradeAttempt;
+  secondary: GradeAttempt;
+}): Promise<InterviewReport | null> {
+  return (await primary()) ?? (await secondary());
 }

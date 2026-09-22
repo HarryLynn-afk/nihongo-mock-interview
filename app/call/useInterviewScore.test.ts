@@ -118,7 +118,7 @@ describe("useInterviewScore", () => {
     });
   });
 
-  it("uses the sample report with the scoring-unavailable banner when /api/score fails", async () => {
+  it("keeps report null when /api/score fails", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockRejectedValue(new Error("network down")),
@@ -138,17 +138,12 @@ describe("useInterviewScore", () => {
     const { result } = renderHook(() => useInterviewScore(collection));
 
     await waitFor(() => {
-      expect(result.current.report).toEqual(
-        expect.objectContaining({
-          headline: "Ready",
-          source: "sample",
-          banner: "Scoring unavailable — sample report.",
-        }),
-      );
+      expect(result.current.report).toBeNull();
+      expect(result.current.scoringFailed).toBe(true);
     });
   });
 
-  it("uses the sample report when /api/score returns a null report", async () => {
+  it("keeps report null when /api/score returns a null report", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
@@ -173,12 +168,8 @@ describe("useInterviewScore", () => {
     const { result } = renderHook(() => useInterviewScore(collection));
 
     await waitFor(() => {
-      expect(result.current.report).toEqual(
-        expect.objectContaining({
-          source: "sample",
-          banner: "Scoring unavailable — sample report.",
-        }),
-      );
+      expect(result.current.report).toBeNull();
+      expect(result.current.scoringFailed).toBe(true);
     });
   });
 });

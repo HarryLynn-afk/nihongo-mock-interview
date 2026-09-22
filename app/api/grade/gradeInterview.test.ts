@@ -30,23 +30,36 @@ const groqReport: InterviewReport = {
 };
 
 describe("gradeInterview", () => {
-  it("uses the Groq grade once", async () => {
-    const fallback = vi.fn().mockResolvedValue(groqReport);
+  it("uses the primary grade and does not call secondary", async () => {
+    const primary = vi.fn().mockResolvedValue(groqReport);
+    const secondary = vi.fn().mockResolvedValue(null);
 
-    const report = await gradeInterview({ fallback });
+    const report = await gradeInterview({ primary, secondary });
 
     expect(report).toEqual(groqReport);
-    expect(fallback).toHaveBeenCalledOnce();
+    expect(primary).toHaveBeenCalledOnce();
+    expect(secondary).not.toHaveBeenCalled();
   });
 
-  it("uses the sample report with the scoring-unavailable banner when Groq misses", async () => {
-    const fallback = vi.fn().mockResolvedValue(null);
+  it("uses the secondary grade when primary misses", async () => {
+    const primary = vi.fn().mockResolvedValue(null);
+    const secondary = vi.fn().mockResolvedValue(groqReport);
 
-    const report = await gradeInterview({ fallback });
+    const report = await gradeInterview({ primary, secondary });
 
-    expect(report?.source).toBe("sample");
-    expect(report?.banner).toBe("Scoring unavailable — sample report.");
-    expect(report?.headline).toBe("Ready");
-    expect(fallback).toHaveBeenCalledOnce();
+    expect(report).toEqual(groqReport);
+    expect(primary).toHaveBeenCalledOnce();
+    expect(secondary).toHaveBeenCalledOnce();
+  });
+
+  it("returns null when primary and secondary both miss", async () => {
+    const primary = vi.fn().mockResolvedValue(null);
+    const secondary = vi.fn().mockResolvedValue(null);
+
+    const report = await gradeInterview({ primary, secondary });
+
+    expect(report).toBeNull();
+    expect(primary).toHaveBeenCalledOnce();
+    expect(secondary).toHaveBeenCalledOnce();
   });
 });

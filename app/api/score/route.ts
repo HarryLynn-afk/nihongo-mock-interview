@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import { getDeepseekGradeKey } from "@/lib/server/env/deepseekGrade";
 import { getGroqGradeKey } from "@/lib/server/env/groqGrade";
 import { gradeInterview } from "../grade/gradeInterview";
 import { parseAnswers } from "../grade/parseAnswers";
+import { runDeepseekGrade } from "../grade/runDeepseekGrade";
 import { runGroqGrade } from "../grade/runGroqGrade";
 
-/** Groq grade can be slow; keep the route alive for the in-process call. */
+/** Groq/DeepSeek grade can be slow; keep the route alive for in-process calls. */
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
@@ -25,11 +27,17 @@ export async function POST(request: Request) {
   }
 
   const report = await gradeInterview({
-    fallback: () =>
+    primary: () =>
       runGroqGrade({
         answers,
         groqFetch: fetch,
         getGradeKey: getGroqGradeKey,
+      }),
+    secondary: () =>
+      runDeepseekGrade({
+        answers,
+        deepseekFetch: fetch,
+        getGradeKey: getDeepseekGradeKey,
       }),
   });
 

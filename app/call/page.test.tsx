@@ -7,7 +7,6 @@ import { PUSHBACK_TRY_AGAIN } from "@/lib/content/pushbackCopy";
 import * as liveTranscription from "./startLiveTranscription";
 import {
   getSampleReport,
-  SCORING_UNAVAILABLE_BANNER,
 } from "@/lib/content/sampleReport";
 import CallPage from "./page";
 
@@ -834,6 +833,7 @@ describe("Call screen", () => {
   });
 
   it("POSTs /api/score once after Q3 when answers are ready, without showing scores", async () => {
+    mockLiveGradeAndSurvey();
     const user = userEvent.setup();
     render(<CallPage />);
 
@@ -870,16 +870,14 @@ describe("Call screen", () => {
     });
   });
 
-  it("shows the scoring-unavailable banner when /api/score returns the sample report, with no spinner", async () => {
+  it("shows scoring unavailable when /api/score returns a null report, with no sample Ready stamp", async () => {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       if (String(input).includes("/api/score")) {
         return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              report: getSampleReport(SCORING_UNAVAILABLE_BANNER),
-            }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          ),
+          new Response(JSON.stringify({ report: null }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
         );
       }
       return Promise.resolve(new Response(null, { status: 202 }));
@@ -899,13 +897,11 @@ describe("Call screen", () => {
     }
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Scoring unavailable — sample report."),
-      ).toBeInTheDocument();
+      expect(screen.getByTestId("scoring-unavailable")).toBeInTheDocument();
     });
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
-    expect(screen.getByTestId("interview-report")).toBeInTheDocument();
-    expect(screen.getByText("準備OK")).toBeInTheDocument();
+    expect(screen.queryByTestId("interview-report")).not.toBeInTheDocument();
+    expect(screen.queryByText("準備OK")).not.toBeInTheDocument();
   });
 
   it("does not show the scoring-unavailable banner when /api/score returns a live report", async () => {

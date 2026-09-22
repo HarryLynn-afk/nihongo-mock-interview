@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  getSampleReport,
-  SCORING_UNAVAILABLE_BANNER,
-  type InterviewReport,
-} from "@/lib/content/sampleReport";
+import type { InterviewReport } from "@/lib/content/sampleReport";
 import type { GradeCollection } from "./useGradeAnswers";
 
 export function useInterviewScore(collection: GradeCollection) {
   const posted = useRef(false);
   const [report, setReport] = useState<InterviewReport | null>(null);
+  const [scoringFailed, setScoringFailed] = useState(false);
 
   useEffect(() => {
     if (collection.status !== "ready" || posted.current) return;
@@ -23,14 +20,19 @@ export function useInterviewScore(collection: GradeCollection) {
         const data = (await res.json()) as {
           report?: InterviewReport | null;
         };
-        setReport(
-          data.report ?? getSampleReport(SCORING_UNAVAILABLE_BANNER),
-        );
+        if (data.report) {
+          setReport(data.report);
+          setScoringFailed(false);
+        } else {
+          setReport(null);
+          setScoringFailed(true);
+        }
       })
       .catch(() => {
-        setReport(getSampleReport(SCORING_UNAVAILABLE_BANNER));
+        setReport(null);
+        setScoringFailed(true);
       });
   }, [collection]);
 
-  return { report };
+  return { report, scoringFailed };
 }
