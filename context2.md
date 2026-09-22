@@ -24,7 +24,7 @@ Do not plan a 29 Aug Launch Pack rebuild.
 - Three Questions, then the practice report on `/call`. Voice-only. A failed Speak retries up to 3 times, then the Question is skipped. No typing.
 - `/` is Guest practice: **Try as guest** opens `/guest` directly (device join is the page, not a dialog over `/`) → 15s popup on `/guest` → `/call?guest=1`, the 3 locked Questions only. Question 1 auto-plays when `/call` paints. No **Start interview** button on `/call`. The email form is only on the Guest report (`form` then `saved`). If this visit already sent, the report does not open the form. This app saves the address in `full_session_requests` only. No admin route and no mail from this app. No topic bank and no follow-ups. No glance pills (Speak in Japanese, Coaching report, 10–15 min). **How it works** stays. **Participant login** is a header pill that opens a dialog on `/login` over the start screen. The URL is still `/login`. The dialog is Google-only: no Try as guest, no guest-practice note, and no ENG/MM inside the dialog. Header ENG/MM stays. `/consent` Join stays **Join interview** and overlays the same landing-style join card, then the 15s popup, then `/call`, the 10-topic bank plus follow-ups.
 - Join UI (shared): compact camera/mic card on paper/feather, not Meet-dark. `/guest` is a public paper-green page (`guestJoin`). `/call` classroom look is separate.
-- Participant entry is Google only: allowlisted `/login`, or an open `/join?from=CODE`. Consent is required this visit. Magic-link login is gone. An open join link shows the same landing as `/` with **Login** only, and no glance pills. **Login** opens **Join NihonGo**; **Continue with Google** keeps the invite code. The line under the button is “Invited testers sign in with Google using the email on the list.” The dialog has no ENG/MM. Close stays on that URL. `/login` has no invite code: Google continues only when the email is already invited or the person is already a Participant. Do not put **Try as guest** or the header **Participant login** pill on the join link.
+- Participant entry is Google only: allowlisted `/login`, or an open `/join?from=CODE`. Consent is required this visit. Magic-link login is gone. `/join` with no `from`, or an unknown invite code, shows the Next not-found page. An open join link shows the same landing as `/` with **Login** only, and no glance pills. **Login** opens **Join NihonGo**; **Continue with Google** keeps the invite code. The line under the button is “Invited testers sign in with Google using the email on the list.” The dialog has no ENG/MM. Close stays on that URL. `/login` has no invite code: Google continues only when the email is already invited or the person is already a Participant. Do not put **Try as guest** or the header **Participant login** pill on the join link.
 - Sensei audio is committed `/question-{id}.mp3`. No runtime TTS.
 - Eng/MM picks one helper language. Japanese stays on the HUD. Do not stack EN and MY.
 - Grade is Groq on the Speak Submit transcript (live caption the student confirmed), then optional DeepSeek Flash (`thinking` off) on any Groq miss. Both miss → scoring unavailable (no live sample Ready). ASR-aware rubric prompt: grade meaning, do not punish caption glitches, do not invent a cleaner transcript. No Whisper overwrite. Speaking is not a score. Speech Delivery Signals are browser timing on answered Questions. Skip interview may still use a local sample for preview only.
@@ -42,7 +42,7 @@ Do not plan a 29 Aug Launch Pack rebuild.
 - Separate pitch route: `/pitch`, access key, scripted sample answers, `/call?pitch=1` as a classroom. Those URLs show the Next.js not-found page.
 - Meet-dark join overlay on `/` (Guest join is `/guest`; shared lobby is landing paper/feather)
 - Email choice before the Guest lobby (“How do you want to practice?”, leave an email, already-sent dialog). The address form stays on the Guest report.
-- Landing glance pills (Speak in Japanese, Coaching report, 10–15 min) on `/` or `/join`
+- Landing glance pills (Speak in Japanese, Coaching report, 10–15 min) on `/` or valid `/join?from=CODE`
 - ENG/MM inside the Google sign-in dialog, and the join-popup line “Sign in with Google to join this tester's practice group.”
 - n8n grade webhook, warm ping, Gemini as the live grader
 - Magic-link / SMTP login
@@ -52,7 +52,7 @@ Do not plan a 29 Aug Launch Pack rebuild.
 
 ## Last unresolved
 
-None that reopen a locked branch. Next step is pasting `003_full_session_requests.sql`, then the open tasks in `claude2.md` (join-link Google through consent, then Issue 15 deploy). The join landing and dialog are checked. CSC 485 research question is later. The Guest session cap stays later.
+None that reopen a locked branch. Next step is pasting `003_full_session_requests.sql`, then the open tasks in `claude2.md` (join-link Google through consent, then Issue 15 deploy). The join landing and dialog are checked; invalid join links are tested to return not-found. CSC 485 research question is later. The Guest session cap stays later.
 
 ## Explicitly not this version unless reopened
 
