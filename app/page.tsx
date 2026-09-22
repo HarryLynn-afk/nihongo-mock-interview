@@ -7,62 +7,9 @@ import { JoinInterview } from "./components/JoinInterview";
 import { LanguageToggle } from "./components/LanguageToggle";
 import { useCopy } from "./components/useUiLocale";
 
-const GLANCE_FACTS = [
-  { id: "speak", icon: SpeakIcon },
-  { id: "report", icon: ReportIcon },
-  { id: "duration", icon: ClockIcon },
-] as const;
-
 const HOW_IT_WORKS_STEPS = ["join", "speak", "report"] as const;
 
 const SENSEI_NAME = "Tanaka-sensei";
-
-function GlanceIcon({ children }: { children: ReactNode }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="size-3.5 shrink-0 text-feather-dark"
-    >
-      {children}
-    </svg>
-  );
-}
-
-function SpeakIcon() {
-  return (
-    <GlanceIcon>
-      <rect x="9" y="3" width="6" height="11" rx="3" />
-      <path d="M6 12a6 6 0 0 0 12 0" />
-      <path d="M12 18v3" />
-    </GlanceIcon>
-  );
-}
-
-function ReportIcon() {
-  return (
-    <GlanceIcon>
-      <path d="M7 3h7l5 5v13H7Z" />
-      <path d="M14 3v5h5" />
-      <path d="M10 13h6" />
-      <path d="M10 17h4" />
-    </GlanceIcon>
-  );
-}
-
-function ClockIcon() {
-  return (
-    <GlanceIcon>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3.5 2" />
-    </GlanceIcon>
-  );
-}
 
 function CtaArrow() {
   return (
@@ -196,18 +143,6 @@ export default function Home({
         <p className="mt-6 w-full rounded-lg border border-eel/10 bg-white/70 px-4 py-3 text-sm text-eel/80 md:hidden">
           {copy.start.computerOnly}
         </p>
-
-        <div className="mx-auto mt-8 flex max-w-[520px] flex-wrap items-center justify-center gap-2">
-          {GLANCE_FACTS.map((fact) => (
-            <span
-              key={fact.id}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-[13px] text-wolf ring-1 ring-feather/15"
-            >
-              <fact.icon />
-              {copy.start.facts[fact.id]}
-            </span>
-          ))}
-        </div>
       </main>
 
       <section

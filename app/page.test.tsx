@@ -55,15 +55,9 @@ describe("Home (start screen)", () => {
       screen.getByRole("heading", { name: "How it works" }),
     ).toBeInTheDocument();
     expect(screen.queryByText("Camera optional")).not.toBeInTheDocument();
-    expect(screen.getByText("Speak in Japanese", { selector: "span" })).toHaveClass(
-      "rounded-full",
-    );
-    expect(screen.getByText("Coaching report", { selector: "span" })).toHaveClass(
-      "rounded-full",
-    );
-    expect(screen.getByText("10–15 min", { selector: "span" })).toHaveClass(
-      "rounded-full",
-    );
+    expect(screen.queryByText("Speak in Japanese")).not.toBeInTheDocument();
+    expect(screen.queryByText("Coaching report")).not.toBeInTheDocument();
+    expect(screen.queryByText("10–15 min")).not.toBeInTheDocument();
     expect(screen.getByText("Tanaka-sensei")).toBeInTheDocument();
     expect(
       screen.queryByText("Tokyo Pathway Japanese School"),

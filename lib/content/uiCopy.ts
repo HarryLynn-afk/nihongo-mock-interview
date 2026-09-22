@@ -9,12 +9,6 @@ const en = {
     participantLogin: "Participant login",
     guestCaption: "Three questions. Guest practice isn't saved.",
     computerOnly: "Open on a computer to join the interview.",
-    facts: {
-      camera: "Camera optional",
-      speak: "Speak in Japanese",
-      report: "Coaching report",
-      duration: "10–15 min",
-    },
     howItWorks: {
       title: "How it works",
       steps: {
@@ -252,12 +246,6 @@ const my: UiCopy = {
     participantLogin: "ပါဝင်သူ ဝင်ရောက်ရန်",
     guestCaption: "မေးခွန်း ၃ ခု။ ဧည့်သည် လေ့ကျင့်မှုကို သိမ်းမထားပါ။",
     computerOnly: "အင်တာဗျူးတက်ရန် ကွန်ပျူတာပေါ်တွင် ဖွင့်ပါ။",
-    facts: {
-      camera: "ကင်မရာ မလိုအပ်ပါ",
-      speak: "ဂျပန်လို ပြောရန်",
-      report: "အကြံပြုချက် report",
-      duration: "၁၀–၁၅ မိနစ်",
-    },
     howItWorks: {
       title: "အလုပ်လုပ်ပုံ",
       steps: {
