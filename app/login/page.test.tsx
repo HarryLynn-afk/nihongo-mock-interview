@@ -19,10 +19,10 @@ describe("Login page", () => {
       within(dialog).queryByRole("button", { name: "Try as guest" }),
     ).not.toBeInTheDocument();
     expect(
-      within(dialog).getByText(
+      within(dialog).queryByText(
         "Guest practice stays on the start screen and is never merged into the study.",
       ),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
         name: "Practice your interview with Tanaka-sensei",

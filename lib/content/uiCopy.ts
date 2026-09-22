@@ -36,8 +36,6 @@ const en = {
   login: {
     title: "Sign in to NihonGo",
     body: "Invited testers sign in with Google using the email on the list.",
-    guestNote:
-      "Guest practice stays on the start screen and is never merged into the study.",
     google: "Continue with Google",
     close: "Close",
     linkSent: "If this email is eligible, a sign-in link has been sent.",
@@ -276,8 +274,6 @@ const my: UiCopy = {
   login: {
     title: "NihonGo သို့ ဝင်ရောက်ရန်",
     body: "ဖိတ်ကြားစာရင်းရှိ အီးမေးလ်ဖြင့် Google ဆိုင်းအင်ဝင်ပါ။",
-    guestNote:
-      "ဧည့်သည် လေ့ကျင့်မှုသည် အစစာမျက်နှာတွင်သာ ရှိပြီး လေ့လာမှုထဲ မပေါင်းပါ။",
     google: "Google ဖြင့် ဆက်ရန်",
     close: "ပိတ်ရန်",
     linkSent: "ဤအီးမေးလ် ပါဝင်ခွင့်ရှိပါက ဆိုင်းအင်လင့်ခ် ပို့ပြီးဖြစ်သည်။",

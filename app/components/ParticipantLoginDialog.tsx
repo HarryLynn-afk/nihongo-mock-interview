@@ -208,10 +208,6 @@ export function ParticipantLoginDialog({
             {localizeAuthMessage(message, locale)}
           </p>
         ) : null}
-
-        <p className="mx-auto mt-6 max-w-[36ch] text-[0.85rem] leading-relaxed text-wolf">
-          {copy.login.guestNote}
-        </p>
       </div>
     </div>
   );
