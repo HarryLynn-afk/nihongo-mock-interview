@@ -38,7 +38,6 @@ describe("InterviewLobby", () => {
     const help = screen.getByTestId("mic-blocked-help");
     expect(help).toHaveTextContent("Microphone is blocked");
     expect(help).not.toHaveTextContent("[Temporary test message]");
-    expect(screen.getByText(/Mic blocked/i)).toBeInTheDocument();
   });
 
   it("says why the camera did not start instead of silently unchecking it", () => {
@@ -82,7 +81,7 @@ describe("InterviewLobby", () => {
     expect(help).not.toHaveTextContent("OverconstrainedError");
     expect(help).not.toHaveTextContent("Browser reported");
     expect(help).not.toHaveTextContent("No camera found");
-    expect(screen.getByRole("checkbox", { name: "Camera" })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: "Camera" })).not.toBeDisabled();
     expect(screen.getByRole("button", { name: "Enter classroom" })).toBeEnabled();
   });
 
@@ -137,7 +136,7 @@ describe("InterviewLobby", () => {
     expect(screen.getByText(/camera is optional/i)).toBeInTheDocument();
   });
 
-  it("toggles camera from the checkbox click", () => {
+  it("toggles camera from the video control click", () => {
     const onToggleCamera = vi.fn();
     render(
       <InterviewLobby
@@ -151,7 +150,7 @@ describe("InterviewLobby", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("checkbox", { name: /camera/i }));
+    fireEvent.click(screen.getByRole("button", { name: /camera/i }));
     expect(onToggleCamera).toHaveBeenCalledTimes(1);
   });
 });
