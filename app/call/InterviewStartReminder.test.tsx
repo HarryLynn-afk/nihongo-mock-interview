@@ -10,8 +10,12 @@ describe("InterviewStartReminder", () => {
     expect(
       screen.getByRole("dialog", { name: /interview will start soon/i }),
     ).toBeInTheDocument();
-    expect(screen.getByTestId("start-reminder-backdrop")).toHaveClass(
+    expect(screen.getByTestId("start-reminder-backdrop")).not.toHaveClass(
       "bg-ink/80",
+    );
+    expect(screen.getByRole("dialog")).toHaveClass("bg-white");
+    expect(screen.getByRole("button", { name: /^skip$/i })).toHaveClass(
+      "bg-feather",
     );
     expect(screen.getByRole("dialog")).toHaveClass("rounded-2xl");
     expect(screen.getByText("15s")).toBeInTheDocument();

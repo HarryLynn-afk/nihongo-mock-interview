@@ -114,7 +114,7 @@ export function JoinInterview({
         <div
           role="dialog"
           aria-label={copy.lobby.readyToJoin}
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/80 p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#e8f8d4]/80 p-6"
         >
           <InterviewLobby
             cameraEnabled={cameraOn}

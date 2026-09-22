@@ -93,131 +93,115 @@ export function InterviewLobby({
     copy.call.you.trim().charAt(0).toLocaleUpperCase() || "Y";
 
   return (
-    <div className="w-full max-w-[360px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#111214] text-[#f2f2f3] shadow-[0_24px_64px_-16px_rgba(0,0,0,0.55)]">
+    <div className="w-full max-w-[360px] overflow-hidden rounded-2xl border border-feather/15 bg-white text-eel shadow-[0_24px_64px_-20px_rgba(88,204,2,0.28)]">
       <div
         data-testid="classroom-preview"
-        className="relative aspect-[4/3] w-full bg-[#17181b]"
+        className="relative aspect-[4/3] w-full bg-[linear-gradient(180deg,#e8f8d4_0%,#f4fbef_100%)]"
       >
-          {showCameraPreview ? (
-            <video
-              ref={videoRef}
-              autoPlay
-              muted
-              playsInline
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div
-                aria-hidden="true"
-                className="flex h-16 w-16 items-center justify-center rounded-lg bg-[#1f8f7a] text-3xl font-semibold text-white"
-              >
-                {avatarLetter}
-              </div>
-            </div>
-          )}
-
-          {/* Click, not change: Safari only shows a camera/mic popup if
-              getUserMedia starts in the same click as the control. */}
-          <div className="absolute inset-x-0 bottom-3 z-10 flex justify-center">
-            <div className="flex overflow-hidden rounded-xl border border-white/10 bg-[rgba(20,21,24,0.92)]">
-              <button
-                type="button"
-                aria-pressed={micActive}
-                aria-label={copy.lobby.microphone}
-                onClick={onToggleMic}
-                className="relative flex min-w-[84px] flex-col items-center gap-1 px-4 py-2 text-[#f2f2f3] transition hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a73e8]"
-              >
-                <span className="relative inline-flex h-5 w-5 items-center justify-center">
-                  <MicIcon className="h-5 w-5" />
-                  {!micActive ? (
-                    <span
-                      aria-hidden="true"
-                      className="absolute left-1/2 top-0 h-5 w-0.5 -translate-x-1/2 rotate-45 rounded-sm bg-[#e2245b]"
-                    />
-                  ) : null}
-                </span>
-                <span className="text-xs font-medium">
-                  {copy.lobby.microphone}
-                </span>
-              </button>
-              <button
-                type="button"
-                aria-pressed={showCameraPreview}
-                aria-label={copy.lobby.camera}
-                onClick={onToggleCamera}
-                className="relative flex min-w-[84px] flex-col items-center gap-1 border-l border-white/10 px-4 py-2 text-[#f2f2f3] transition hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a73e8]"
-              >
-                <span className="relative inline-flex h-5 w-5 items-center justify-center">
-                  <CameraIcon className="h-5 w-5" />
-                  {!showCameraPreview ? (
-                    <span
-                      aria-hidden="true"
-                      className="absolute left-1/2 top-0 h-5 w-0.5 -translate-x-1/2 rotate-45 rounded-sm bg-[#e2245b]"
-                    />
-                  ) : null}
-                </span>
-                <span className="text-xs font-medium">{copy.lobby.camera}</span>
-              </button>
+        {showCameraPreview ? (
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div
+              aria-hidden="true"
+              className="flex h-16 w-16 items-center justify-center rounded-2xl bg-feather text-3xl font-semibold text-white"
+            >
+              {avatarLetter}
             </div>
           </div>
+        )}
+
+        {/* Click, not change: Safari only shows a camera/mic popup if
+            getUserMedia starts in the same click as the control. */}
+        <div className="absolute inset-x-0 bottom-3 z-10 flex justify-center">
+          <div className="flex overflow-hidden rounded-full border border-feather/20 bg-white/90 shadow-[0_8px_20px_-8px_rgba(20,30,20,0.2)]">
+            <button
+              type="button"
+              aria-pressed={micActive}
+              aria-label={copy.lobby.microphone}
+              onClick={onToggleMic}
+              className="relative flex min-w-[84px] flex-col items-center gap-1 px-4 py-2 text-eel transition hover:bg-polar focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
+            >
+              <span className="relative inline-flex h-5 w-5 items-center justify-center">
+                <MicIcon className="h-5 w-5" />
+                {!micActive ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-1/2 top-0 h-5 w-0.5 -translate-x-1/2 rotate-45 rounded-sm bg-[#e2245b]"
+                  />
+                ) : null}
+              </span>
+              <span className="text-xs font-medium">
+                {copy.lobby.microphone}
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={showCameraPreview}
+              aria-label={copy.lobby.camera}
+              onClick={onToggleCamera}
+              className="relative flex min-w-[84px] flex-col items-center gap-1 border-l border-feather/20 px-4 py-2 text-eel transition hover:bg-polar focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
+            >
+              <span className="relative inline-flex h-5 w-5 items-center justify-center">
+                <CameraIcon className="h-5 w-5" />
+                {!showCameraPreview ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-1/2 top-0 h-5 w-0.5 -translate-x-1/2 rotate-45 rounded-sm bg-[#e2245b]"
+                  />
+                ) : null}
+              </span>
+              <span className="text-xs font-medium">{copy.lobby.camera}</span>
+            </button>
+          </div>
         </div>
+      </div>
 
-        <div className="flex flex-col gap-3 px-4 py-3">
-          <p className="text-center text-xs text-[#b8b9bd]">
-            {copy.lobby.cameraOptional}
-          </p>
+      <div className="flex flex-col gap-3 px-4 py-4">
+        <p className="text-center text-xs text-wolf">
+          {copy.lobby.cameraOptional}
+        </p>
 
-          {cameraHelp ? (
-            <div
-              data-testid="camera-blocked-help"
-              className={
-                cameraHelpIsQuiet
-                  ? "rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-[#f2f2f3]/80"
-                  : "rounded-lg border border-amber-300/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-100"
-              }
-            >
-              <p className="font-medium">{cameraHelp.title}</p>
-              <p
-                className={
-                  cameraHelpIsQuiet
-                    ? "mt-1 text-[#f2f2f3]/70"
-                    : "mt-1 text-amber-100/90"
-                }
-              >
-                {cameraHelp.steps}
-              </p>
-              <p
-                className={
-                  cameraHelpIsQuiet
-                    ? "mt-1 text-[#f2f2f3]/60"
-                    : "mt-1 text-amber-100/80"
-                }
-              >
-                {cameraHelp.after}
-              </p>
-            </div>
-          ) : null}
-
-          {help ? (
-            <div
-              data-testid="mic-blocked-help"
-              className="rounded-lg border border-amber-300/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-100"
-            >
-              <p className="font-medium">{help.title}</p>
-              <p className="mt-1 text-amber-100/90">{help.steps}</p>
-              <p className="mt-1 text-amber-100/80">{help.after}</p>
-            </div>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={onContinue}
-            className="w-full rounded-lg bg-[#1a73e8] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#2681ef] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a73e8]"
+        {cameraHelp ? (
+          <div
+            data-testid="camera-blocked-help"
+            className={
+              cameraHelpIsQuiet
+                ? "rounded-xl border border-feather/15 bg-polar px-3 py-2 text-sm text-eel"
+                : "rounded-xl border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-eel"
+            }
           >
-            {copy.lobby.enterClassroom}
-          </button>
-        </div>
+            <p className="font-medium">{cameraHelp.title}</p>
+            <p className="mt-1 text-wolf">{cameraHelp.steps}</p>
+            <p className="mt-1 text-wolf">{cameraHelp.after}</p>
+          </div>
+        ) : null}
+
+        {help ? (
+          <div
+            data-testid="mic-blocked-help"
+            className="rounded-xl border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-eel"
+          >
+            <p className="font-medium">{help.title}</p>
+            <p className="mt-1 text-wolf">{help.steps}</p>
+            <p className="mt-1 text-wolf">{help.after}</p>
+          </div>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={onContinue}
+          className="w-full rounded-full bg-feather px-5 py-3 text-sm font-bold text-white shadow-[0_14px_30px_-10px_rgba(88,204,2,0.55)] transition-[transform,box-shadow,background-color] hover:-translate-y-0.5 hover:bg-feather-dark hover:shadow-[0_18px_34px_-10px_rgba(88,204,2,0.65)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
+        >
+          {copy.lobby.enterClassroom}
+        </button>
+      </div>
     </div>
   );
 }

@@ -134,6 +134,12 @@ describe("InterviewLobby", () => {
     );
 
     expect(screen.getByText(/camera is optional/i)).toBeInTheDocument();
+    expect(screen.getByTestId("classroom-preview")).not.toHaveClass(
+      "bg-[#17181b]",
+    );
+    expect(screen.getByRole("button", { name: /enter classroom/i })).toHaveClass(
+      "bg-feather",
+    );
   });
 
   it("toggles camera from the video control click", () => {

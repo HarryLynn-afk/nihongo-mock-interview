@@ -58,6 +58,19 @@ describe("/guest", () => {
     expect(pushMock).not.toHaveBeenCalled();
   });
 
+  it("uses landing paper and feather instead of a Meet-dark join screen", () => {
+    const { container } = render(<GuestJoin />);
+
+    expect(container.firstElementChild).not.toHaveClass("bg-black");
+    expect(container.firstElementChild).toHaveClass("text-eel");
+    expect(
+      screen.getByRole("button", { name: /enter classroom/i }),
+    ).toHaveClass("bg-feather");
+    expect(screen.getByRole("button", { name: "ENG" })).toHaveClass(
+      "bg-feather",
+    );
+  });
+
   it("asks for the camera when the Camera control is clicked", async () => {
     const user = userEvent.setup();
     render(<GuestJoin />);
@@ -82,7 +95,7 @@ describe("/guest", () => {
     expect(
       screen.getByRole("dialog", { name: /interview will start soon/i }),
     ).toBeInTheDocument();
-    expect(screen.getByTestId("start-reminder-backdrop")).toHaveClass(
+    expect(screen.getByTestId("start-reminder-backdrop")).not.toHaveClass(
       "bg-ink/80",
     );
     expect(pushMock).not.toHaveBeenCalled();
