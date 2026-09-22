@@ -128,7 +128,14 @@ export function useLobbyDevices({ active }: { active: boolean }) {
   }, [active]);
 
   useEffect(() => {
-    if (active) return;
+    if (active) {
+      return () => {
+        stopStream(videoStreamRef.current);
+        stopStream(audioStreamRef.current);
+        videoStreamRef.current = null;
+        audioStreamRef.current = null;
+      };
+    }
     stopStream(videoStreamRef.current);
     stopStream(audioStreamRef.current);
     videoStreamRef.current = null;

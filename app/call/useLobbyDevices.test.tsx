@@ -301,4 +301,26 @@ describe("useLobbyDevices", () => {
       }
     });
   });
+
+  it("stops device streams when the lobby unmounts while still active", async () => {
+    const videoStream = makeStream(["video"]);
+    getUserMedia.mockResolvedValue(videoStream);
+
+    const { result, unmount } = renderHook(() =>
+      useLobbyDevices({ active: true }),
+    );
+
+    act(() => {
+      result.current.toggleCamera();
+    });
+    await waitFor(() => {
+      expect(getUserMedia).toHaveBeenCalled();
+    });
+
+    unmount();
+
+    for (const track of videoStream.getTracks()) {
+      expect(track.stop).toHaveBeenCalled();
+    }
+  });
 });

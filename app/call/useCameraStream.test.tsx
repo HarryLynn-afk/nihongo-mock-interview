@@ -1,13 +1,35 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, renderHook, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import { useCameraStream } from "./useCameraStream";
+
+function makeStream() {
+  const tracks = [
+    {
+      kind: "video" as const,
+      readyState: "live",
+      stop: vi.fn(function stop(this: { readyState: string }) {
+        this.readyState = "ended";
+      }),
+    },
+  ];
+  return {
+    getTracks: () => tracks,
+    getVideoTracks: () => tracks,
+    getAudioTracks: () => [],
+  } as unknown as MediaStream;
+}
 
 describe("useCameraStream", () => {
   const getUserMedia = vi.fn();
   const enumerateDevices = vi.fn();
+  const play = vi.fn().mockResolvedValue(undefined);
 
   beforeEach(() => {
     enumerateDevices.mockResolvedValue([]);
+    play.mockClear();
+    play.mockResolvedValue(undefined);
+    HTMLVideoElement.prototype.play = play;
     vi.stubGlobal("navigator", {
       mediaDevices: { getUserMedia, enumerateDevices },
     });
@@ -83,23 +105,68 @@ describe("useCameraStream", () => {
     });
   });
 
-  it("turns the camera off via toggleCamera without requesting the stream again", async () => {
-    getUserMedia.mockResolvedValue({} as MediaStream);
+  it("stops the camera stream when toggled off", async () => {
+    const stream = makeStream();
+    getUserMedia.mockResolvedValue(stream);
 
     const { result } = renderHook(() => useCameraStream());
     await waitFor(() => expect(result.current.cameraState).toBe("on"));
 
-    const callsBeforeToggle = getUserMedia.mock.calls.length;
     act(() => {
       result.current.toggleCamera();
     });
 
     expect(result.current.cameraState).toBe("off");
-    expect(getUserMedia.mock.calls.length).toBe(callsBeforeToggle);
+    expect(stream.getTracks()[0]?.stop).toHaveBeenCalled();
+  });
+
+  it("requests a new stream and attaches it after Camera off then Camera on", async () => {
+    const first = makeStream();
+    const second = makeStream();
+    getUserMedia
+      .mockResolvedValueOnce(first)
+      .mockResolvedValueOnce(second);
+
+    function TestComponent() {
+      const { videoRef, toggleCamera, cameraState } = useCameraStream();
+      return (
+        <div>
+          <span data-testid="state">{cameraState}</span>
+          {cameraState === "on" ? (
+            <video ref={videoRef} data-testid="preview" />
+          ) : (
+            <div data-testid="placeholder" />
+          )}
+          <button type="button" onClick={toggleCamera}>
+            toggle
+          </button>
+        </div>
+      );
+    }
+
+    const { getByRole, getByTestId } = render(<TestComponent />);
+    await waitFor(() => {
+      expect(getByTestId("preview").srcObject).toBe(first);
+    });
+
+    act(() => {
+      getByRole("button", { name: "toggle" }).click();
+    });
+    expect(getByTestId("state").textContent).toBe("off");
+    expect(getByTestId("placeholder")).toBeInTheDocument();
+
+    act(() => {
+      getByRole("button", { name: "toggle" }).click();
+    });
+    await waitFor(() => {
+      expect(getByTestId("state").textContent).toBe("on");
+      expect(getByTestId("preview").srcObject).toBe(second);
+    });
+    expect(play).toHaveBeenCalled();
   });
 
   it("attaches the resolved stream to the video element via videoRef", async () => {
-    const fakeStream = { id: "fake-stream" } as unknown as MediaStream;
+    const fakeStream = makeStream();
     getUserMedia.mockResolvedValue(fakeStream);
 
     function TestComponent() {
@@ -114,6 +181,42 @@ describe("useCameraStream", () => {
 
     await waitFor(() => {
       expect(video.srcObject).toBe(fakeStream);
+      expect(play).toHaveBeenCalled();
+    });
+  });
+
+  it("reattaches the live stream when the <video> remounts", async () => {
+    const fakeStream = makeStream();
+    getUserMedia.mockResolvedValue(fakeStream);
+
+    function TestComponent() {
+      const { videoRef } = useCameraStream();
+      const [show, setShow] = useState(true);
+      return (
+        <div>
+          {show ? <video ref={videoRef} data-testid="preview" /> : <div />}
+          <button type="button" onClick={() => setShow((current) => !current)}>
+            remount
+          </button>
+        </div>
+      );
+    }
+
+    const { getByRole, getByTestId, queryByTestId } = render(<TestComponent />);
+    await waitFor(() => {
+      expect(getByTestId("preview").srcObject).toBe(fakeStream);
+    });
+
+    act(() => {
+      getByRole("button", { name: "remount" }).click();
+    });
+    expect(queryByTestId("preview")).not.toBeInTheDocument();
+
+    act(() => {
+      getByRole("button", { name: "remount" }).click();
+    });
+    await waitFor(() => {
+      expect(getByTestId("preview").srcObject).toBe(fakeStream);
     });
   });
 });

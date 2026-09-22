@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { JoinInterview } from "./JoinInterview";
 
@@ -43,6 +43,34 @@ describe("JoinInterview", () => {
 
     await user.click(screen.getByRole("button", { name: /^skip$/i }));
     expect(pushMock).toHaveBeenCalledWith("/call");
+  });
+
+  it("releases the lobby camera before navigating to /call", async () => {
+    const stop = vi.fn();
+    getUserMedia.mockResolvedValue({
+      getTracks: () => [{ kind: "video", readyState: "live", stop }],
+      getVideoTracks: () => [{ kind: "video", readyState: "live", stop }],
+      getAudioTracks: () => [],
+    } as unknown as MediaStream);
+    vi.stubGlobal("navigator", {
+      mediaDevices: {
+        getUserMedia,
+        enumerateDevices: vi.fn().mockResolvedValue([]),
+      },
+    });
+
+    const user = userEvent.setup();
+    render(<JoinInterview />);
+
+    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    await user.click(screen.getByRole("checkbox", { name: /^camera$/i }));
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalled());
+
+    await user.click(screen.getByRole("button", { name: /enter classroom/i }));
+    await user.click(screen.getByRole("button", { name: /^skip$/i }));
+
+    expect(pushMock).toHaveBeenCalledWith("/call");
+    expect(stop).toHaveBeenCalled();
   });
 
   it("asks a Guest to continue or leave an email before the lobby", async () => {

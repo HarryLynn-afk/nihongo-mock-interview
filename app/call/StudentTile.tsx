@@ -1,11 +1,11 @@
-import type { RefObject } from "react";
+import type { Ref } from "react";
 import { useCopy } from "../components/useUiLocale";
 import type { CameraState } from "./useCameraStream";
 
 type StudentTileProps = {
   cameraState: CameraState;
   micOn: boolean;
-  videoRef: RefObject<HTMLVideoElement | null>;
+  videoRef: Ref<HTMLVideoElement | null>;
   onToggleCamera: () => void;
   onToggleMic: () => void;
 };

@@ -62,7 +62,9 @@ export function JoinInterview({
     videoRef,
     toggleCamera,
     toggleMic,
-  } = useLobbyDevices({ active: devicesVisible });
+  } = useLobbyDevices({
+    active: devicesVisible && !interviewStarted,
+  });
 
   useEffect(() => {
     if (!interviewStarted) return;
