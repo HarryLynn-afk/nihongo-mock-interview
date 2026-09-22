@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { JoinLinkLanding } from "./JoinLinkLanding";
 
@@ -42,14 +42,21 @@ describe("JoinLinkLanding", () => {
 
     await user.click(screen.getByRole("button", { name: "Login" }));
 
+    const dialog = screen.getByRole("dialog", { name: "Join NihonGo" });
     expect(
-      screen.getByRole("button", { name: "Continue with Google" }),
+      within(dialog).getByRole("button", { name: "Continue with Google" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(
+      within(dialog).queryByRole("button", { name: "ENG" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole("button", { name: "MM" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
         "Sign in with Google to join this tester's practice group.",
       ),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByText(
         "Invited testers sign in with Google using the email on the list.",

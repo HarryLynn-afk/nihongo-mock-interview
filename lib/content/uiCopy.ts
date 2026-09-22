@@ -71,7 +71,6 @@ const en = {
   },
   joinLink: {
     title: "Join NihonGo",
-    body: "Sign in with Google to join this tester's practice group.",
     google: "Continue with Google",
     login: "Login",
     unknown: "This sign-up link isn't available.",
@@ -314,7 +313,6 @@ const my: UiCopy = {
   },
   joinLink: {
     title: "NihonGo ဝင်ရောက်ရန်",
-    body: "ဤစမ်းသပ်သူ၏ လေ့ကျင့်အဖွဲ့သို့ ဝင်ရန် Google ဖြင့် ဆိုင်းအင်ဝင်ပါ။",
     google: "Google ဖြင့် ဆက်ရန်",
     login: "ဝင်ရောက်ရန်",
     unknown: "ဤဆိုင်းအပ်လင့်ခ်ကို အသုံးပြု၍ မရပါ။",

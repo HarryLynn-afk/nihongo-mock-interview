@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { localizeAuthMessage } from "@/lib/content/uiCopy";
-import { LanguageToggle } from "./LanguageToggle";
 import { useCopy } from "./useUiLocale";
 
 function GoogleMark() {
@@ -56,12 +55,12 @@ export function GoogleSignInDialog({
   message,
 }: {
   title: string;
-  body: string;
+  body?: string;
   onContinue: () => Promise<void>;
   onClose: () => void;
   message?: string | null;
 }) {
-  const { locale, setLocale, copy } = useCopy();
+  const { locale, copy } = useCopy();
   const dialogRef = useRef<HTMLDivElement>(null);
   const [pending, setPending] = useState(false);
 
@@ -136,14 +135,6 @@ export function GoogleSignInDialog({
         className="login-dialog-in relative w-full max-w-[440px] rounded-[20px] bg-paper px-6 pb-7 pt-14 text-center shadow-[0_40px_80px_-20px_rgba(20,30,20,0.35)] outline-none sm:px-8"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <div className="absolute left-4 top-4">
-          <LanguageToggle
-            locale={locale}
-            onChange={setLocale}
-            variant="light"
-            tone="feather"
-          />
-        </div>
         <button
           type="button"
           aria-label={copy.login.close}
@@ -184,9 +175,11 @@ export function GoogleSignInDialog({
             {localizeAuthMessage(message, locale)}
           </p>
         ) : null}
-        <p className="mx-auto mt-4 max-w-[34ch] text-[0.92rem] leading-relaxed text-wolf">
-          {body}
-        </p>
+        {body ? (
+          <p className="mx-auto mt-4 max-w-[34ch] text-[0.92rem] leading-relaxed text-wolf">
+            {body}
+          </p>
+        ) : null}
       </div>
     </div>
   );
