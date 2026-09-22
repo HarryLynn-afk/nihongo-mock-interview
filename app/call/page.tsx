@@ -342,11 +342,6 @@ export default function CallPage() {
             variant="dark"
           />
         </div>
-        {!participantId ? (
-          <p className="w-full shrink-0 rounded-xl border border-paper/15 bg-paper/5 px-4 py-2 text-center text-sm text-paper/80">
-            {copy.call.guestBanner}
-          </p>
-        ) : null}
         {participantId ? (
           <p className="w-full text-center text-sm text-paper/70">
             {copy.call.participant} {participantId}

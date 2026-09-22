@@ -87,9 +87,6 @@ export function readAuthCallback(search: string, hash: string): AuthCallbackInte
   return { kind: "none" };
 }
 
-export const GUEST_BANNER =
-  "Guest practice is not saved and is not part of the study.";
-
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }

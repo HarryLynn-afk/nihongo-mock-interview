@@ -100,7 +100,6 @@ const en = {
     skip: "Skip",
   },
   call: {
-    guestBanner: "Guest practice is not saved and is not part of the study.",
     participant: "Participant",
     skipInterview: "Skip interview",
     questionOf: "Question {n} of {total}",
@@ -348,7 +347,6 @@ const my: UiCopy = {
     skip: "ကျော်မည်",
   },
   call: {
-    guestBanner: "ဧည့်သည် လေ့ကျင့်မှုကို မသိမ်းပါ။ လေ့လာမှုထဲ မပါဝင်ပါ။",
     participant: "ပါဝင်သူ",
     skipInterview: "အင်တာဗျူး ကျော်ရန်",
     questionOf: "မေးခွန်း {n} / {total}",

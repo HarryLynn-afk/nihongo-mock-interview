@@ -3,7 +3,6 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { pickSessionQuestions } from "@/lib/content/questionBank";
 import { questions } from "@/lib/content/questions";
-import { GUEST_BANNER } from "@/lib/content/studyAuth";
 import { PUSHBACK_TRY_AGAIN } from "@/lib/content/pushbackCopy";
 import * as liveTranscription from "./startLiveTranscription";
 import {
@@ -1252,7 +1251,9 @@ describe("Call screen", () => {
     await expect(
       screen.findByText("Participant P001", {}, { timeout: 400 }),
     ).rejects.toThrow();
-    expect(screen.getByText(GUEST_BANNER)).toBeInTheDocument();
+    expect(
+      screen.queryByText(/guest practice is not saved/i),
+    ).not.toBeInTheDocument();
   });
 
   it("shows Participant P001 after a consented Join", async () => {
@@ -1264,7 +1265,6 @@ describe("Call screen", () => {
     await waitFor(() => {
       expect(screen.getByText("Participant P001")).toBeInTheDocument();
     });
-    expect(screen.queryByText(GUEST_BANNER)).not.toBeInTheDocument();
   });
 
   it("does not show Help the study on a Try as guest report", async () => {
