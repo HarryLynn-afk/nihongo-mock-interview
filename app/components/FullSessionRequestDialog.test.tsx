@@ -76,8 +76,8 @@ describe("FullSessionRequestDialog", () => {
     expect(sessionStorage.getItem(FULL_SESSION_REQUEST_KEY)).toBeNull();
     expect(screen.getByText(/could not be saved/i)).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /continue as guest/i }),
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: /continue as guest/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("closes from the backdrop without saving", async () => {
@@ -89,5 +89,29 @@ describe("FullSessionRequestDialog", () => {
 
     await user.click(screen.getByTestId("full-session-request-backdrop"));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows already sent as an alert with Continue as guest", () => {
+    render(
+      <FullSessionRequestDialog
+        step="alreadySent"
+        showContinue
+        onClose={vi.fn()}
+        onContinueAsGuest={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: /you already sent an email/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /you already sent an email/i,
+    );
+    expect(
+      screen.getByText(/this visit already left an address/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /continue as guest/i }),
+    ).toBeInTheDocument();
   });
 });

@@ -222,6 +222,9 @@ const en = {
     savedTitle: "You will get an email",
     savedBody:
       "Once this address is added, you will get an email. You can keep practicing as a guest.",
+    alreadySentTitle: "You already sent an email",
+    alreadySentBody:
+      "This visit already left an address. Close this and continue as a guest when you are ready.",
     saveError:
       "That email could not be saved. You can still continue as a guest.",
     invalidEmail: "Enter a valid email address.",
@@ -466,6 +469,9 @@ const my: UiCopy = {
     savedTitle: "အီးမေးလ် ရရှိပါမည်",
     savedBody:
       "ဤလိပ်စာကို ထည့်သွင်းပြီးမှ အီးမေးလ် ရရှိပါမည်။ ဧည့်သည်အဖြစ် ဆက်လက် လေ့ကျင့်နိုင်ပါသည်။",
+    alreadySentTitle: "အီးမေးလ် ပို့ပြီးပါပြီ",
+    alreadySentBody:
+      "ဤလာရောက်မှုတွင် လိပ်စာ ထားခဲ့ပြီးပါပြီ။ ပိတ်ပြီး အဆင်သင့်ဖြစ်လျှင် ဧည့်သည်အဖြစ် ဆက်ပါ။",
     saveError:
       "ဤအီးမေးလ်ကို မသိမ်းနိုင်ပါ။ ဧည့်သည်အဖြစ် ဆက်လက် လေ့ကျင့်နိုင်ပါသည်။",
     invalidEmail: "မှန်ကန်သော အီးမေးလ် ထည့်ပါ။",

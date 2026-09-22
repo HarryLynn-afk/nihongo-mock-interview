@@ -25,6 +25,7 @@ describe("JoinInterview", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     getUserMedia.mockReset();
+    sessionStorage.clear();
   });
 
   it("Participant Join stays on this page for the start popup, then Skip goes to /call", async () => {
@@ -74,5 +75,25 @@ describe("JoinInterview", () => {
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /continue as guest/i }));
     expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
+  });
+
+  it("tells a Guest they already sent when Leave an email is clicked again", async () => {
+    sessionStorage.setItem("nihongo-full-session-request", "sent");
+    const user = userEvent.setup();
+    render(<JoinInterview guest label="Try as guest" />);
+
+    await user.click(screen.getByRole("button", { name: /try as guest/i }));
+    await user.click(screen.getByRole("button", { name: /leave an email/i }));
+
+    expect(
+      screen.getByRole("dialog", { name: /you already sent an email/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /you already sent an email/i,
+    );
+    expect(
+      screen.getByRole("button", { name: /continue as guest/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: /email/i })).not.toBeInTheDocument();
   });
 });

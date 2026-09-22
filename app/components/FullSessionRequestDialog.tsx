@@ -7,7 +7,11 @@ import {
 } from "@/lib/content/fullSessionRequest";
 import { useCopy } from "./useUiLocale";
 
-export type FullSessionRequestStep = "choice" | "form" | "saved";
+export type FullSessionRequestStep =
+  | "choice"
+  | "form"
+  | "saved"
+  | "alreadySent";
 
 export function FullSessionRequestDialog({
   step,
@@ -87,18 +91,21 @@ export function FullSessionRequestDialog({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
-          <h2 id="full-session-request-title" className="text-lg font-medium">
-            {title}
-          </h2>
+          {step === "alreadySent" ? null : (
+            <h2 id="full-session-request-title" className="text-lg font-medium">
+              {title}
+            </h2>
+          )}
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full px-3 py-1 text-sm text-paper/80"
+            className={`rounded-full px-3 py-1 text-sm text-paper/80 ${
+              step === "alreadySent" ? "ml-auto" : ""
+            }`}
           >
             {text.close}
           </button>
         </div>
-
         {step === "choice" ? (
           <>
             <p className="text-sm leading-relaxed text-paper/80">
@@ -154,15 +161,6 @@ export function FullSessionRequestDialog({
             >
               {text.send}
             </button>
-            {showContinue ? (
-              <button
-                type="button"
-                onClick={onContinueAsGuest}
-                className="text-sm font-medium text-paper/80"
-              >
-                {text.continueAsGuest}
-              </button>
-            ) : null}
           </>
         ) : null}
 
@@ -170,6 +168,31 @@ export function FullSessionRequestDialog({
           <>
             <p className="text-sm leading-relaxed text-paper/80">
               {text.savedBody}
+            </p>
+            {showContinue ? (
+              <button
+                type="button"
+                onClick={onContinueAsGuest}
+                className="rounded-full bg-feather px-5 py-3 font-medium text-white"
+              >
+                {text.continueAsGuest}
+              </button>
+            ) : null}
+          </>
+        ) : null}
+
+        {step === "alreadySent" ? (
+          <>
+            <p
+              id="full-session-request-title"
+              role="alert"
+              data-testid="full-session-already-sent"
+              className="w-full rounded-xl border border-amber-300/40 bg-amber-500/10 px-4 py-3 text-center text-sm font-medium text-amber-100"
+            >
+              {text.alreadySentTitle}
+            </p>
+            <p className="text-sm leading-relaxed text-paper/80">
+              {text.alreadySentBody}
             </p>
             {showContinue ? (
               <button

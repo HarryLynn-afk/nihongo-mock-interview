@@ -98,7 +98,9 @@ export function JoinInterview({
             openDevices();
           }}
           onLeaveEmail={() => {
-            setRequestStep(readFullSessionRequestSent() ? "saved" : "form");
+            setRequestStep(
+              readFullSessionRequestSent() ? "alreadySent" : "form",
+            );
           }}
           onSent={() => setRequestStep("saved")}
         />
