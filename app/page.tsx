@@ -113,7 +113,17 @@ function AccentHeadline({ text }: { text: string }) {
   );
 }
 
-export default function Home({ catchAuth = true }: { catchAuth?: boolean }) {
+export default function Home({
+  catchAuth = true,
+  hero,
+  headerAction,
+}: {
+  catchAuth?: boolean;
+  /** Replaces Try as guest and the guest caption. Omit on the public start screen. */
+  hero?: ReactNode;
+  /** Replaces the header Participant login pill. Pass null to show none. */
+  headerAction?: ReactNode | null;
+}) {
   const { locale, setLocale, copy } = useCopy();
 
   return (
@@ -140,13 +150,17 @@ export default function Home({ catchAuth = true }: { catchAuth?: boolean }) {
             variant="light"
             tone="feather"
           />
-          <Link
-            href="/login"
-            scroll={false}
-            className="inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full bg-[#d8f5b0] px-6 text-sm font-medium text-feather-dark shadow-[0_4px_7px_rgba(88,204,2,0.12)] transition-colors hover:bg-[#c8ee96]"
-          >
-            {copy.start.participantLogin}
-          </Link>
+          {headerAction === undefined ? (
+            <Link
+              href="/login"
+              scroll={false}
+              className="inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full bg-[#d8f5b0] px-6 text-sm font-medium text-feather-dark shadow-[0_4px_7px_rgba(88,204,2,0.12)] transition-colors hover:bg-[#c8ee96]"
+            >
+              {copy.start.participantLogin}
+            </Link>
+          ) : (
+            headerAction
+          )}
         </div>
       </header>
 
@@ -163,17 +177,21 @@ export default function Home({ catchAuth = true }: { catchAuth?: boolean }) {
           {copy.start.subhead}
         </p>
 
-        <div className="mt-10 hidden justify-center md:flex">
-          <JoinInterview
-            label={copy.start.tryAsGuest}
-            guest
-            tone="feather"
-            trailing={<CtaArrow />}
-          />
-        </div>
-        <p className="mt-3 hidden text-[12.5px] text-wolf md:block">
-          {copy.start.guestCaption}
-        </p>
+        {hero ?? (
+          <div className="mt-10 hidden justify-center md:flex">
+            <JoinInterview
+              label={copy.start.tryAsGuest}
+              guest
+              tone="feather"
+              trailing={<CtaArrow />}
+            />
+          </div>
+        )}
+        {hero ? null : (
+          <p className="mt-3 hidden text-[12.5px] text-wolf md:block">
+            {copy.start.guestCaption}
+          </p>
+        )}
 
         <p className="mt-6 w-full rounded-lg border border-eel/10 bg-white/70 px-4 py-3 text-sm text-eel/80 md:hidden">
           {copy.start.computerOnly}

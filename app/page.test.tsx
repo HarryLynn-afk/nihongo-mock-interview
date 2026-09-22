@@ -183,4 +183,25 @@ describe("Home (start screen)", () => {
 
     expect(document.querySelectorAll("input, form").length).toBe(0);
   });
+
+  it("renders the given hero and omits Participant login when headerAction is null", () => {
+    render(
+      <Home
+        hero={<button type="button">Login</button>}
+        headerAction={null}
+        catchAuth={false}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Try as guest" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Participant login" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Three questions. Guest practice isn't saved."),
+    ).not.toBeInTheDocument();
+  });
 });
