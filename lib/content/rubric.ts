@@ -84,6 +84,7 @@ export function getRubricPrompt(): string {
     "Quote must be copied from that transcript. Use （無言） as the quote only when the transcript is empty after trim.",
     "Rewrite is Japanese only. If rewrite equals quote, keep that phrase as a useful phrase (optional enhancement), even when forced is true. Only write a different rewrite when there is a real problem. If the rewrite differs from the quote, include Hiragana or Katakana. Never use （無言） as the rewrite.",
     "Never score pronunciation, fluency, pace, hesitation, or confidence from a transcript. The speaking integer is ignored for the practice total and Headline. The listening key means answer relevance, not a listening test.",
+    "Each answer transcript is a live speech caption (speech-to-text / ASR), not a human-edited transcript. Grade meaning and rubric content; do not punish ASR glitches, homophone slips, or missing particles that look like caption artifacts. Do not invent a cleaner or corrected transcript. Quote must be copied only from the submitted transcript.",
     "Do not tell the student to add a career or study goal if that answer already names a specific one. Do not invent evidence.",
     "There is no pre-filled student card. Score only from the answers in this session.",
     "Never use exam or certification labels in your scores or critiques.",

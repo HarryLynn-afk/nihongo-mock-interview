@@ -741,7 +741,7 @@ describe("Call screen", () => {
     ).toBe(false);
   });
 
-  it("POSTs /api/scribe after spoken submit with no waiting state, then shows Q2", async () => {
+  it("does not POST /api/scribe after spoken submit, then shows Q2", async () => {
     const recorded = new Blob([new Uint8Array([7, 7, 7])], { type: "audio/webm" });
     class FakeMediaRecorder {
       ondataavailable: ((event: { data: Blob }) => void) | null = null;
@@ -757,14 +757,6 @@ describe("Call screen", () => {
 
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("/api/scribe")) {
-        return Promise.resolve(
-          new Response(JSON.stringify({ transcript: "SCRIBE" }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          }),
-        );
-      }
       if (url.includes("/api/translate")) {
         return Promise.resolve(
           new Response(JSON.stringify({ english: "Hello." }), {
@@ -792,17 +784,16 @@ describe("Call screen", () => {
     await user.click(screen.getByRole("button", { name: /submit answer/i }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        "/api/scribe",
-        expect.objectContaining({ method: "POST" }),
-      );
-    });
-
-    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
-    expect(screen.queryByText(/scoring|waiting|scribe/i)).not.toBeInTheDocument();
-    await waitFor(() => {
       expect(hud().getByText(questions[1].japanese)).toBeInTheDocument();
     });
+
+    expect(
+      fetchMock.mock.calls.filter((call) =>
+        String(call[0]).includes("/api/scribe"),
+      ),
+    ).toHaveLength(0);
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(screen.queryByText(/scoring|waiting|scribe/i)).not.toBeInTheDocument();
   });
 
   it("does not POST /api/scribe for a failing Speak attempt 1", async () => {

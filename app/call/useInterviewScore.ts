@@ -4,9 +4,9 @@ import {
   SCORING_UNAVAILABLE_BANNER,
   type InterviewReport,
 } from "@/lib/content/sampleReport";
-import type { ScribeCollection } from "./useBackgroundScribe";
+import type { GradeCollection } from "./useGradeAnswers";
 
-export function useInterviewScore(collection: ScribeCollection) {
+export function useInterviewScore(collection: GradeCollection) {
   const posted = useRef(false);
   const [report, setReport] = useState<InterviewReport | null>(null);
 
@@ -17,11 +17,7 @@ export function useInterviewScore(collection: ScribeCollection) {
     void fetch("/api/score", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        answers: collection.answers.map(
-          ({ useSubmittedTranscript: _omit, ...gradeAnswer }) => gradeAnswer,
-        ),
-      }),
+      body: JSON.stringify({ answers: collection.answers }),
     })
       .then(async (res) => {
         const data = (await res.json()) as {

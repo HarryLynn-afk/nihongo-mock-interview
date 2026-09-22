@@ -47,4 +47,13 @@ describe("getRubricPrompt", () => {
     expect(prompt).toMatch(/category/i);
     expect(prompt).not.toMatch(/"coaching"/);
   });
+
+  it("tells the grader the transcripts are live speech captions and not to invent a cleaner transcript", () => {
+    const prompt = getRubricPrompt();
+
+    expect(prompt).toMatch(/live (speech )?caption|speech-to-text|ASR/i);
+    expect(prompt).toMatch(/do not (punish|penalize).*(glitch|error|artifact)/i);
+    expect(prompt).toMatch(/do not invent.*(cleaner|corrected) transcript/i);
+    expect(prompt).toMatch(/quote.*(must|only).*(from|submitted)/i);
+  });
 });

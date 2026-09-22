@@ -13,7 +13,7 @@ import { FullSessionRequestDialog } from "../components/FullSessionRequestDialog
 import { buildReportView } from "./buildReportView";
 import { playQuestionAudio } from "./playQuestionAudio";
 import { useAnswerCapture } from "./useAnswerCapture";
-import { useBackgroundScribe } from "./useBackgroundScribe";
+import { useGradeAnswers } from "./useGradeAnswers";
 import { useDeliverySignals } from "./useDeliverySignals";
 import { useCameraStream } from "./useCameraStream";
 import { useInterviewScore } from "./useInterviewScore";
@@ -131,9 +131,9 @@ export default function CallPage() {
       enableFollowUps:
         followUpsForCallSession(sessionKind) && sessionQuestions !== null,
     });
-  const scribe = useBackgroundScribe({ answers, phase });
+  const gradeAnswers = useGradeAnswers({ answers, phase });
   const delivery = useDeliverySignals({ answers, phase });
-  const { report: scoredReport } = useInterviewScore(scribe);
+  const { report: scoredReport } = useInterviewScore(gradeAnswers);
   const previewing = previewReport !== null;
   const report = previewReport ?? scoredReport;
   const displayAnswers = previewing ? DEBUG_PREVIEW_ANSWERS : answers;

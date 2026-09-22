@@ -1,18 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useInterviewScore } from "./useInterviewScore";
-import type { ScribeCollection } from "./useBackgroundScribe";
+import type { GradeCollection } from "./useGradeAnswers";
 
 describe("useInterviewScore", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("does not POST /api/score while Scribe is still collecting", () => {
+  it("does not POST /api/score while answers are still collecting", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const collection: ScribeCollection = { status: "collecting" };
+    const collection: GradeCollection = { status: "collecting" };
     renderHook(() => useInterviewScore(collection));
 
     expect(fetchMock).not.toHaveBeenCalled();
@@ -22,13 +22,13 @@ describe("useInterviewScore", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const collection: ScribeCollection = { status: "ready", answers: [] };
+    const collection: GradeCollection = { status: "ready", answers: [] };
     renderHook(() => useInterviewScore(collection));
 
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("POSTs /api/score once when Scribe becomes ready, with GradeAnswer fields only", async () => {
+  it("POSTs /api/score once when answers become ready, with GradeAnswer fields only", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ report: { headline: "Ready" } }), {
         status: 200,
@@ -37,26 +37,24 @@ describe("useInterviewScore", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const collection: ScribeCollection = {
+    const collection: GradeCollection = {
       status: "ready",
       answers: [
         {
           questionIndex: 0,
-          transcript: "SCRIBE_TEXT",
-          useSubmittedTranscript: false,
+          transcript: "SUBMITTED_0",
           pushbackCount: 0,
         },
         {
           questionIndex: 1,
           transcript: "はい。",
-          useSubmittedTranscript: true,
           pushbackCount: 1,
         },
       ],
     };
 
     const { rerender } = renderHook(
-      (props: { collection: ScribeCollection }) =>
+      (props: { collection: GradeCollection }) =>
         useInterviewScore(props.collection),
       { initialProps: { collection } },
     );
@@ -74,7 +72,7 @@ describe("useInterviewScore", () => {
           answers: [
             {
               questionIndex: 0,
-              transcript: "SCRIBE_TEXT",
+              transcript: "SUBMITTED_0",
               pushbackCount: 0,
             },
             {
@@ -102,13 +100,12 @@ describe("useInterviewScore", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const collection: ScribeCollection = {
+    const collection: GradeCollection = {
       status: "ready",
       answers: [
         {
           questionIndex: 0,
           transcript: "はい。",
-          useSubmittedTranscript: true,
           pushbackCount: 0,
         },
       ],
@@ -127,13 +124,12 @@ describe("useInterviewScore", () => {
       vi.fn().mockRejectedValue(new Error("network down")),
     );
 
-    const collection: ScribeCollection = {
+    const collection: GradeCollection = {
       status: "ready",
       answers: [
         {
           questionIndex: 0,
           transcript: "はい。",
-          useSubmittedTranscript: true,
           pushbackCount: 0,
         },
       ],
@@ -163,13 +159,12 @@ describe("useInterviewScore", () => {
       ),
     );
 
-    const collection: ScribeCollection = {
+    const collection: GradeCollection = {
       status: "ready",
       answers: [
         {
           questionIndex: 0,
           transcript: "はい。",
-          useSubmittedTranscript: true,
           pushbackCount: 0,
         },
       ],
