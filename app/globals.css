@@ -12,6 +12,7 @@
   --font-sans: var(--font-geist-sans), var(--font-myanmar), "Noto Sans Myanmar", ui-sans-serif, sans-serif;
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-pt-serif), var(--font-myanmar), "Noto Sans Myanmar", Georgia, "Times New Roman", serif;
+  --font-display: var(--font-poppins), var(--font-geist-sans), var(--font-myanmar), "Noto Sans Myanmar", ui-sans-serif, sans-serif;
 
   /* NihonGo locked design tokens — docs/prd-nihongo.md "Design tokens" */
   --color-ink: #0f172a;
@@ -20,6 +21,18 @@
   --color-stamp-ready: #22c55e;
   --color-stamp-almost-ready: #f59e0b;
   --color-stamp-keep-practicing: #ef4444;
+
+  /* Duolingo brand colors (Mobbin web hero + official palette) */
+  --color-feather: #58cc02;
+  --color-feather-dark: #58a700;
+  --color-mask: #89e219;
+  --color-eel: #4b4b4b;
+  --color-wolf: #777777;
+  --color-swan: #e5e5e5;
+  --color-polar: #f7f7f7;
+  --color-macaw: #1cb0f6;
+  --color-beetle: #ce82ff;
+  --color-bee: #ffc800;
 }
 
 @media (prefers-color-scheme: dark) {
