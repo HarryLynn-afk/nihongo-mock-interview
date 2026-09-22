@@ -141,7 +141,7 @@ export default function CallPage() {
   }, [report, studyReady, participantId]);
 
   useEffect(() => {
-    if (!report || previewing) return;
+    if (!report || previewing || sessionKind === "guest") return;
     fetch("/api/survey")
       .then((res) => res.json())
       .then((data: { enabled?: boolean }) => {
@@ -150,7 +150,7 @@ export default function CallPage() {
       .catch(() => {
         setFormEnabled(false);
       });
-  }, [report, previewing]);
+  }, [report, previewing, sessionKind]);
 
   useEffect(() => {
     if (!report || !participantId || savedStudyRef.current || previewing) return;
@@ -271,7 +271,7 @@ export default function CallPage() {
     displayAnswers.length > 0 &&
     displayAnswers.every((answer) => answer.status === "skipped");
   const usefulnessView =
-    sessionId === null
+    sessionKind === "guest" || sessionId === null
       ? null
       : buildUsefulnessView({
           formEnabled,

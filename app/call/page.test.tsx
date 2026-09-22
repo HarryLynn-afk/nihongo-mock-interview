@@ -1267,6 +1267,31 @@ describe("Call screen", () => {
     expect(screen.queryByText(GUEST_BANNER)).not.toBeInTheDocument();
   });
 
+  it("does not show Help the study on a Try as guest report", async () => {
+    mockLiveGradeAndSurvey();
+    window.history.pushState({}, "", "/call?guest=1");
+
+    const user = userEvent.setup();
+    render(<CallPage />);
+    await completeLockedInterview(user);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("session-id").textContent).toMatch(
+        /^G-[A-HJ-NP-Z2-9]{4}$/,
+      );
+    });
+    expect(
+      screen.queryByRole("button", { name: /help the study/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("usefulness-step")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: /help the study/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some((call) => String(call[0]).includes("/api/survey")),
+    ).toBe(false);
+  });
+
   it("tags a Guest Interview with a G- session code even if study/me still has P001", async () => {
     mockLiveGradeAndSurvey("P001");
     window.history.pushState({}, "", "/call?guest=1");
