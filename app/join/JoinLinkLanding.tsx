@@ -34,6 +34,7 @@ function JoinLoginButton({ from }: { from: string }) {
       {open ? (
         <GoogleSignInDialog
           title={copy.joinLink.title}
+          body={copy.login.body}
           onClose={() => setOpen(false)}
           onContinue={startGoogle}
         />

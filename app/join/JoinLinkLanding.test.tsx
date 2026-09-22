@@ -53,13 +53,13 @@ describe("JoinLinkLanding", () => {
       within(dialog).queryByRole("button", { name: "MM" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByText(
-        "Sign in with Google to join this tester's practice group.",
+      within(dialog).getByText(
+        "Invited testers sign in with Google using the email on the list.",
       ),
-    ).not.toBeInTheDocument();
+    ).toBeInTheDocument();
     expect(
       screen.queryByText(
-        "Invited testers sign in with Google using the email on the list.",
+        "Sign in with Google to join this tester's practice group.",
       ),
     ).not.toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
