@@ -17,6 +17,7 @@ import { CONSENT_GATE_COOKIE, consentGateIsOpen } from "./studyAuth";
 
 export type RouteRole =
   | "guestHome"
+  | "guestJoin"
   | "participantEntry"
   | "consent"
   | "call"
@@ -25,6 +26,7 @@ export type RouteRole =
 
 export function routeRole(pathname: string): RouteRole {
   if (pathname === "/") return "guestHome";
+  if (pathname === "/guest") return "guestJoin";
   if (pathname === "/login" || pathname === "/join") return "participantEntry";
   if (pathname === "/consent") return "consent";
   if (pathname === "/call") return "call";

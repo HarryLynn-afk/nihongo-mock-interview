@@ -24,9 +24,8 @@ type JoinInterviewProps = {
 };
 
 /**
- * Practice Join: device check → 15s popup on this page → `/call`.
- * Guest (`guest`) lands on `/call?guest=1`, the 3 locked Questions.
- * A consented Participant lands on `/call`, the topic bank.
+ * Practice Join CTA. Guest (`guest`) asks how to practice, then `/guest`.
+ * A consented Participant opens the device lobby on this page, then `/call`.
  */
 export function JoinInterview({
   label,
@@ -97,6 +96,10 @@ export function JoinInterview({
           onClose={() => setRequestStep(null)}
           onContinueAsGuest={() => {
             setRequestStep(null);
+            if (guest) {
+              router.push("/guest");
+              return;
+            }
             openDevices();
           }}
           onLeaveEmail={() => {
@@ -108,18 +111,24 @@ export function JoinInterview({
         />
       ) : null}
       {devicesVisible ? (
-        <InterviewLobby
-          cameraEnabled={cameraOn}
-          micEnabled={micOn}
-          cameraBlocked={cameraBlocked}
-          cameraErrorName={cameraErrorName}
-          micBlocked={micBlocked}
-          micErrorName={micErrorName}
-          videoRef={videoRef}
-          onToggleCamera={toggleCamera}
-          onToggleMic={toggleMic}
-          onContinue={continueFromDevices}
-        />
+        <div
+          role="dialog"
+          aria-label={copy.lobby.readyToJoin}
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/80 p-6"
+        >
+          <InterviewLobby
+            cameraEnabled={cameraOn}
+            micEnabled={micOn}
+            cameraBlocked={cameraBlocked}
+            cameraErrorName={cameraErrorName}
+            micBlocked={micBlocked}
+            micErrorName={micErrorName}
+            videoRef={videoRef}
+            onToggleCamera={toggleCamera}
+            onToggleMic={toggleMic}
+            onContinue={continueFromDevices}
+          />
+        </div>
       ) : null}
       {reminderVisible ? (
         <InterviewStartReminder

@@ -11,21 +11,11 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("Home (start screen)", () => {
-  const getUserMedia = vi.fn();
-
   beforeEach(() => {
     pushMock.mockReset();
-    getUserMedia.mockResolvedValue({
-      getTracks: () => [],
-    } as unknown as MediaStream);
-    vi.stubGlobal("navigator", {
-      mediaDevices: { getUserMedia },
-    });
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
-    getUserMedia.mockReset();
     sessionStorage.clear();
     window.history.replaceState({}, "", "/");
   });
@@ -107,7 +97,7 @@ describe("Home (start screen)", () => {
     expect(guest.parentElement).toHaveClass("justify-center");
   });
 
-  it("opens the device popup on the start screen after Try as guest, with no timer", async () => {
+  it("Continue as guest leaves the landing for /guest, with no Ready to join overlay", async () => {
     const user = userEvent.setup();
     render(<Home />);
 
@@ -115,68 +105,11 @@ describe("Home (start screen)", () => {
     await user.click(screen.getByRole("button", { name: /continue as guest/i }));
 
     expect(screen.getByText("NihonGo")).toBeInTheDocument();
-    expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", {
-        name: "Japanese interview with Tanaka-sensei",
-      }),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId("classroom-preview")).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: /camera/i })).not.toBeChecked();
-    expect(screen.getByRole("checkbox", { name: /microphone/i })).not.toBeChecked();
-    expect(getUserMedia).not.toHaveBeenCalled();
-    expect(
-      screen.getByRole("button", { name: /enter classroom/i }),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("dialog", { name: /interview will start soon/i })).not.toBeInTheDocument();
-    expect(pushMock).not.toHaveBeenCalled();
-  });
-
-  it("asks for the camera when the Camera box is clicked", async () => {
-    const user = userEvent.setup();
-    render(<Home />);
-
-    await user.click(screen.getByRole("button", { name: "Try as guest" }));
-    await user.click(screen.getByRole("button", { name: /continue as guest/i }));
-    await user.click(screen.getByRole("checkbox", { name: /camera/i }));
-
-    expect(getUserMedia).toHaveBeenCalledWith({ video: true });
-    expect(getUserMedia).not.toHaveBeenCalledWith({ audio: true });
-    expect(screen.getByRole("checkbox", { name: /camera/i })).toBeChecked();
-  });
-
-  it("Enter classroom keeps the lobby and shows the start popup", async () => {
-    const user = userEvent.setup();
-    render(<Home />);
-
-    await user.click(screen.getByRole("button", { name: "Try as guest" }));
-    await user.click(screen.getByRole("button", { name: /continue as guest/i }));
-    await user.click(screen.getByRole("button", { name: /enter classroom/i }));
-
-    expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
-    expect(
-      screen.getByRole("dialog", { name: /interview will start soon/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId("start-reminder-backdrop")).toHaveClass(
-      "bg-ink/80",
-    );
-    expect(screen.getByText("NihonGo")).toBeInTheDocument();
-    expect(pushMock).not.toHaveBeenCalled();
-  });
-
-  it("Skip on the start popup navigates to the call screen", async () => {
-    const user = userEvent.setup();
-    render(<Home />);
-
-    await user.click(screen.getByRole("button", { name: "Try as guest" }));
-    await user.click(screen.getByRole("button", { name: /continue as guest/i }));
-    await user.click(screen.getByRole("button", { name: /enter classroom/i }));
-    await user.click(screen.getByRole("button", { name: /^skip$/i }));
-
-    expect(
-      screen.getByRole("dialog", { name: /interview will start soon/i }),
-    ).toBeInTheDocument();
-    expect(pushMock).toHaveBeenCalledWith("/call?guest=1");
+      screen.queryByRole("dialog", { name: /ready to join/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("classroom-preview")).not.toBeInTheDocument();
+    expect(pushMock).toHaveBeenCalledWith("/guest");
   });
 
   it("gates Join behind a desktop viewport and shows the open-on-a-computer message on narrow viewports, via a CSS breakpoint pair", () => {
@@ -230,16 +163,9 @@ describe("Home (start screen)", () => {
       screen.getByRole("button", { name: "ဧည့်သည်အဖြစ် ဆက်ရန်" }),
     );
     expect(
-      screen.getByRole("dialog", { name: "ဝင်ရန် အဆင်သင့်" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", {
-        name: "Tanaka-sensei နှင့် ဂျပန် အင်တာဗျူး",
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "စာသင်ခန်းထဲ ဝင်ရန်" }),
-    ).toBeInTheDocument();
+      screen.queryByRole("dialog", { name: "ဝင်ရန် အဆင်သင့်" }),
+    ).not.toBeInTheDocument();
+    expect(pushMock).toHaveBeenCalledWith("/guest");
   });
 
   it("never prints exam or verdict labels anywhere on the page", () => {

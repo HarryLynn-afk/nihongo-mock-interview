@@ -63,7 +63,7 @@ describe("JoinInterview", () => {
     render(<JoinInterview />);
 
     await user.click(screen.getByRole("button", { name: "Join interview" }));
-    await user.click(screen.getByRole("checkbox", { name: /^camera$/i }));
+    await user.click(screen.getByRole("button", { name: /^camera$/i }));
     await waitFor(() => expect(getUserMedia).toHaveBeenCalled());
 
     await user.click(screen.getByRole("button", { name: /enter classroom/i }));
@@ -73,7 +73,7 @@ describe("JoinInterview", () => {
     expect(stop).toHaveBeenCalled();
   });
 
-  it("asks a Guest to continue or leave an email before the lobby", async () => {
+  it("asks a Guest to continue or leave an email before /guest", async () => {
     const user = userEvent.setup();
     render(<JoinInterview guest label="Try as guest" />);
 
@@ -82,9 +82,11 @@ describe("JoinInterview", () => {
       screen.getByRole("dialog", { name: /how do you want to practice/i }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: /ready to join/i })).not.toBeInTheDocument();
+    expect(pushMock).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: /continue as guest/i }));
-    expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: /ready to join/i })).not.toBeInTheDocument();
+    expect(pushMock).toHaveBeenCalledWith("/guest");
   });
 
   it("lets a Guest continue after leaving an email", async () => {
@@ -102,7 +104,8 @@ describe("JoinInterview", () => {
       screen.getByRole("dialog", { name: /you will get an email/i }),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /continue as guest/i }));
-    expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: /ready to join/i })).not.toBeInTheDocument();
+    expect(pushMock).toHaveBeenCalledWith("/guest");
   });
 
   it("tells a Guest they already sent when Leave an email is clicked again", async () => {
