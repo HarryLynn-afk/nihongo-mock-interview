@@ -212,13 +212,6 @@ export function ParticipantLoginDialog({
         <p className="mx-auto mt-6 max-w-[36ch] text-[0.85rem] leading-relaxed text-wolf">
           {copy.login.guestNote}
         </p>
-        <button
-          type="button"
-          onClick={close}
-          className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-eel underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
-        >
-          {copy.login.tryAsGuest}
-        </button>
       </div>
     </div>
   );

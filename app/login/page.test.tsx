@@ -16,8 +16,8 @@ describe("Login page", () => {
     const dialog = screen.getByRole("dialog", { name: "Sign in to NihonGo" });
     expect(dialog).toBeInTheDocument();
     expect(
-      within(dialog).getByRole("button", { name: "Try as guest" }),
-    ).toBeInTheDocument();
+      within(dialog).queryByRole("button", { name: "Try as guest" }),
+    ).not.toBeInTheDocument();
     expect(
       within(dialog).getByText(
         "Guest practice stays on the start screen and is never merged into the study.",
