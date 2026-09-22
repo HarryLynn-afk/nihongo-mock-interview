@@ -8,52 +8,52 @@
 
 ## Current State
 - CSC 485 = research later. CSC 492 = working app. Not a hackathon. The presentation path is **Try as guest**, the three locked Questions. There is no `/pitch` route.
-- `main` code HEAD `dffc946`. **31 commits ahead of `origin/main`**. **502/502** tests passing. Not deployed to Netlify.
-- Built and still current: Issues 1–14, Direct Join 16–17, Pushback 22–24, quoted critique 25–26, Usefulness step 28, form-field map 29, Groq-only grade (`qwen/qwen3.8-27b`) + 60s capacity skip, coaching report (Overview then Review), Interview Answer Quality vs Speech Delivery Signals (Deepgram PCM, no second mic), voice-only, committed sensei mp3s, consent-this-visit, 15s lobby popup, guest-first `/` landing, Deepgram listen handshake, lobby camera retry, one-store Submit, try-again banner, `G-`/`P-` session codes, Guest `?guest=1` on the 3 locked Questions, spotlight classroom, Answer again / Hear again, Eng/MM, capped Google join-links, allowlisted Google login, PKCE + `prompt: "select_account"`, guest email request, grade on Speak Submit text only (no Whisper).
-- `/`: Poppins guest-first hero, **Try as guest** only, header **Participant login** pill + Eng/MM. **Try as guest** → choice (continue as Guest, or leave email). If this visit already sent, the dialog shows **already-sent** (no form). Continue as Guest → lobby → 15s popup → `/call?guest=1`. **Participant login** is a Google-only dialog on `/login`.
-- `/pitch` and `/call?pitch=1` show the Next.js not-found page.
-- `/call`: voice-only. Guest = 3 locked Questions; Participant = topic bank + follow-ups. No guest practice banner. Report is Overview (stamp / radar / delivery) then Review (Q nav + card). Help the study for Participant only. Guest report can ask for email unless already sent this visit. Dev-only Skip interview still present.
-- Scoring: `useGradeAnswers` → `POST /api/score` with Speak Submit transcripts only. ASR-aware lines in `getRubricPrompt()`. No `/api/scribe`, no Whisper, no `/api/translate`, no Wispr `/api/stt`. Sample on Groq miss. Speaking not in `/100`.
-- Env: `check-env` requires only `GROQ_GRADE_API_KEY`. Optional: `ELEVENLABS_TTS_API_KEY` (generate-time), `DEEPGRAM_STT_API_KEY`, `RESEARCH_FORM_URL`, Supabase trio. Removed from example: translate / STT / Scribe / Wispr / Pitch access.
-- Guest email: `POST /api/full-session-request` → `full_session_requests`. Still need SQL paste of `003_full_session_requests.sql` for live save.
+- `main` HEAD `dd20428`. **35 commits ahead of `origin/main`**. **509/509** tests passing. Not deployed to Netlify.
+- Built and still current: Issues 1–14, Direct Join 16–17, Pushback 22–24, quoted critique 25–26, Usefulness step 28, form-field map 29, coaching report (Overview then Review), Interview Answer Quality vs Speech Delivery Signals (Deepgram PCM), voice-only, committed sensei mp3s, consent-this-visit, 15s lobby popup, guest-first `/`, Deepgram listen, lobby camera retry, one-store Submit, try-again banner, `G-`/`P-` codes, Guest 3 locked Questions, spotlight classroom, Answer again / Hear again, Eng/MM, join-links, Google login PKCE + account chooser, guest email request, grade on Speak Submit text (no Whisper).
+- **This session:** Groq primary + **DeepSeek Flash** grade fallback (`thinking` off); both miss → `ScoringUnavailableScreen` (no live sample Ready). Skip interview still local `getSampleReport(null)`. Answer again dock shows **Answer again** (not “1 retry”); cap still 1. Speak auto-pauses after **10s** idle with no new live transcript (no popup).
+- `/`: Poppins guest-first hero, **Try as guest** → choice (continue / leave email / already-sent). Lobby → 15s → `/call?guest=1`. Header **Participant login** → Google dialog on `/login`.
+- `/call`: Guest 3Q; Participant bank + follow-ups. No guest banner. Help the study Participant-only. Dev Skip interview still present.
+- Scoring: `POST /api/score` → Groq → DeepSeek → `report: null`. Optional `DEEPSEEK_GRADE_API_KEY`. `check-env` still requires only `GROQ_GRADE_API_KEY`.
 - Untracked on purpose: learning-map, scoring/session notes, ui-ux-review, prototype HTMLs, `personal.md`.
-- Live Guest Interview + Groq grade still not browser-verified this session (paid Deepgram/Groq not approved).
+- Live DeepSeek / full Guest Interview not browser-verified this session (paid APIs not approved for an agent run).
 
 ---
 
 ## Open Tasks
-**CSC 492 / testers:** finish join-link ops if needed, remaining Issue 29 human items, then Issue 15 deploy. Formal docs / oral exam / presentation later.
-**CSC 485:** research question and evaluation — deferred until testers can run.
+**CSC 492 / testers:** join-link ops if needed, Issue 29 human items, Issue 15 deploy. Formal docs / oral exam later.
+**CSC 485:** research question — deferred.
 
-1. **`/login` Continue with Google is confirmed working** (PKCE + account-chooser). Still live-verify `/join?from=<code>` end-to-end if not already done. After Netlify, update Google JS origins and Supabase Redirect URLs / Site URL.
-2. Live-verify a Guest (3Q) or P001 practice Interview: Speech Delivery **Clear enough** / **Needs practice** when the transcript is complete, **and** Answer Quality `source: "grade"` (not sample). Click **1 retry** and Hear again once. Spends Deepgram + Groq grade only — ask before an agent run.
-3. Confirm a Participant Skip + Submit land as two research-form rows with a `P-` session code. Guest report does not POST Help the study.
-4. Native Burmese review of remaining MY drafts in report / survey / Question `burmeseTranslation` / `uiCopy.ts`.
-5. Instructor written yes/no on RSU / CSC 485 consent — blocker before faculty testers.
-6. Unpublish the old n8n **NihonGo grade** webhook.
-7. Optional: `ELEVENLABS_TTS_API_KEY` only to regenerate clips. Set `DEEPGRAM_STT_API_KEY` to a **Member** key on Netlify if live captions should work.
-8. Remove development-only **Skip interview** before Issue 15; then Netlify deploy; then update Supabase / Google off `localhost`.
-9. Phase 3 root CSS (Arial override, dark-mode tokens, focus rings). Not a deploy blocker.
-10. Mobbin polish (not a blocker).
-11. CSC 485 research question — later.
-12. User-count proof: Google Form N, not sign-up. Join-link `P00x` count as people; do not count Guest `G-` as unique students.
-13. Later: scoring-fallback decisions (Gemini vs sample vs Retry UI). Do not `/build-plan` until chosen.
+1. Live-verify `/join?from=<code>` if not done. After Netlify, update Google origins + Supabase Site URL.
+2. Live-verify Guest or P001: Delivery Clear enough / Needs practice when transcript is complete, Answer Quality `source: "grade"` (Groq or DeepSeek — not unavailable). Click Answer again + Hear again once. Ask before paid Deepgram/Groq/DeepSeek.
+3. Confirm Participant Skip + Submit → two research-form rows with `P-`. Guest does not POST Help the study.
+4. Native Burmese review of remaining MY drafts.
+5. Instructor written yes/no on RSU / CSC 485 consent.
+6. Unpublish old n8n **NihonGo grade** webhook.
+7. Optional Netlify: `DEEPGRAM_STT_API_KEY` (Member), `DEEPSEEK_GRADE_API_KEY` (+ ~$2 credit), `ELEVENLABS_TTS_API_KEY` only to regenerate clips.
+8. Remove **Skip interview** before Issue 15; Netlify deploy; move Supabase / Google off `localhost`.
+9. Paste `003_full_session_requests.sql` so Guest email save succeeds.
+10. Phase 3 root CSS. Not a deploy blocker.
+11. Mobbin polish (not a blocker).
+12. CSC 485 research question — later.
+13. User-count proof: Google Form N; `P00x` people; do not count Guest `G-` as unique students.
 14. Later: one Groq critique per rubric category.
-15. Later: live Burmese on the report (would need a new translate path — `/api/translate` was removed).
+15. Later: live Burmese on the report (new translate path — `/api/translate` removed).
 16. Later: InterviewReport refresh / draft resume after tab close.
-17. Paste `supabase/migrations/003_full_session_requests.sql` so Guest email save succeeds.
-18. Later: cap how many Guest sessions can run.
-19. Later: Google account chooser brand name (“to continue to NihonGo”) after a public site + brand verification.
+17. Later: Guest session cap.
+18. Later: Google account chooser brand name after public site + brand verification.
+19. Later: soft dock hint if testers miss auto-pause (no modal).
 
 ---
 
 ## Fold into CLAUDE.md later
 - **Participant login is a dialog on `/login`.** Soft nav via `@modal`; hard visit shows start screen behind the dialog.
 - **Pitch route is gone.** Do not restore `/pitch`, `?pitch=1`, access key, or `pitchAnswers.ts`.
-- **Guest email request** → `full_session_requests` only. Already-sent dialog step when this visit already sent. No admin / no outbound mail here.
-- **Grade path:** `useGradeAnswers` feeds `/api/score` with Speak Submit text only. ASR-aware `getRubricPrompt()`. No Whisper / `/api/scribe` / `GROQ_STT_API_KEY`.
-- **Report chrome:** Overview (stamp / radar / delivery) then Review (Q nav + one card). No guest banner on `/call`.
-- **Dead routes removed:** `/api/translate`, `/api/stt` (Wispr), ElevenLabs Scribe env module. `check-env` = `GROQ_GRADE_API_KEY` only.
+- **Guest email request** → `full_session_requests` only. Already-sent dialog step when this visit already sent.
+- **Grade path:** Groq primary → DeepSeek Flash secondary → unavailable. Speak Submit text only. No Whisper.
+- **Answer again:** visible label Answer again; secret cap 1; same STT engine on redo.
+- **Speak idle:** auto-pause after 10s with no new transcript; no popup.
+- **Report chrome:** Overview then Review. No guest banner on `/call`.
+- **Dead routes removed:** `/api/translate`, `/api/stt`, Scribe env. `check-env` = `GROQ_GRADE_API_KEY` only.
 
 ---
 
@@ -69,3 +69,4 @@ Rows before 2026-09-22 stay in `CLAUDE.md`. Append new rows here only.
 | 2026-09-22 | Guest email request UI | Choice before the lobby, report ask like Help the study, save to `full_session_requests`. SQL paste still required. No admin page and no outbound mail in this app. |
 | 2026-09-22 | Closed the session (`361b123`, 525 tests) | Help the study stays off Guest reports. Email request is saved here; the other project sends the mail. Guest session cap and Google brand name stay later. |
 | 2026-09-22 | Report Overview/Review; already-sent email; drop guest banner; grade Submit text + ASR prompt; remove Whisper/translate/Wispr (`dffc946`, 502 tests) | Score Speak Submit only. No `/api/scribe`. `check-env` = grade key only. Do not restore Whisper as preferred grade input. |
+| 2026-09-22 | Groq→DeepSeek grade fallback; hide Answer again count; Speak idle auto-pause (`a3fe96c`…`dd20428`, 509 tests) | DeepSeek Flash, thinking off. Both miss → unavailable (not sample Ready). Answer again cap 1, label only. Idle 10s → Pause; no popup. Do not force browser STT on redo. |

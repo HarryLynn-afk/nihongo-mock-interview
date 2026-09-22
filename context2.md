@@ -22,15 +22,16 @@ Do not plan a 29 Aug Launch Pack rebuild.
 - Product option A: one student, one track, Language School Interview. No agency, no COE decision, no Job Interview track. Coaching aid, not an admissions or immigration authority.
 - Interviewer: Tanaka-sensei. School name Tokyo Pathway Japanese School stays in the locked profile fixture only. Learner UI does not show the school name.
 - Three Questions, then the practice report on `/call`. Voice-only. A failed Speak retries up to 3 times, then the Question is skipped. No typing.
-- `/` is Guest practice: **Try as guest** opens a choice — continue as Guest, or leave an email to ask for the full Interview. Continue as Guest → device lobby → 15s popup → `/call?guest=1`, the 3 locked Questions only. After a send they can still continue as Guest. The Guest report asks again unless this visit already sent. This app saves the address in `full_session_requests` only. No admin route and no mail from this app. No topic bank and no follow-ups. **Participant login** is a header pill that opens a dialog on `/login` over the start screen. The URL is still `/login`. The dialog is Google-only: no Try as guest and no guest-practice note. `/consent` Join stays **Join interview** and goes to `/call`, the 10-topic bank plus follow-ups.
+- `/` is Guest practice: **Try as guest** opens a choice — continue as Guest, or leave an email to ask for the full Interview. Continue as Guest → device lobby → 15s popup → `/call?guest=1`, the 3 locked Questions only. After a send they can still continue as Guest. A second leave-email this visit shows already-sent (no form). The Guest report asks again unless this visit already sent. This app saves the address in `full_session_requests` only. No admin route and no mail from this app. No topic bank and no follow-ups. **Participant login** is a header pill that opens a dialog on `/login` over the start screen. The URL is still `/login`. The dialog is Google-only: no Try as guest and no guest-practice note. `/consent` Join stays **Join interview** and goes to `/call`, the 10-topic bank plus follow-ups.
 - Participant entry is Google only: allowlisted `/login`, or an open `/join?from=CODE`. Consent is required this visit. Magic-link login is gone.
 - Sensei audio is committed `/question-{id}.mp3`. No runtime TTS.
 - Eng/MM picks one helper language. Japanese stays on the HUD. Do not stack EN and MY.
-- Grade is Groq on the Speak Submit transcript (live caption the student confirmed). ASR-aware rubric prompt: grade meaning, do not punish caption glitches, do not invent a cleaner transcript. No Whisper overwrite. Speaking is not a score. Speech Delivery Signals are browser timing on answered Questions. Sample report is the Groq-miss fallback only.
+- Grade is Groq on the Speak Submit transcript (live caption the student confirmed), then optional DeepSeek Flash (`thinking` off) on any Groq miss. Both miss → scoring unavailable (no live sample Ready). ASR-aware rubric prompt: grade meaning, do not punish caption glitches, do not invent a cleaner transcript. No Whisper overwrite. Speaking is not a score. Speech Delivery Signals are browser timing on answered Questions. Skip interview may still use a local sample for preview only.
+- Answer again is one pre-Submit redo per Question. Dock shows **Answer again** (no retry count). Same STT engine on the kept take. Speak auto-pauses after 10s with no new live transcript (same as Pause; no popup).
 - InterviewReport is Overview (stamp / radar / delivery) then Review (question nav + one card). No guest practice banner on `/call`.
 - Help the study is for Participant reports only. A Try as guest report (`/call?guest=1`) does not show the button or the dialog. Session codes are `G-` / `P-`.
 - Desktop-first. No shadcn/ui. No extra database beyond optional Supabase for study login.
-- Build requires `GROQ_GRADE_API_KEY` only. Optional Deepgram, generate-time ElevenLabs TTS, research form URL, Supabase. No runtime translate / Wispr / Whisper / Pitch access key.
+- Build requires `GROQ_GRADE_API_KEY` only. Optional Deepgram, DeepSeek grade fallback, generate-time ElevenLabs TTS, research form URL, Supabase. No runtime translate / Wispr / Whisper / Pitch access key.
 
 ## Voided — do not reopen
 
@@ -52,10 +53,11 @@ None that reopen a locked branch. Next step is pasting `003_full_session_request
 
 - Live Burmese of tester answers via `/api/translate` (route removed; would need a new path)
 - One Groq critique per rubric category
-- Gemini as a second grader, or removing the sample last screen
+- Gemini as a second grader, or removing the sample last screen (DeepSeek Flash is the chosen grade overflow; live sample Ready on miss is gone)
 - Interview resume after tab close
 - Guest 2-Interview cap
-- Scoring-fallback UI (Retry vs sample) until that decision is chosen
+- Scoring-fallback UI (Retry) until that decision is chosen
 - Google account-chooser brand name (“to continue to NihonGo”). The Supabase project URL on that screen stays until brand verification, after a public site exists.
 - A cap on how many Guest sessions can run. Try as guest stays open until that cap is chosen.
 - Background Whisper / `/api/scribe` / preferring a second ASR over Speak Submit text
+- Unlimited Answer again, browser STT forced on Answer again, or a modal when Speak auto-pauses
