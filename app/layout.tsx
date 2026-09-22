@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Geist, Geist_Mono, Poppins, PT_Serif } from "next/font/google";
 import "./globals.css";
 
@@ -32,7 +33,10 @@ export const metadata: Metadata = {
     "AI-powered Japanese language-school interview practice — CSC 485 / CSC 492",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+  modal,
+}: LayoutProps<"/"> & { modal?: ReactNode }) {
   return (
     <html
       lang="en"
@@ -50,7 +54,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <div id="nihongo-route" className="flex min-h-full flex-1 flex-col">
+          {children}
+        </div>
+        {modal}
+      </body>
     </html>
   );
 }

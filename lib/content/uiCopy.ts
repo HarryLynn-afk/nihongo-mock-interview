@@ -34,9 +34,12 @@ const en = {
     },
   },
   login: {
-    title: "Participant login",
-    body: "Invited testers sign in with Google using the email on the list. Guest practice stays on the start screen and is never merged into the study.",
+    title: "Sign in to NihonGo",
+    body: "Invited testers sign in with Google using the email on the list.",
+    guestNote:
+      "Guest practice stays on the start screen and is never merged into the study.",
     google: "Continue with Google",
+    close: "Close",
     linkSent: "If this email is eligible, a sign-in link has been sent.",
     errorNotInvited: "This Google account is not in the invited-tester list.",
     tryAsGuest: "Try as guest",
@@ -272,9 +275,12 @@ const my: UiCopy = {
     },
   },
   login: {
-    title: "ပါဝင်သူ ဝင်ရောက်ရန်",
-    body: "ဖိတ်ကြားစာရင်းရှိ အီးမေးလ်ဖြင့် Google ဆိုင်းအင်ဝင်ပါ။ ဧည့်သည် လေ့ကျင့်မှုသည် အစစာမျက်နှာတွင်သာ ရှိပြီး လေ့လာမှုထဲ မပေါင်းပါ။",
+    title: "NihonGo သို့ ဝင်ရောက်ရန်",
+    body: "ဖိတ်ကြားစာရင်းရှိ အီးမေးလ်ဖြင့် Google ဆိုင်းအင်ဝင်ပါ။",
+    guestNote:
+      "ဧည့်သည် လေ့ကျင့်မှုသည် အစစာမျက်နှာတွင်သာ ရှိပြီး လေ့လာမှုထဲ မပေါင်းပါ။",
     google: "Google ဖြင့် ဆက်ရန်",
+    close: "ပိတ်ရန်",
     linkSent: "ဤအီးမေးလ် ပါဝင်ခွင့်ရှိပါက ဆိုင်းအင်လင့်ခ် ပို့ပြီးဖြစ်သည်။",
     errorNotInvited: "ဤ Google အကောင့်သည် ဖိတ်ကြားစာရင်းတွင် မရှိပါ။",
     tryAsGuest: "ဧည့်သည်အဖြစ် စမ်းကြည့်ရန်",

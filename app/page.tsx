@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { HashSessionCatcher } from "./auth/HashSessionCatcher";
 import { JoinInterview } from "./components/JoinInterview";
 import { LanguageToggle } from "./components/LanguageToggle";
@@ -112,12 +113,12 @@ function AccentHeadline({ text }: { text: string }) {
   );
 }
 
-export default function Home() {
+export default function Home({ catchAuth = true }: { catchAuth?: boolean }) {
   const { locale, setLocale, copy } = useCopy();
 
   return (
     <div className="relative flex min-h-screen flex-col bg-[radial-gradient(circle_at_10%_55%,rgba(255,255,255,0.7),transparent_45%),linear-gradient(180deg,#e8f8d4_0%,#f4fbef_55%,#ffffff_100%)] text-eel">
-      <HashSessionCatcher idle />
+      {catchAuth ? <HashSessionCatcher idle /> : null}
 
       <header className="mx-auto flex w-full max-w-[1400px] flex-wrap items-center gap-x-4 gap-y-3 px-5 py-6 md:px-12">
         <a
@@ -139,12 +140,13 @@ export default function Home() {
             variant="light"
             tone="feather"
           />
-          <a
+          <Link
             href="/login"
+            scroll={false}
             className="inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full bg-[#d8f5b0] px-6 text-sm font-medium text-feather-dark shadow-[0_4px_7px_rgba(88,204,2,0.12)] transition-colors hover:bg-[#c8ee96]"
           >
             {copy.start.participantLogin}
-          </a>
+          </Link>
         </div>
       </header>
 

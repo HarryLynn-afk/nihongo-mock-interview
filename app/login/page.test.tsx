@@ -1,20 +1,48 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import LoginPage from "./page";
 
+const { replaceMock } = vi.hoisted(() => ({ replaceMock: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: replaceMock }),
+}));
+
 describe("Login page", () => {
-  it("offers Continue with Google and no email sign-in link form", () => {
+  it("opens Participant login as a dialog over the start screen, with Google only", () => {
     render(<LoginPage />);
 
+    const dialog = screen.getByRole("dialog", { name: "Sign in to NihonGo" });
+    expect(dialog).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Try as guest" }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        "Guest practice stays on the start screen and is never merged into the study.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "Practice your interview with Tanaka-sensei",
+        hidden: true,
+      }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Continue with Google" }),
     ).toBeInTheDocument();
-    expect(screen.queryByLabelText("Email")).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Send sign-in link" }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("Or send a sign-in link")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /github/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /create an account/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("starts allowlisted Google through POST /api/auth/login-google", async () => {
@@ -23,7 +51,7 @@ describe("Login page", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     const assign = vi.fn();
-    vi.stubGlobal("location", { assign });
+    vi.stubGlobal("location", { assign, search: "", hash: "" });
     const user = userEvent.setup();
     render(<LoginPage />);
 
@@ -43,12 +71,36 @@ describe("Login page", () => {
     vi.stubGlobal("location", {
       assign: vi.fn(),
       search: "?error=not_invited",
+      hash: "",
     });
     render(<LoginPage />);
 
     expect(
       await screen.findByText("This Google account is not in the invited-tester list."),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/already opened or has expired/i),
+    ).not.toBeInTheDocument();
     vi.unstubAllGlobals();
+  });
+
+  it("closes back to the start screen from the close control, Escape, and the backdrop", async () => {
+    replaceMock.mockReset();
+    const user = userEvent.setup();
+    render(<LoginPage />);
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    expect(replaceMock).toHaveBeenCalledWith("/", { scroll: false });
+
+    replaceMock.mockReset();
+    await user.keyboard("{Escape}");
+    expect(replaceMock).toHaveBeenCalledWith("/", { scroll: false });
+
+    replaceMock.mockReset();
+    const scrim = screen.getByRole("dialog", { name: "Sign in to NihonGo" })
+      .parentElement;
+    expect(scrim).not.toBeNull();
+    fireEvent.mouseDown(scrim!);
+    expect(replaceMock).toHaveBeenCalledWith("/", { scroll: false });
   });
 });
