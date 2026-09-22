@@ -8,10 +8,11 @@
 
 ## Current State
 - CSC 485 = research later. CSC 492 = working app. Not a hackathon. The presentation path is **Try as guest**, the three locked Questions. There is no `/pitch` route.
-- `main` HEAD `2f87ee6`. **41 commits ahead of `origin/main`**. **514/514** tests passing. Not deployed to Netlify.
+- `main` HEAD `d309058`. **44 commits ahead of `origin/main`**. **514/514** tests passing. Not deployed to Netlify.
 - Built and still current: Issues 1–14, Direct Join 16–17, Pushback 22–24, quoted critique 25–26, Usefulness step 28, form-field map 29, coaching report (Overview then Review), Interview Answer Quality vs Speech Delivery Signals (Deepgram PCM), voice-only, committed sensei mp3s, consent-this-visit, 15s start overlay, guest-first `/`, `/guest` join page, Deepgram listen, lobby camera retry, one-store Submit, try-again banner, `G-`/`P-` codes, Guest 3 locked Questions, spotlight classroom, Answer again / Hear again, Eng/MM, join-links, Google login PKCE + account chooser, guest email request, grade on Speak Submit text (no Whisper), Groq→DeepSeek grade fallback, Speak idle auto-pause.
-- **This session:** Guest device check left the landing (`c41d987`…`2f87ee6`). **Try as guest** → choice → `/guest` (join is the page, not a dialog over `/`). Shared `InterviewLobby` + 15s reminder use landing paper/feather (Participant `/consent` overlay uses the same card). Then `/call?guest=1`. `/call` classroom unchanged.
-- `/`: Poppins guest-first hero, **Try as guest** → choice (continue / leave email / already-sent) → `/guest`. Header **Participant login** → Google dialog on `/login`.
+- **This session:** **Try as guest** opens `/guest` with no email dialog (`d309058`). The address form stays on the Guest report (`form` then `saved`). The 15s card stays on `/guest`. No **Start interview** button on `/call`. Browser-checked: click → device check; **Enter classroom** still shows the 15s card and **Skip**.
+- `/`: Poppins guest-first hero, **Try as guest** → `/guest`. Header **Participant login** → Google dialog on `/login`.
+- `/join?from=CODE` uses the same landing as `/` (`08e45eb`). Open link: **Login** only (no **Try as guest**, no header **Participant login**). **Login** opens the shared Google dialog; **Continue with Google** posts `/api/auth/join-google` with that code. Close stays on the join URL. `/login` still posts `/api/auth/login-google` with no code (allowlist).
 - `/guest`: public (`guestJoin`, no visit cookie). Paper-green page, wordmark, feather Eng/MM, compact join card. **Enter classroom** → 15s overlay on this page → `/call?guest=1`.
 - `/call`: Guest 3Q; Participant bank + follow-ups. No guest banner. Help the study Participant-only. Dev Skip interview still present.
 - Scoring: `POST /api/score` → Groq → DeepSeek → `report: null`. Optional `DEEPSEEK_GRADE_API_KEY`. `check-env` still requires only `GROQ_GRADE_API_KEY`.
@@ -24,7 +25,7 @@
 **CSC 492 / testers:** join-link ops if needed, Issue 29 human items, Issue 15 deploy. Formal docs / oral exam later.
 **CSC 485:** research question — deferred.
 
-1. Live-verify `/join?from=<code>` if not done. After Netlify, update Google origins + Supabase Site URL.
+1. Live-verify Google on `/join?from=<code>` through consent and `P00x` (landing and dialog already checked; OAuth was not clicked). After Netlify, update Google origins + Supabase Site URL.
 2. Live-verify Guest or P001: Delivery Clear enough / Needs practice when transcript is complete, Answer Quality `source: "grade"` (Groq or DeepSeek — not unavailable). Click Answer again + Hear again once. Ask before paid Deepgram/Groq/DeepSeek.
 3. Confirm Participant Skip + Submit → two research-form rows with `P-`. Guest does not POST Help the study.
 4. Native Burmese review of remaining MY drafts.
@@ -49,14 +50,15 @@
 ## Fold into CLAUDE.md later
 - **Participant login is a dialog on `/login`.** Soft nav via `@modal`; hard visit shows start screen behind the dialog.
 - **Pitch route is gone.** Do not restore `/pitch`, `?pitch=1`, access key, or `pitchAnswers.ts`.
-- **Guest email request** → `full_session_requests` only. Already-sent dialog step when this visit already sent.
+- **Guest email request** → `full_session_requests` only, and only from the Guest report (`form` then `saved`). **Try as guest** does not ask. If this visit already sent, the report does not open the form. No choice step and no already-sent dialog.
 - **Grade path:** Groq primary → DeepSeek Flash secondary → unavailable. Speak Submit text only. No Whisper.
 - **Answer again:** visible label Answer again; secret cap 1; same STT engine on redo.
 - **Speak idle:** auto-pause after 10s with no new transcript; no popup.
 - **Report chrome:** Overview then Review. No guest banner on `/call`.
 - **Dead routes removed:** `/api/translate`, `/api/stt`, Scribe env. `check-env` = `GROQ_GRADE_API_KEY` only.
 - **Lobby camera:** stop lobby tracks when Interview starts / on unmount; do not leave a second live getUserMedia against `/call`. Call Camera toggle must stop/restart the stream and reattach + `play()` on remount.
-- **Guest join is `/guest`.** Continue as guest does not open a lobby overlay on `/`. Join card is page content (landing paper/feather). Participant `/consent` still overlays the same card. 15s reminder stays on the join page, not `/call`. `routeRole("/guest")` is `guestJoin`; `mustSignIn` is false.
+- **Guest join is `/guest`.** **Try as guest** opens that page directly. No email choice on the way. Join card is page content (landing paper/feather). Participant `/consent` still overlays the same card. 15s reminder stays on the join page, not `/call`. Do not add a **Start interview** button on `/call`. `routeRole("/guest")` is `guestJoin`; `mustSignIn` is false.
+- **Join link landing.** `/join?from=CODE` reuses `Home`. **Login** opens `GoogleSignInDialog`. Continue posts join-google with the code. Do not send that button to `/login`. Do not put **Try as guest** or **Participant login** on an open join link. `/login` stays allowlisted and has no invite code.
 
 ---
 
@@ -75,3 +77,5 @@ Rows before 2026-09-22 stay in `CLAUDE.md`. Append new rows here only.
 | 2026-09-22 | Groq→DeepSeek grade fallback; hide Answer again count; Speak idle auto-pause (`a3fe96c`…`dd20428`, 509 tests) | DeepSeek Flash, thinking off. Both miss → unavailable (not sample Ready). Answer again cap 1, label only. Idle 10s → Pause; no popup. Do not force browser STT on redo. |
 | 2026-09-22 | Fix black You tile while camera still open (`f838b80`, 513 tests) | Lobby releases webcam before `/call`; call hook reattaches + `play()` on remount; Camera toggle stops/restarts stream. Continuity/closed-lid miss stays a device note, not this leak. |
 | 2026-09-22 | Guest join page + landing-aligned lobby (`c41d987`…`2f87ee6`, 514 tests) | Continue as guest → `/guest` (join is the page). Shared lobby + 15s reminder use paper/feather. `/consent` overlay uses the same card. Do not put the Meet-dark join over `/`. Do not restyle `/call` for this. |
+| 2026-09-22 | Join link uses the shared landing (`08e45eb`, 517 tests) | **Login** opens Continue with Google for that invite code. Close stays on `/join`. No Try as guest and no Participant login on that page. `/login` stays allowlisted. |
+| 2026-09-22 | Try as guest skips the email choice (`d309058`, 514 tests) | Click opens `/guest`. Email form stays on the Guest report (`form` / `saved` only). 15s card stays. No Start interview button on `/call`. |
