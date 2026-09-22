@@ -27,6 +27,5 @@ describe("groqCapacity", () => {
     expect(shouldSkipGroqCall("grade", 1_000)).toBe(true);
     expect(shouldSkipGroqCall("grade", 60_999)).toBe(true);
     expect(shouldSkipGroqCall("grade", 61_000)).toBe(false);
-    expect(shouldSkipGroqCall("translate", 1_000)).toBe(false);
   });
 });

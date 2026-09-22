@@ -12,9 +12,7 @@ function runCheckEnv(env: Record<string, string | undefined>) {
 }
 
 const ALL_REQUIRED_ENV = {
-  GROQ_TRANSLATE_API_KEY: "test-key",
   GROQ_GRADE_API_KEY: "test-key",
-  GROQ_STT_API_KEY: "test-key",
 };
 
 describe("scripts/check-env.mjs", () => {
@@ -43,16 +41,16 @@ describe("scripts/check-env.mjs", () => {
     expect(result.stderr).not.toMatch(/RESEARCH_FORM_URL/);
   });
 
-  it("does not require N8N_WEBHOOK_URL", () => {
-    const envWithoutN8n: Record<string, string | undefined> = {
+  it("does not require GROQ_TRANSLATE_API_KEY", () => {
+    const envWithoutTranslate: Record<string, string | undefined> = {
       ...ALL_REQUIRED_ENV,
     };
-    delete envWithoutN8n.N8N_WEBHOOK_URL;
+    delete envWithoutTranslate.GROQ_TRANSLATE_API_KEY;
 
-    const result = runCheckEnv(envWithoutN8n);
+    const result = runCheckEnv(envWithoutTranslate);
 
     expect(result.status).toBe(0);
-    expect(result.stderr).not.toMatch(/N8N_WEBHOOK_URL/);
+    expect(result.stderr).not.toMatch(/GROQ_TRANSLATE_API_KEY/);
   });
 
   it("does not require ELEVENLABS_TTS_API_KEY", () => {
@@ -77,6 +75,42 @@ describe("scripts/check-env.mjs", () => {
 
     expect(result.status).toBe(0);
     expect(result.stderr).not.toMatch(/ELEVENLABS_SCRIBE_API_KEY/);
+  });
+
+  it("does not require WISPR_API_KEY", () => {
+    const envWithoutWispr: Record<string, string | undefined> = {
+      ...ALL_REQUIRED_ENV,
+    };
+    delete envWithoutWispr.WISPR_API_KEY;
+
+    const result = runCheckEnv(envWithoutWispr);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).not.toMatch(/WISPR_API_KEY/);
+  });
+
+  it("does not require PITCH_ACCESS_KEY", () => {
+    const envWithoutPitch: Record<string, string | undefined> = {
+      ...ALL_REQUIRED_ENV,
+    };
+    delete envWithoutPitch.PITCH_ACCESS_KEY;
+
+    const result = runCheckEnv(envWithoutPitch);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).not.toMatch(/PITCH_ACCESS_KEY/);
+  });
+
+  it("does not require GROQ_STT_API_KEY", () => {
+    const envWithoutStt: Record<string, string | undefined> = {
+      ...ALL_REQUIRED_ENV,
+    };
+    delete envWithoutStt.GROQ_STT_API_KEY;
+
+    const result = runCheckEnv(envWithoutStt);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).not.toMatch(/GROQ_STT_API_KEY/);
   });
 
   it("does not require DEEPGRAM_STT_API_KEY or Supabase", () => {

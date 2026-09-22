@@ -833,7 +833,7 @@ describe("Call screen", () => {
     ).toHaveLength(0);
   });
 
-  it("POSTs /api/score once after Q3 when Scribe is ready, without showing scores", async () => {
+  it("POSTs /api/score once after Q3 when answers are ready, without showing scores", async () => {
     const user = userEvent.setup();
     render(<CallPage />);
 

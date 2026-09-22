@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 
 const REQUIRED_ENV_VARS = [
-  "GROQ_TRANSLATE_API_KEY",
   "GROQ_GRADE_API_KEY",
-  "GROQ_STT_API_KEY",
 ];
 
 const missing = REQUIRED_ENV_VARS.filter((name) => !process.env[name]);
