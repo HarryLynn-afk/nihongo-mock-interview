@@ -242,187 +242,207 @@ export function InterviewReportScreen({
         </button>
       ) : null}
       <div
-        className={`flex min-h-0 flex-1 flex-col gap-4 md:flex-row md:items-stretch ${
-          hasTopAction ? "pt-12 md:pt-0" : ""
+        className={`flex min-h-0 flex-1 flex-col gap-6 ${
+          hasTopAction ? "pt-12" : ""
         }`}
       >
-      <aside
-        data-testid="report-question-nav"
-        className="flex w-full shrink-0 flex-col gap-2 md:max-w-52"
-      >
-        <p className="text-xs font-medium tracking-wide text-paper/50">
-          {copy.report.transcript}
-        </p>
-        {sessionId ? (
-          <p data-testid="session-id" className="text-[10px] tracking-wide text-paper/40">
-            {sessionId}
-          </p>
-        ) : null}
-        <nav className="flex flex-col gap-1">
-          {view.questions.map((card) => {
-            const selectedNav = card.questionIndex === selectedIndex;
-            return (
-              <button
-                key={card.questionIndex}
-                type="button"
-                onClick={() => {
-                  setSelectedIndex(card.questionIndex);
-                }}
-                className={`rounded-xl px-3 py-2 text-left text-sm ${
-                  selectedNav
-                    ? "bg-indigo/30 text-paper"
-                    : "bg-paper/5 text-paper/80"
-                }`}
-              >
-                <span className="block font-medium">
-                  Q{card.questionIndex + 1} {card.navLabel}
-                </span>
-                <span className="text-xs text-paper/60">{card.scoreText}</span>
-              </button>
-            );
-          })}
-        </nav>
-      </aside>
-
-      <div className="flex min-w-0 flex-1 flex-col gap-4">
-        <header
-          className={`flex flex-wrap items-end justify-between gap-3 ${
-            hasTopAction ? "md:pr-40" : ""
-          }`}
-        >
-          <div>
-            <h1 className="text-xl font-medium">{view.title}</h1>
-            <p className="mt-1 text-sm font-medium text-paper/80">
-              {view.answerQualityTitle}
-            </p>
-            {view.banner ? (
-              <p className="mt-1 text-sm text-paper/80">{view.banner}</p>
-            ) : null}
-            <p className="mt-2 text-sm text-paper/60">{view.disclaimer}</p>
-          </div>
-          <div data-testid="report-stamp" className={`text-right ${revealClass(stage >= 1)}`}>
-            <p className="text-3xl font-medium md:text-4xl">
-              {view.total}/100
-            </p>
-            <p className="text-sm font-medium">
-              {view.headlineLabel} —{" "}
-              <span className={view.stampColorClass}>{view.stamp}</span>
-            </p>
-          </div>
-        </header>
-
-        <div className="grid gap-4 rounded-2xl border border-paper/10 bg-paper/5 p-4 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)]">
-          <div data-testid="readiness-radar" className={revealClass(stage >= 0)}>
-            <svg viewBox="0 0 280 260" className="mx-auto h-52 w-full max-w-xs">
-              {[0.4, 0.7, 1].map((level) => (
-                <polygon
-                  key={level}
-                  points={gridPolygon(level, radarScores.length)}
-                  className="fill-none stroke-paper/15"
-                />
-              ))}
-              {radarScores.map((score, index) => {
-                const end = axisPoint(index, radarScores.length, AXIS_RADIUS);
-                return (
-                  <line
-                    key={`${score.key}-axis`}
-                    x1={CX}
-                    y1={CY}
-                    x2={end.x}
-                    y2={end.y}
-                    className="stroke-paper/20"
-                  />
-                );
-              })}
-              {radarScores.length > 0 ? (
-                <polygon
-                  points={radarPolygon(radarScores)}
-                  className="fill-indigo/40 stroke-indigo"
-                />
-              ) : null}
-              {radarScores.map((score, index) => {
-                const point = axisPoint(index, radarScores.length, 104);
-                return (
-                  <text
-                    key={`${score.key}-label`}
-                    x={point.x}
-                    y={point.y}
-                    textAnchor={labelAnchor(index, radarScores.length)}
-                    className="fill-paper text-[11px]"
-                  >
-                    {score.radarLabel}
-                  </text>
-                );
-              })}
-            </svg>
-          </div>
-          <ul data-testid="report-score-bars" className="flex flex-col justify-center gap-2 text-sm">
-            {view.scores.map((score) => (
-              <li key={score.key} className="flex items-center gap-3">
-                <span className="w-44 shrink-0 text-paper/80">{score.label}</span>
-                {score.assessed ? (
-                  <>
-                    <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-paper/10">
-                      <span
-                        className="block h-full rounded-full bg-indigo"
-                        style={{
-                          width: `${Math.max(8, (score.points / score.weight) * 100)}%`,
-                        }}
-                      />
-                    </span>
-                    <span className="w-20 shrink-0 text-right text-xs text-paper/60">
-                      {score.ratingLabel}
-                    </span>
-                    <span className="w-12 shrink-0 text-right tabular-nums">
-                      {score.points}/{score.weight}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-paper/50">
-                    {copy.report.deliveryHeadline.notAssessed}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-          <p className="text-xs text-paper/50 lg:col-span-2">
-            {view.listeningNote}
-            {view.voiceNote ? ` ${view.voiceNote}` : null}
-          </p>
-          {view.notes.map((line) => (
-            <p key={line} className="text-xs text-paper/60 lg:col-span-2">
-              {line}
-            </p>
-          ))}
-        </div>
-
-        {view.delivery ? (
-          <div
-            data-testid="speech-delivery-signals"
-            className="rounded-2xl border border-paper/10 bg-paper/5 p-4"
+        <div data-testid="report-overview" className="flex flex-col gap-4">
+          <header
+            className={`flex flex-wrap items-end justify-between gap-3 ${
+              hasTopAction ? "md:pr-40" : ""
+            }`}
           >
-            <p className="text-xs font-medium tracking-wide text-paper/50">
-              {view.deliveryTitle}
+            <div>
+              <h1 className="text-xl font-medium">{view.title}</h1>
+              <p className="mt-1 text-sm font-medium text-paper/80">
+                {view.answerQualityTitle}
+              </p>
+              {view.banner ? (
+                <p className="mt-1 text-sm text-paper/80">{view.banner}</p>
+              ) : null}
+              <p className="mt-2 text-sm text-paper/60">{view.disclaimer}</p>
+              {sessionId ? (
+                <p
+                  data-testid="session-id"
+                  className="mt-2 text-[10px] tracking-wide text-paper/40"
+                >
+                  {sessionId}
+                </p>
+              ) : null}
+            </div>
+            <div
+              data-testid="report-stamp"
+              className={`text-right ${revealClass(stage >= 1)}`}
+            >
+              <p className="text-3xl font-medium md:text-4xl">
+                {view.total}/100
+              </p>
+              <p className="text-sm font-medium">
+                {view.headlineLabel} —{" "}
+                <span className={view.stampColorClass}>{view.stamp}</span>
+              </p>
+            </div>
+          </header>
+
+          <div className="grid gap-4 rounded-2xl border border-paper/10 bg-paper/5 p-4 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)]">
+            <div
+              data-testid="readiness-radar"
+              className={revealClass(stage >= 0)}
+            >
+              <svg viewBox="0 0 280 260" className="mx-auto h-52 w-full max-w-xs">
+                {[0.4, 0.7, 1].map((level) => (
+                  <polygon
+                    key={level}
+                    points={gridPolygon(level, radarScores.length)}
+                    className="fill-none stroke-paper/15"
+                  />
+                ))}
+                {radarScores.map((score, index) => {
+                  const end = axisPoint(index, radarScores.length, AXIS_RADIUS);
+                  return (
+                    <line
+                      key={`${score.key}-axis`}
+                      x1={CX}
+                      y1={CY}
+                      x2={end.x}
+                      y2={end.y}
+                      className="stroke-paper/20"
+                    />
+                  );
+                })}
+                {radarScores.length > 0 ? (
+                  <polygon
+                    points={radarPolygon(radarScores)}
+                    className="fill-indigo/40 stroke-indigo"
+                  />
+                ) : null}
+                {radarScores.map((score, index) => {
+                  const point = axisPoint(index, radarScores.length, 104);
+                  return (
+                    <text
+                      key={`${score.key}-label`}
+                      x={point.x}
+                      y={point.y}
+                      textAnchor={labelAnchor(index, radarScores.length)}
+                      className="fill-paper text-[11px]"
+                    >
+                      {score.radarLabel}
+                    </text>
+                  );
+                })}
+              </svg>
+            </div>
+            <ul
+              data-testid="report-score-bars"
+              className="flex flex-col justify-center gap-2 text-sm"
+            >
+              {view.scores.map((score) => (
+                <li key={score.key} className="flex items-center gap-3">
+                  <span className="w-44 shrink-0 text-paper/80">
+                    {score.label}
+                  </span>
+                  {score.assessed ? (
+                    <>
+                      <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-paper/10">
+                        <span
+                          className="block h-full rounded-full bg-indigo"
+                          style={{
+                            width: `${Math.max(8, (score.points / score.weight) * 100)}%`,
+                          }}
+                        />
+                      </span>
+                      <span className="w-20 shrink-0 text-right text-xs text-paper/60">
+                        {score.ratingLabel}
+                      </span>
+                      <span className="w-12 shrink-0 text-right tabular-nums">
+                        {score.points}/{score.weight}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-paper/50">
+                      {copy.report.deliveryHeadline.notAssessed}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-paper/50 lg:col-span-2">
+              {view.listeningNote}
+              {view.voiceNote ? ` ${view.voiceNote}` : null}
             </p>
-            <p className="mt-1 text-lg font-medium">{view.delivery.headline}</p>
-            <p className="mt-1 text-sm text-paper/70">{view.delivery.note}</p>
-            {view.delivery.answers[0]?.observations.slice(0, 4).map((line) => (
-              <p key={line} className="mt-1 text-xs text-paper/60">
+            {view.notes.map((line) => (
+              <p key={line} className="text-xs text-paper/60 lg:col-span-2">
                 {line}
               </p>
             ))}
           </div>
-        ) : null}
 
-        <div
-          data-testid="report-critiques"
-          className={`flex min-h-[18rem] flex-1 flex-col overflow-y-auto rounded-2xl border border-paper/10 bg-paper/5 p-4 ${revealClass(stage >= 2)}`}
-        >
-          {selected ? (
-            <QuestionCard card={selected} locale={locale} />
+          {view.delivery ? (
+            <div
+              data-testid="speech-delivery-signals"
+              className="rounded-2xl border border-paper/10 bg-paper/5 p-4"
+            >
+              <p className="text-xs font-medium tracking-wide text-paper/50">
+                {view.deliveryTitle}
+              </p>
+              <p className="mt-1 text-lg font-medium">
+                {view.delivery.headline}
+              </p>
+              <p className="mt-1 text-sm text-paper/70">{view.delivery.note}</p>
+              {view.delivery.answers[0]?.observations.slice(0, 4).map((line) => (
+                <p key={line} className="mt-1 text-xs text-paper/60">
+                  {line}
+                </p>
+              ))}
+            </div>
           ) : null}
         </div>
-      </div>
+
+        <div data-testid="report-review" className="flex flex-col gap-3">
+          <div
+            data-testid="report-question-nav"
+            className="flex flex-col gap-2"
+          >
+            <p className="text-xs font-medium tracking-wide text-paper/50">
+              {copy.report.transcript}
+            </p>
+            <nav className="flex flex-wrap gap-2">
+              {view.questions.map((card) => {
+                const selectedNav = card.questionIndex === selectedIndex;
+                return (
+                  <button
+                    key={card.questionIndex}
+                    type="button"
+                    onClick={() => {
+                      setSelectedIndex(card.questionIndex);
+                    }}
+                    className={`rounded-full px-3 py-1.5 text-left text-sm ${
+                      selectedNav
+                        ? "bg-indigo/30 text-paper"
+                        : "bg-paper/5 text-paper/80"
+                    }`}
+                  >
+                    <span className="font-medium">
+                      Q{card.questionIndex + 1} {card.navLabel}
+                    </span>
+                    <span className="ml-2 text-xs text-paper/60">
+                      {card.scoreText}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div
+            data-testid="report-critiques"
+            className={`flex min-h-[18rem] flex-1 flex-col overflow-y-auto rounded-2xl border border-paper/10 bg-paper/5 p-4 ${revealClass(stage >= 2)}`}
+          >
+            {selected ? (
+              <QuestionCard card={selected} locale={locale} />
+            ) : null}
+          </div>
+        </div>
       </div>
     </section>
   );

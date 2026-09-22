@@ -96,6 +96,46 @@ describe("InterviewReportScreen", () => {
     vi.useRealTimers();
   });
 
+  it("puts Interview Answer Quality in Overview and Question chips in Review", async () => {
+    const user = userEvent.setup();
+    render(<InterviewReportScreen view={voiceView} />);
+
+    const overview = screen.getByTestId("report-overview");
+    const review = screen.getByTestId("report-review");
+
+    expect(within(overview).getByText("Interview Answer Quality")).toBeInTheDocument();
+    expect(within(overview).getByTestId("readiness-radar")).toBeInTheDocument();
+    expect(within(overview).queryByTestId("report-question-nav")).not.toBeInTheDocument();
+    expect(within(overview).queryByTestId("report-critiques")).not.toBeInTheDocument();
+
+    expect(within(review).getByTestId("report-question-nav")).toBeInTheDocument();
+    expect(within(review).getByTestId("report-critiques")).toBeInTheDocument();
+    expect(within(review).queryByTestId("readiness-radar")).not.toBeInTheDocument();
+
+    await user.click(
+      within(review).getByRole("button", { name: /q2 motivation/i }),
+    );
+    expect(
+      within(review).getByText("Add a personal future goal."),
+    ).toBeInTheDocument();
+    expect(within(overview).getByText("Interview Answer Quality")).toBeInTheDocument();
+  });
+
+  it("keeps Speech Delivery Signals in Overview, not in Review", () => {
+    render(<InterviewReportScreen view={voiceView} />);
+
+    expect(
+      within(screen.getByTestId("report-overview")).getByTestId(
+        "speech-delivery-signals",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("report-review")).queryByTestId(
+        "speech-delivery-signals",
+      ),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows AI Interview Practice Feedback, the stamp in its locked color, criterion scores as points/weight, and the /100 total", () => {
     render(<InterviewReportScreen view={voiceView} />);
 
