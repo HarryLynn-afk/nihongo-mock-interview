@@ -77,12 +77,12 @@ export function nextAfterAuth({
 }: {
   from: string | null;
   ok: boolean;
-}): "/consent" | "/login" | `/join?from=${string}` {
+}): "/" | "/login" | `/join?from=${string}` {
   if (!ok) {
     if (from) return `/join?from=${encodeURIComponent(from)}`;
     return "/login";
   }
-  return "/consent";
+  return from ? `/join?from=${encodeURIComponent(from)}` : "/";
 }
 
 /** Re-export so middleware/tests import visit policy from one place. */

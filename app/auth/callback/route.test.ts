@@ -8,12 +8,14 @@ const {
   getUser,
   signOut,
   exchangeCodeForSession,
+  verifyOtp,
   invitedMaybeSingle,
   participantMaybeSingle,
 } = vi.hoisted(() => ({
   getUser: vi.fn(),
   signOut: vi.fn(),
   exchangeCodeForSession: vi.fn(),
+  verifyOtp: vi.fn(),
   invitedMaybeSingle: vi.fn(),
   participantMaybeSingle: vi.fn(),
 }));
@@ -22,7 +24,7 @@ vi.mock("@/lib/server/study/serverClient", () => ({
   createStudyServerClient: vi.fn(async () => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
     return {
-      auth: { getUser, signOut, exchangeCodeForSession },
+      auth: { getUser, signOut, exchangeCodeForSession, verifyOtp },
     };
   }),
 }));
@@ -49,6 +51,7 @@ describe("GET /auth/callback", () => {
     getUser.mockReset();
     signOut.mockReset();
     exchangeCodeForSession.mockReset();
+    verifyOtp.mockReset();
     invitedMaybeSingle.mockReset();
     participantMaybeSingle.mockReset();
   });
@@ -101,7 +104,7 @@ describe("GET /auth/callback", () => {
     expect(signOut).toHaveBeenCalled();
   });
 
-  it("lets allowlisted /login Google reach consent", async () => {
+  it("returns allowlisted Google sign-in to the normal landing", async () => {
     process.env = {
       ...ORIGINAL_ENV,
       NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
@@ -122,13 +125,60 @@ describe("GET /auth/callback", () => {
     const res = await GET(
       new Request("http://localhost:3000/auth/callback?code=pkce"),
     );
-    expect(res.headers.get("location")).toBe("http://localhost:3000/consent");
+    expect(res.headers.get("location")).toBe("http://localhost:3000/");
     expect(signOut).not.toHaveBeenCalled();
     const setCookie = res.headers.get("set-cookie") ?? "";
     expect(setCookie).toContain(`${CONSENT_GATE_COOKIE}=ok`);
     expect(setCookie).toMatch(/nihongo_visit_id=[^;]+/);
     expect(setCookie).toContain("nihongo_visit_consented=;");
     expect(setCookie.toLowerCase()).toContain("httponly");
+  });
+
+  it("returns a signed-in tester to the unique-link landing", async () => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
+      SUPABASE_SERVICE_ROLE_KEY: "service",
+    };
+    exchangeCodeForSession.mockResolvedValue({ error: null });
+    getUser.mockResolvedValue({
+      data: { user: { id: "user-1", email: "tester@gmail.com" } },
+    });
+    participantMaybeSingle.mockResolvedValue({ data: null, error: null });
+    invitedMaybeSingle.mockResolvedValue({ data: null, error: null });
+    vi.resetModules();
+    const { GET } = await import("./route");
+
+    const res = await GET(
+      new Request("http://localhost:3000/auth/callback?code=pkce&from=rsu-k7m2"),
+    );
+
+    expect(res.headers.get("location")).toBe(
+      "http://localhost:3000/join?from=rsu-k7m2",
+    );
+    expect(res.headers.get("set-cookie") ?? "").toContain(
+      `${JOIN_FROM_COOKIE}=rsu-k7m2`,
+    );
+  });
+
+  it("returns a token-hash sign-in to the unique-link landing", async () => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
+      SUPABASE_SERVICE_ROLE_KEY: "service",
+    };
+    verifyOtp.mockResolvedValue({ error: null });
+    getUser.mockResolvedValue({ data: { user: { id: "user-1", email: "tester@gmail.com" } } });
+    participantMaybeSingle.mockResolvedValue({ data: null });
+    invitedMaybeSingle.mockResolvedValue({ data: null });
+    vi.resetModules();
+    const { GET } = await import("./route");
+
+    const res = await GET(new Request("http://localhost:3000/auth/callback?token_hash=abc&type=magiclink&from=T1"));
+
+    expect(res.headers.get("location")).toBe("http://localhost:3000/join?from=T1");
   });
 
   it("does not keep a leftover session when the join Google exchange misses", async () => {

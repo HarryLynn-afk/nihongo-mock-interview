@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { JOIN_FROM_COOKIE, readJoinFrom } from "@/lib/content/joinLink";
 import { consentGateCookie, shouldRewriteAuthCallback } from "@/lib/content/studyAuth";
 import {
   CONSENT_GATE_COOKIE,
@@ -16,6 +17,14 @@ import {
 function forgetVisit(response: NextResponse) {
   const gate = consentGateCookie(false);
   response.cookies.set(gate.name, gate.value, gate.options);
+}
+
+function landingForVisit(request: NextRequest) {
+  const from = readJoinFrom(`?from=${encodeURIComponent(request.cookies.get(JOIN_FROM_COOKIE)?.value ?? "")}`);
+  const landing = request.nextUrl.clone();
+  landing.pathname = from ? "/join" : "/";
+  landing.search = from ? `?from=${encodeURIComponent(from)}` : "";
+  return landing;
 }
 
 async function redirectToLoginAndSignOut(
@@ -72,10 +81,7 @@ export async function middleware(request: NextRequest) {
     (!request.cookies.get(VISIT_ID_COOKIE)?.value ||
       !request.cookies.get(VISIT_CONSENT_COOKIE)?.value)
   ) {
-    const consent = request.nextUrl.clone();
-    consent.pathname = "/consent";
-    consent.search = "";
-    return NextResponse.redirect(consent);
+    return NextResponse.redirect(landingForVisit(request));
   }
 
   const rewriteCallback = shouldRewriteAuthCallback(pathname, search);
@@ -125,10 +131,7 @@ export async function middleware(request: NextRequest) {
         request.cookies.get(VISIT_CONSENT_COOKIE)?.value,
       ))
     ) {
-      const consent = request.nextUrl.clone();
-      consent.pathname = "/consent";
-      consent.search = "";
-      return NextResponse.redirect(consent);
+      return NextResponse.redirect(landingForVisit(request));
     }
     const { data: participant } = await supabase
       .from("participants")
@@ -136,10 +139,7 @@ export async function middleware(request: NextRequest) {
       .eq("id", user.id)
       .maybeSingle();
     if (!participant?.participant_id) {
-      const consent = request.nextUrl.clone();
-      consent.pathname = "/consent";
-      consent.search = "";
-      return NextResponse.redirect(consent);
+      return NextResponse.redirect(landingForVisit(request));
     }
   }
   return response;

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { joinPageView, readJoinFrom } from "@/lib/content/joinLink";
 import { lookupJoinLink } from "@/lib/server/study/lookupJoinLink";
+import { getLandingView } from "@/lib/server/study/landingView";
 import { JoinLinkLanding } from "./JoinLinkLanding";
 
 export const metadata: Metadata = {
@@ -24,5 +25,6 @@ export default async function JoinPage({
   if (!from || !link) {
     notFound();
   }
-  return <JoinLinkLanding from={from} view={joinPageView(from, link)} />;
+  const landing = await getLandingView(`/join?from=${encodeURIComponent(from)}`);
+  return <JoinLinkLanding from={from} view={joinPageView(from, link)} landing={landing} />;
 }

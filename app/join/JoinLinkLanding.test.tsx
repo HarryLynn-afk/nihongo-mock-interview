@@ -3,8 +3,12 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { JoinLinkLanding } from "./JoinLinkLanding";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+}));
+
 describe("JoinLinkLanding", () => {
-  it("shows the start screen with Login when the join link is open", () => {
+  it("shows the shared guest landing with Login when the join link is open", () => {
     render(
       <JoinLinkLanding
         from="rsu-k7m2"
@@ -18,15 +22,29 @@ describe("JoinLinkLanding", () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Try as guest" }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try as guest" })).toBeInTheDocument();
+    expect(screen.getByText(/Sign in with Google for the full interview/)).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "Participant login" }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Continue with Google" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("keeps the unique link as the profile return destination", () => {
+    render(
+      <JoinLinkLanding
+        from="rsu-k7m2"
+        view={{ status: "open", showGoogle: true }}
+        landing={{ kind: "signedIn", origin: "/join?from=rsu-k7m2", consentedThisVisit: false }}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "Profile" })).toHaveAttribute(
+      "href",
+      "/profile?returnTo=%2Fjoin%3Ffrom%3Drsu-k7m2",
+    );
   });
 
   it("opens Continue with Google when Login is clicked and does not start Google yet", async () => {
@@ -80,7 +98,8 @@ describe("JoinLinkLanding", () => {
     ).toBeInTheDocument();
   });
 
-  it("hides Login and says the link is full when the cap is reached", () => {
+  it("shows a dismissible full-link popup over the shared landing", async () => {
+    const user = userEvent.setup();
     render(<JoinLinkLanding from="T1" view={{ status: "full", showGoogle: false }} />);
 
     expect(
@@ -89,7 +108,36 @@ describe("JoinLinkLanding", () => {
       }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Login" })).not.toBeInTheDocument();
-    expect(screen.getByText("This sign-up link is full.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try as guest" })).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog", { name: "This sign-up link is full." });
+    await user.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog", { name: "This sign-up link is full." })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try as guest" })).toBeInTheDocument();
+  });
+
+  it("opens the full popup again for a different full invite", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <JoinLinkLanding from="T1" view={{ status: "full", showGoogle: false }} />,
+    );
+    await user.click(screen.getByRole("button", { name: "Close" }));
+
+    rerender(<JoinLinkLanding from="T2" view={{ status: "full", showGoogle: false }} />);
+
+    expect(screen.getByRole("dialog", { name: "This sign-up link is full." })).toBeInTheDocument();
+  });
+
+  it("does not offer Join interview on a full unique link even with a saved sign-in", () => {
+    render(
+      <JoinLinkLanding
+        from="T1"
+        view={{ status: "full", showGoogle: false }}
+        landing={{ kind: "signedIn", origin: "/join?from=T1", consentedThisVisit: false }}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: "Join interview" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try as guest" })).toBeInTheDocument();
   });
 
   it("starts Google sign-up through POST /api/auth/join-google", async () => {

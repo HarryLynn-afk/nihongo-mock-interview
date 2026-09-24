@@ -74,20 +74,20 @@ describe("visit route / session matrix", () => {
     expect(setCookie).not.toMatch(/nihongo_consent_gate=;.*max-age=0/i);
   });
 
-  it("successful auth goes to /consent; failed join goes back to join", () => {
-    expect(nextAfterAuth({ from: null, ok: true })).toBe("/consent");
+  it("successful auth returns to the landing; failed join goes back to join", () => {
+    expect(nextAfterAuth({ from: null, ok: true })).toBe("/");
     expect(nextAfterAuth({ from: "rsu-k7m2", ok: false })).toBe(
       "/join?from=rsu-k7m2",
     );
   });
 
-  it("Participant /call with sign-in but no consent returns to consent", async () => {
+  it("Participant /call with sign-in but no consent returns to the landing", async () => {
     expect(mustSignIn("/call", "", "ok")).toBe(false);
     const { middleware } = await import("../../middleware");
     const res = await middleware(
       request("/call", `${CONSENT_GATE_COOKIE}=ok`),
     );
     expect(res.status).toBe(307);
-    expect(res.headers.get("location")).toBe("http://localhost/consent");
+    expect(res.headers.get("location")).toBe("http://localhost/");
   });
 });

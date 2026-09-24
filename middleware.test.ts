@@ -86,15 +86,22 @@ describe("middleware visit gate", () => {
     const { middleware } = await import("./middleware");
     const res = await middleware(request("/call", `${CONSENT_GATE_COOKIE}=ok`));
     expect(res.status).toBe(307);
-    expect(res.headers.get("location")).toBe("http://localhost/consent");
+    expect(res.headers.get("location")).toBe("http://localhost/");
   });
 
-  it("sends a signed-in tester without consent for this visit back to consent", async () => {
+  it("keeps the unique landing URL when an unconsented call is opened", async () => {
+    const { middleware } = await import("./middleware");
+    const res = await middleware(request("/call", `${CONSENT_GATE_COOKIE}=ok; nihongo_join_from=rsu-k7m2`));
+
+    expect(res.headers.get("location")).toBe("http://localhost/join?from=rsu-k7m2");
+  });
+
+  it("sends a signed-in tester without consent for this visit back to the landing", async () => {
     const { middleware } = await import("./middleware");
     const res = await middleware(request("/call", `${CONSENT_GATE_COOKIE}=ok`));
 
     expect(res.status).toBe(307);
-    expect(res.headers.get("location")).toBe("http://localhost/consent");
+    expect(res.headers.get("location")).toBe("http://localhost/");
   });
 
   it("lets /call?guest=1 through without a visit cookie", async () => {

@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { createServerClient, signOut } = vi.hoisted(() => ({
+const { createServerClient, signOut, cookieValues } = vi.hoisted(() => ({
   createServerClient: vi.fn(),
   signOut: vi.fn(),
+  cookieValues: { nihongo_join_from: "T1" } as Record<string, string>,
 }));
 
 vi.mock("@supabase/ssr", () => ({ createServerClient }));
 vi.mock("next/headers", () => ({
   cookies: async () => ({
     getAll: () => [],
-    get: (name: string) =>
-      name === "nihongo_join_from" ? { value: "T1" } : undefined,
+    get: (name: string) => cookieValues[name] ? { value: cookieValues[name] } : undefined,
     set: vi.fn(),
   }),
 }));
@@ -38,5 +38,14 @@ describe("POST /api/auth/logout", () => {
     ]) {
       expect(response.cookies.get(name)?.value).toBe("");
     }
+  });
+
+  it("returns normal-link sign-out to the guest landing", async () => {
+    delete cookieValues.nihongo_join_from;
+    const { POST } = await import("./route");
+
+    const response = await POST();
+
+    expect(await response.json()).toEqual({ ok: true, destination: "/" });
   });
 });

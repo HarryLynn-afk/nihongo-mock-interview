@@ -45,6 +45,28 @@ describe("JoinInterview", () => {
     expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
   });
 
+  it("asks for consent before opening Participant device setup", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ participantId: "P001" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<JoinInterview consentRequired />);
+
+    await user.click(screen.getByRole("button", { name: "Join interview" }));
+
+    expect(screen.getByRole("dialog", { name: "Study consent" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: /ready to join/i })).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: "Agree and continue" }));
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/study/consent", { method: "POST" });
+    expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
+  });
+
   it("turns off the camera preview when the device popup closes", async () => {
     const stop = vi.fn();
     getUserMedia.mockResolvedValue({

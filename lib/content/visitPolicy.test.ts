@@ -75,9 +75,9 @@ describe("mustSignIn", () => {
 });
 
 describe("nextAfterAuth", () => {
-  it("sends a successful sign-in to Study consent", () => {
-    expect(nextAfterAuth({ from: null, ok: true })).toBe("/consent");
-    expect(nextAfterAuth({ from: "rsu-k7m2", ok: true })).toBe("/consent");
+  it("returns successful sign-in to its originating landing", () => {
+    expect(nextAfterAuth({ from: null, ok: true })).toBe("/");
+    expect(nextAfterAuth({ from: "rsu-k7m2", ok: true })).toBe("/join?from=rsu-k7m2");
   });
 
   it("returns join or login when auth misses", () => {

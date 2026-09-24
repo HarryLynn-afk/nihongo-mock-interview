@@ -4,6 +4,8 @@ import { createBrowserClient } from "@supabase/ssr";
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { readJoinFrom } from "@/lib/content/joinLink";
+import { nextAfterAuth } from "@/lib/content/visitPolicy";
 import {
   MAGIC_LINK_EXPIRED_COPY,
   MAGIC_LINK_MISSING_COPY,
@@ -13,10 +15,8 @@ import { localizeAuthMessage } from "@/lib/content/uiCopy";
 import { useCopy } from "../components/useUiLocale";
 
 export function HashSessionCatcher({
-  redirectTo = "/consent",
   idle = false,
 }: {
-  redirectTo?: string;
   idle?: boolean;
 }) {
   const router = useRouter();
@@ -52,10 +52,13 @@ export function HashSessionCatcher({
       settled = true;
       if (expireTimerId !== undefined) clearTimeout(expireTimerId);
       void (async () => {
-        if (redirectTo === "/consent") {
-          await fetch("/api/auth/consent-gate", { method: "POST" });
+        const response = await fetch("/api/auth/consent-gate", { method: "POST" });
+        if (!response.ok) {
+          setStatus("Sign-in could not be completed.");
+          return;
         }
-        router.replace(redirectTo);
+        const from = readJoinFrom(window.location.search);
+        router.replace(nextAfterAuth({ from, ok: true }));
       })();
     }
 
@@ -99,7 +102,7 @@ export function HashSessionCatcher({
       subscription.unsubscribe();
       if (expireTimerId !== undefined) clearTimeout(expireTimerId);
     };
-  }, [idle, redirectTo, router]);
+  }, [idle, router]);
 
   if (!status) return null;
   return (

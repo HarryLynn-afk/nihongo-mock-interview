@@ -41,7 +41,7 @@ describe("participant classroom consent gate", () => {
     const response = await middleware(request);
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("http://localhost/consent");
+    expect(response.headers.get("location")).toBe("http://localhost/");
   });
 
   it("allows the signed-in tester after consent for this visit", async () => {
@@ -73,6 +73,6 @@ describe("participant classroom consent gate", () => {
     const { middleware } = await import("./middleware");
     const response = await middleware(request);
 
-    expect(response.headers.get("location")).toBe("http://localhost/consent");
+    expect(response.headers.get("location")).toBe("http://localhost/");
   });
 });

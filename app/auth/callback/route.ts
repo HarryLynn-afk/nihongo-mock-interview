@@ -139,7 +139,11 @@ export async function GET(request: Request) {
       await supabase.auth.signOut();
       return redirectLoginNotInvited(origin);
     }
-    return redirectWithJoinFrom(new URL("/consent", origin), from, true);
+    return redirectWithJoinFrom(
+      new URL(from ? `/join?from=${encodeURIComponent(from)}` : "/", origin),
+      from,
+      true,
+    );
   }
 
   if (supabase && tokenHash && isOtpType(type)) {
@@ -156,7 +160,11 @@ export async function GET(request: Request) {
       await supabase.auth.signOut();
       return redirectLoginNotInvited(origin);
     }
-    return redirectWithJoinFrom(new URL("/consent", origin), from, true);
+    return redirectWithJoinFrom(
+      new URL(from ? `/join?from=${encodeURIComponent(from)}` : "/", origin),
+      from,
+      true,
+    );
   }
 
   // Hash tokens live in the URL fragment, which this server route never

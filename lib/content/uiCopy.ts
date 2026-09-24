@@ -37,6 +37,8 @@ const en = {
   },
   account: {
     eyebrow: "Your space",
+    profile: "Profile",
+    back: "Back to interview",
     title: "Your interview starts here",
     intro: "Check your Google account, then continue to the classroom.",
     label: "Tester account",
@@ -73,6 +75,7 @@ const en = {
     joinInterview: "Join interview",
   },
   joinLink: {
+    explanation: "Sign in with Google for the full interview. Guest practice is shorter and isn't saved.",
     title: "Join NihonGo",
     google: "Continue with Google",
     login: "Login",
@@ -290,6 +293,8 @@ const my: UiCopy = {
   },
   account: {
     eyebrow: "သင့်နေရာ",
+    profile: "ပရိုဖိုင်",
+    back: "အင်တာဗျူးသို့ ပြန်သွားရန်",
     title: "သင့်အင်တာဗျူးကို ဤနေရာမှ စတင်ပါ",
     intro: "Google အကောင့်ကို စစ်ဆေးပြီး စာသင်ခန်းသို့ ဆက်ပါ။",
     label: "စမ်းသပ်သူ အကောင့်",
@@ -325,6 +330,7 @@ const my: UiCopy = {
     joinInterview: "အင်တာဗျူးတက်ရန်",
   },
   joinLink: {
+    explanation: "အင်တာဗျူးအပြည့်အစုံအတွက် Google ဖြင့် ဝင်ရောက်ပါ။ ဧည့်သည် လေ့ကျင့်မှုမှာ ပိုတိုပြီး သိမ်းဆည်းမည် မဟုတ်ပါ။",
     title: "NihonGo ဝင်ရောက်ရန်",
     google: "Google ဖြင့် ဆက်ရန်",
     login: "ဝင်ရောက်ရန်",

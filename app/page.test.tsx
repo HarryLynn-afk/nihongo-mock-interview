@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Home from "./components/Home";
 import { UI_LOCALE_STORAGE_KEY } from "@/lib/content/locale";
@@ -40,9 +40,7 @@ describe("Home (start screen)", () => {
     expect(
       screen.getByText("Three questions. Guest practice isn't saved."),
     ).toBeInTheDocument();
-    const loginLink = screen.getByRole("link", {
-      name: "Participant login",
-    });
+    const loginLink = screen.getByRole("link", { name: "Login" });
     expect(loginLink).toHaveAttribute("href", "/login");
     expect(
       screen.queryByRole("navigation", { name: "Primary" }),
@@ -80,15 +78,41 @@ describe("Home (start screen)", () => {
     );
   });
 
-  it("keeps Participant login in the header only, with a single Try as guest CTA", () => {
+  it("shows Join interview, guest practice, and Profile after Google sign-in", () => {
+    render(
+      <Home
+        view={{
+          kind: "signedIn",
+          origin: "/join?from=T1",
+          consentedThisVisit: false,
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Join interview" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try as guest" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Profile" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Participant login" })).not.toBeInTheDocument();
+  });
+
+  it("keeps Login in the header only, with a single Try as guest CTA", () => {
     render(<Home />);
 
     const guest = screen.getByRole("button", { name: "Try as guest" });
-    const login = screen.getByRole("link", { name: "Participant login" });
+    const login = screen.getByRole("link", { name: "Login" });
 
     expect(login).toHaveAttribute("href", "/login");
     expect(guest.parentElement).not.toBe(login.parentElement);
     expect(guest.parentElement).toHaveClass("justify-center");
+  });
+
+  it("places Login on the left side of the header before the language control", () => {
+    render(<Home />);
+
+    const header = screen.getByRole("banner");
+    const login = within(header).getByRole("link", { name: "Login" });
+    const language = within(header).getByRole("group", { name: "Language" });
+    expect(login.compareDocumentPosition(language) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("Try as guest leaves the landing for /guest, with no email dialog", async () => {
@@ -141,7 +165,7 @@ describe("Home (start screen)", () => {
       screen.getByRole("button", { name: "ဧည့်သည်အဖြစ် စမ်းကြည့်ရန်" }),
     ).toBeInTheDocument();
     expect(
-      screen.getAllByRole("link", { name: "ပါဝင်သူ ဝင်ရောက်ရန်" }).length,
+      screen.getAllByRole("link", { name: "ဝင်ရောက်ရန်" }).length,
     ).toBeGreaterThan(0);
     expect(screen.queryByRole("link", { name: "လေ့ကျင့်ရန်" })).not.toBeInTheDocument();
     expect(

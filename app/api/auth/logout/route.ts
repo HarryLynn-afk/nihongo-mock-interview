@@ -21,7 +21,7 @@ export async function POST() {
     }
   }
 
-  const destination = from ? `/join?from=${encodeURIComponent(from)}` : "/login";
+  const destination = from ? `/join?from=${encodeURIComponent(from)}` : "/";
   const response = NextResponse.json({ ok: true, destination });
   const gate = consentGateCookie(false);
   response.cookies.set(gate.name, gate.value, gate.options);
