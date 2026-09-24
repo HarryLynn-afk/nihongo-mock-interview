@@ -145,6 +145,22 @@ export function useLobbyDevices({ active }: { active: boolean }) {
     attachPreview(null);
   }, [active, attachPreview]);
 
+  const resetDevices = useCallback(() => {
+    stopStream(videoStreamRef.current);
+    stopStream(audioStreamRef.current);
+    videoStreamRef.current = null;
+    audioStreamRef.current = null;
+    cameraOnRef.current = false;
+    micOnRef.current = false;
+    setCameraOn(false);
+    setMicOn(false);
+    setCameraBlocked(false);
+    setCameraErrorName(null);
+    setMicBlocked(false);
+    setMicErrorName(null);
+    attachPreview(null);
+  }, [attachPreview]);
+
   const toggleCamera = useCallback(() => {
     if (cameraOnRef.current) {
       cameraOnRef.current = false;
@@ -237,5 +253,6 @@ export function useLobbyDevices({ active }: { active: boolean }) {
     videoRef,
     toggleCamera,
     toggleMic,
+    resetDevices,
   };
 }

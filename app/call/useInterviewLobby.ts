@@ -34,6 +34,10 @@ export function useInterviewLobby({
     setStep("devices");
   }, []);
 
+  const closeDevices = useCallback(() => {
+    setStep("idle");
+  }, []);
+
   const continueFromDevices = useCallback(() => {
     setSecondsLeft(REMINDER_SECONDS);
     setStep("reminder");
@@ -49,6 +53,7 @@ export function useInterviewLobby({
     interviewStarted,
     secondsLeft,
     openDevices,
+    closeDevices,
     continueFromDevices,
     skipReminder,
   };

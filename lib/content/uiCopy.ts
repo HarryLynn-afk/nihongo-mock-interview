@@ -82,6 +82,7 @@ const en = {
   },
   lobby: {
     readyToJoin: "Ready to join",
+    close: "Close",
     heading: "Japanese interview with Tanaka-sensei",
     subhead: "Choose camera and microphone, then enter the classroom.",
     camera: "Camera",
@@ -333,6 +334,7 @@ const my: UiCopy = {
   },
   lobby: {
     readyToJoin: "ဝင်ရန် အဆင်သင့်",
+    close: "ပိတ်ရန်",
     heading: "Tanaka-sensei နှင့် ဂျပန် အင်တာဗျူး",
     subhead: "ကင်မရာနှင့် မိုက်ခရိုဖုန်း ရွေးပြီး စာသင်ခန်းထဲ ဝင်ပါ။",
     camera: "ကင်မရာ",

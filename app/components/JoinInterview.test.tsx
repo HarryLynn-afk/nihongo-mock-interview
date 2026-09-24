@@ -28,6 +28,52 @@ describe("JoinInterview", () => {
     sessionStorage.clear();
   });
 
+  it("closes the Participant device popup and stays on the account page", async () => {
+    const user = userEvent.setup();
+    render(<JoinInterview />);
+
+    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(screen.queryByRole("dialog", { name: /ready to join/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Join interview" })).toBeInTheDocument();
+    expect(pushMock).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
+  });
+
+  it("turns off the camera preview when the device popup closes", async () => {
+    const stop = vi.fn();
+    getUserMedia.mockResolvedValue({
+      getTracks: () => [{ kind: "video", readyState: "live", stop }],
+      getVideoTracks: () => [{ kind: "video", readyState: "live", stop }],
+      getAudioTracks: () => [],
+    } as unknown as MediaStream);
+    vi.stubGlobal("navigator", {
+      mediaDevices: {
+        getUserMedia,
+        enumerateDevices: vi.fn().mockResolvedValue([]),
+      },
+    });
+
+    const user = userEvent.setup();
+    render(<JoinInterview />);
+
+    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    await user.click(screen.getByRole("button", { name: "Camera" }));
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalled());
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(stop).toHaveBeenCalled());
+
+    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    expect(screen.getByRole("button", { name: "Camera" })).toHaveAttribute("aria-pressed", "false");
+    expect(pushMock).not.toHaveBeenCalled();
+  });
+
   it("Participant Join stays on this page for the start popup, then Skip goes to /call", async () => {
     const user = userEvent.setup();
     render(<JoinInterview />);

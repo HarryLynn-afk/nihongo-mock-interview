@@ -39,6 +39,7 @@ export function JoinInterview({
     interviewStarted,
     secondsLeft,
     openDevices,
+    closeDevices,
     continueFromDevices,
     skipReminder,
   } = useInterviewLobby({ skipLobby: false, startIdle: true });
@@ -53,6 +54,7 @@ export function JoinInterview({
     videoRef,
     toggleCamera,
     toggleMic,
+    resetDevices,
   } = useLobbyDevices({
     active: devicesVisible && !interviewStarted,
   });
@@ -87,18 +89,41 @@ export function JoinInterview({
           aria-label={copy.lobby.readyToJoin}
           className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#e8f8d4]/80 p-6"
         >
-          <InterviewLobby
-            cameraEnabled={cameraOn}
-            micEnabled={micOn}
-            cameraBlocked={cameraBlocked}
-            cameraErrorName={cameraErrorName}
-            micBlocked={micBlocked}
-            micErrorName={micErrorName}
-            videoRef={videoRef}
-            onToggleCamera={toggleCamera}
-            onToggleMic={toggleMic}
-            onContinue={continueFromDevices}
-          />
+          <div className="relative w-full max-w-[360px]">
+            <InterviewLobby
+              cameraEnabled={cameraOn}
+              micEnabled={micOn}
+              cameraBlocked={cameraBlocked}
+              cameraErrorName={cameraErrorName}
+              micBlocked={micBlocked}
+              micErrorName={micErrorName}
+              videoRef={videoRef}
+              onToggleCamera={toggleCamera}
+              onToggleMic={toggleMic}
+              onContinue={continueFromDevices}
+            />
+            <button
+              type="button"
+              aria-label={copy.lobby.close}
+              onClick={() => {
+                resetDevices();
+                closeDevices();
+              }}
+              className="absolute right-3 top-3 z-20 flex size-8 items-center justify-center rounded-full bg-white/90 text-eel shadow-sm transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                className="size-4"
+              >
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </div>
         </div>
       ) : null}
       {reminderVisible ? (
