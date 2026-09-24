@@ -10,8 +10,12 @@ This is not a hackathon or event-day demo. The 29 Aug Launch Pack rebuild is voi
 A student joins a mock admission interview with Tanaka-sensei (Tokyo Pathway Japanese School), answers **by voice**, and sees an **Interview Readiness** report on `/call` (no `/report` route). Typing is not offered.
 
 - **Guest** (**Try as guest** on `/` → `/call?guest=1`): practice the three locked Questions. Not saved to study sessions.
-- **Participant** (`/login` or a capped join link → private tester account on `/consent` → **Join interview** → `/call`): invited tester after Google login and consent this visit. Their name and email appear on their own account page; the classroom and report show `P001`… instead. Topic bank + follow-ups. Study N.
+- **Participant** (`/` or a capped join link → Google sign-in → same landing → **Join interview** → consent → device setup → `/call`): invited tester after Google login and consent this visit. Their name and email appear on `/profile`; the classroom and report show `P001`… instead. Topic bank + follow-ups. Study N.
 - **Pitch mode** was removed. `/pitch` and `/call?pitch=1` show the not-found page.
+
+The [participant entry flow](docs/participant-entry-flow.md) records the landing, sign-in, profile, consent, and classroom sequence.
+
+The [lint cleanup checklist](docs/lint-cleanup.md) records the existing code-checker errors and warnings for later work.
 
 On `/call`, Tanaka-sensei plays committed `public/question-{id}.mp3`. The student Speaks Japanese (Deepgram live captions, or browser SpeechRecognition if Deepgram is unset). **Hear again** (speaker left of the Japanese headline) replays the Question while idle or paused. **Answer again** (**1 retry**, left of the mic) is one content redo before Submit, per Question. Empty or no-kana takes get two more Speak attempts, then the Question is skipped. Camera is optional; mic is required.
 
@@ -70,8 +74,8 @@ npm run lint
 Desktop browser only. Phone visitors see “Open on a computer.”
 
 - Practice: http://localhost:3000 (**Try as guest** → device check → 15s lobby popup → `/call?guest=1`)
-- Participant login: http://localhost:3000/login (allowlisted Google email → tester account and consent on `/consent` → Join)
-- Unique join link: http://localhost:3000/join?from=CODE (valid capped invite code → Google → tester account and consent on `/consent` → Join)
+- Participant login: http://localhost:3000 (Login → allowlisted Google email → same landing with **Join interview**)
+- Unique join link: http://localhost:3000/join?from=CODE (valid capped invite code → Google → same landing with **Join interview**)
 
 ## Optional study database (Supabase)
 
@@ -113,7 +117,7 @@ insert into invite_links (code, max_signups)
 values ('rsu-k7m2', 11);
 ```
 
-Send `/join?from=rsu-k7m2`. The valid invite code is the permission to join: the tester signs in with Google, sees their private tester account, agrees to consent, and enters the classroom. A slot is consumed only when a new Participant is created successfully. Returning testers do not consume another slot. **Sign out** on the tester account page ends the current session without consuming a slot and returns to the same join link (or `/login` for allowlisted entry).
+Send `/join?from=rsu-k7m2`. The valid invite code is the permission to join: the tester signs in with Google, returns to the same landing, chooses **Join interview**, agrees to consent, and enters the classroom. A slot is consumed only when a new Participant is created successfully. Returning testers do not consume another slot. **Sign out** on `/profile` ends the current session without consuming a slot and returns to the same join link (or `/` for allowlisted entry).
 
 ### 4. Auth URLs
 
@@ -122,7 +126,7 @@ In the same project: **Authentication** → **URL Configuration**.
 - Site URL (local): `http://localhost:3000`
 - Redirect URLs: `http://localhost:3000/auth/callback`
 
-Enable **Google** under **Authentication** → **Providers**. After Google OAuth, testers land on `/consent`, then Join. Google Cloud’s authorized redirect is `https://<project-ref>.supabase.co/auth/v1/callback`, not this app’s `/login` or `/join`.
+Enable **Google** under **Authentication** → **Providers**. After Google OAuth, testers return to their landing page, then choose **Join interview** to consent and enter. Google Cloud’s authorized redirect is `https://<project-ref>.supabase.co/auth/v1/callback`, not this app’s `/login` or `/join`.
 
 Dashboard **Invite user** and Supabase magic-link emails are not used by this app. `POST /api/auth/magic-link` intentionally returns `410 gone`.
 
@@ -140,7 +144,7 @@ If Groq misses (timeout, bad JSON, or 429/503/529 capacity skip), the last scree
 ## Project layout
 
 ```text
-app/                 Routes + API handlers (`/`, `/call`, `/login`, `/consent`, `/join`)
+app/                 Routes + API handlers (`/`, `/call`, `/login`, `/profile`, `/join`)
 lib/server/          Secrets — never import from a "use client" file
 lib/content/         Locked questions, rubric, sample report (safe anywhere)
 public/              Sensei clips (`question-{id}.mp3`) and tile image
