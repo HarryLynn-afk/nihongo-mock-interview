@@ -71,7 +71,7 @@ export async function openUserCamera({
       await enumerateDevices(),
     );
     if ("stream" in firstList) return firstList;
-    if (firstList.lastName) lastName = firstList.lastName;
+    if ("lastName" in firstList && firstList.lastName) lastName = firstList.lastName;
 
     await delay(settleMs);
     const secondList = await tryListedCameras(
@@ -79,7 +79,7 @@ export async function openUserCamera({
       await enumerateDevices(),
     );
     if ("stream" in secondList) return secondList;
-    if (secondList.lastName) lastName = secondList.lastName;
+    if ("lastName" in secondList && secondList.lastName) lastName = secondList.lastName;
 
     return { errorName: lastName };
   }

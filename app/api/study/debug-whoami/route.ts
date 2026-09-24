@@ -3,8 +3,8 @@ import { createStudyServerClient } from "@/lib/server/study/serverClient";
 
 /**
  * Dev-only diagnostic: which email (if any) the current Supabase session
- * belongs to. Never exposed in production — the app's privacy design shows
- * a participant id to testers, never their email.
+ * belongs to. Not available in production; the private Tester account page
+ * now shows the signed-in email directly to its owner.
  */
 export async function GET() {
   if (process.env.NODE_ENV === "production") {

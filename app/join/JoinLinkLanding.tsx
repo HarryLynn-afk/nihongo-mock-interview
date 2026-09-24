@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { JoinPageView } from "@/lib/content/joinLink";
 import { GoogleSignInDialog } from "../components/GoogleSignInDialog";
-import Home from "../page";
+import Home from "../components/Home";
 import { useCopy } from "../components/useUiLocale";
 
 function JoinLoginButton({ from }: { from: string }) {

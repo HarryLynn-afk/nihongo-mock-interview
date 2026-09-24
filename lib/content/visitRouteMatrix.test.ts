@@ -81,13 +81,13 @@ describe("visit route / session matrix", () => {
     );
   });
 
-  it("Participant /call with a visit cookie stays", async () => {
+  it("Participant /call with sign-in but no consent returns to consent", async () => {
     expect(mustSignIn("/call", "", "ok")).toBe(false);
     const { middleware } = await import("../../middleware");
     const res = await middleware(
       request("/call", `${CONSENT_GATE_COOKIE}=ok`),
     );
-    expect(res.status).toBe(200);
-    expect(res.headers.get("location")).toBeNull();
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe("http://localhost/consent");
   });
 });

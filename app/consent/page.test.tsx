@@ -16,6 +16,8 @@ vi.mock("../components/JoinInterview", () => ({
 function mockStudyMe(body: {
   participantId?: string | null;
   consented?: boolean;
+  state?: "signInRequired" | "consentRequired" | "ready";
+  account?: { displayName: string; email: string };
 }) {
   return {
     ok: true,
@@ -29,21 +31,64 @@ describe("Study consent page", () => {
     pushMock.mockReset();
   });
 
-  it("shows a dev-only signed-in-as line from /api/study/debug-whoami", async () => {
-    const fetchMock = vi.fn((input: RequestInfo) => {
-      if (String(input).includes("/api/study/me")) {
-        return Promise.resolve(mockStudyMe({ participantId: null, consented: false }));
+  it("shows the Google account and lets the tester sign out", async () => {
+    const fetchMock = vi.fn((input: RequestInfo, init?: RequestInit) => {
+      if (String(input) === "/api/study/me") {
+        return Promise.resolve(
+          mockStudyMe({
+            state: "consentRequired",
+            account: { displayName: "May Thiri", email: "may@gmail.com" },
+            participantId: "P001",
+          }),
+        );
       }
-      return Promise.resolve({
-        ok: true,
-        json: async () => ({ email: "tester@gmail.com" }),
-      });
+      if (String(input) === "/api/auth/logout" && init?.method === "POST") {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ ok: true, destination: "/join?from=T1" }),
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ email: null }) });
     });
     vi.stubGlobal("fetch", fetchMock);
     render(<ConsentPage />);
 
-    expect(await screen.findByText(/tester@gmail\.com/)).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith("/api/study/debug-whoami");
+    expect(await screen.findByText("May Thiri")).toBeInTheDocument();
+    expect(screen.getByText("may@gmail.com")).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Sign out" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/auth/logout", { method: "POST" });
+      expect(pushMock).toHaveBeenCalledWith("/join?from=T1");
+    });
+  });
+
+  it("shows account identity as page content without the development diagnostic", async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        mockStudyMe({
+          state: "consentRequired",
+          account: { displayName: "May Thiri", email: "may@gmail.com" },
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ConsentPage />);
+
+    expect(await screen.findByText("may@gmail.com")).toBeInTheDocument();
+    expect(screen.queryByText(/Dev only/)).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith("/api/study/debug-whoami");
+  });
+
+  it("does not offer consent when the Google session is gone", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(mockStudyMe({ state: "signInRequired" }))),
+    );
+    render(<ConsentPage />);
+
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/login"));
+    expect(screen.queryByRole("button", { name: "Agree and continue" })).not.toBeInTheDocument();
   });
 
   it("keeps Agree disabled until the checkbox is ticked", async () => {

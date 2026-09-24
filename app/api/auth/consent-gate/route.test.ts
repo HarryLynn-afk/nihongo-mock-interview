@@ -57,7 +57,9 @@ describe("POST /api/auth/consent-gate", () => {
     expect(res.status).toBe(200);
     const setCookie = res.headers.get("set-cookie") ?? "";
     expect(setCookie).toContain(`${CONSENT_GATE_COOKIE}=ok`);
+    expect(setCookie).toMatch(/nihongo_visit_id=[^;]+/);
+    expect(setCookie).toContain("nihongo_visit_consented=;");
     expect(setCookie.toLowerCase()).toContain("httponly");
-    expect(setCookie.toLowerCase()).not.toMatch(/max-age=/);
+    expect(setCookie.split(",")[0].toLowerCase()).not.toMatch(/max-age=/);
   });
 });

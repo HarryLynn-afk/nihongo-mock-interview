@@ -4,8 +4,14 @@ import { consentGateCookie, shouldRewriteAuthCallback } from "@/lib/content/stud
 import {
   CONSENT_GATE_COOKIE,
   mustSignIn,
+  isParticipantCall,
   isRemovedPitchUrl,
 } from "@/lib/content/visitPolicy";
+import {
+  hasVisitConsent,
+  VISIT_CONSENT_COOKIE,
+  VISIT_ID_COOKIE,
+} from "@/lib/server/study/visitConsent";
 
 function forgetVisit(response: NextResponse) {
   const gate = consentGateCookie(false);
@@ -20,7 +26,7 @@ async function redirectToLoginAndSignOut(
   const login = request.nextUrl.clone();
   login.pathname = "/login";
   login.search = "";
-  let response = NextResponse.redirect(login);
+  const response = NextResponse.redirect(login);
   forgetVisit(response);
   if (url && anon) {
     const supabase = createServerClient(url, anon, {
@@ -61,6 +67,16 @@ export async function middleware(request: NextRequest) {
   if (mustSignIn(pathname, search, visitCookie)) {
     return redirectToLoginAndSignOut(request, url, anon);
   }
+  if (
+    isParticipantCall(pathname, search) &&
+    (!request.cookies.get(VISIT_ID_COOKIE)?.value ||
+      !request.cookies.get(VISIT_CONSENT_COOKIE)?.value)
+  ) {
+    const consent = request.nextUrl.clone();
+    consent.pathname = "/consent";
+    consent.search = "";
+    return NextResponse.redirect(consent);
+  }
 
   const rewriteCallback = shouldRewriteAuthCallback(pathname, search);
   const destination = request.nextUrl.clone();
@@ -95,7 +111,37 @@ export async function middleware(request: NextRequest) {
       },
     },
   });
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (isParticipantCall(pathname, search)) {
+    if (!user) {
+      return redirectToLoginAndSignOut(request, url, anon);
+    }
+    if (
+      !(await hasVisitConsent(
+        user.id,
+        request.cookies.get(VISIT_ID_COOKIE)?.value,
+        request.cookies.get(VISIT_CONSENT_COOKIE)?.value,
+      ))
+    ) {
+      const consent = request.nextUrl.clone();
+      consent.pathname = "/consent";
+      consent.search = "";
+      return NextResponse.redirect(consent);
+    }
+    const { data: participant } = await supabase
+      .from("participants")
+      .select("participant_id")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (!participant?.participant_id) {
+      const consent = request.nextUrl.clone();
+      consent.pathname = "/consent";
+      consent.search = "";
+      return NextResponse.redirect(consent);
+    }
+  }
   return response;
 }
 

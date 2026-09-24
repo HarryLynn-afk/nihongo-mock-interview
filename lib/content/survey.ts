@@ -77,11 +77,12 @@ export function buildSurveyPayload({
         comment: string;
       };
 }): SurveyPayload {
+  const source: "live" | "sample" = report.source === "sample" ? "sample" : "live";
   const base = {
     sessionId,
     headline: report.headline,
     total: report.total,
-    source: report.source === "sample" ? "sample" : "live",
+    source,
     answers: [...answers],
   };
   if (outcome.skipped) {

@@ -126,6 +126,8 @@ describe("GET /auth/callback", () => {
     expect(signOut).not.toHaveBeenCalled();
     const setCookie = res.headers.get("set-cookie") ?? "";
     expect(setCookie).toContain(`${CONSENT_GATE_COOKIE}=ok`);
+    expect(setCookie).toMatch(/nihongo_visit_id=[^;]+/);
+    expect(setCookie).toContain("nihongo_visit_consented=;");
     expect(setCookie.toLowerCase()).toContain("httponly");
   });
 

@@ -37,14 +37,10 @@ describe("middleware removed pitch URLs", () => {
     expect(call.headers.get("location")).toBeNull();
   });
 
-  it("does not redirect a Guest or Participant call", async () => {
+  it("does not redirect a Guest call", async () => {
     const { middleware } = await import("./middleware");
     const guest = await middleware(request("/call?guest=1"));
-    const practice = await middleware(
-      request("/call", `${CONSENT_GATE_COOKIE}=ok`),
-    );
     expect(guest.headers.get("location")).toBeNull();
-    expect(practice.headers.get("location")).toBeNull();
   });
 });
 
@@ -86,11 +82,19 @@ describe("middleware visit gate", () => {
     expect(res.headers.get("location")).toBe("http://localhost/login");
   });
 
-  it("lets Participant /call through with a visit cookie", async () => {
+  it("requires consent after a Participant signs in", async () => {
     const { middleware } = await import("./middleware");
     const res = await middleware(request("/call", `${CONSENT_GATE_COOKIE}=ok`));
-    expect(res.status).toBe(200);
-    expect(res.headers.get("location")).toBeNull();
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe("http://localhost/consent");
+  });
+
+  it("sends a signed-in tester without consent for this visit back to consent", async () => {
+    const { middleware } = await import("./middleware");
+    const res = await middleware(request("/call", `${CONSENT_GATE_COOKIE}=ok`));
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe("http://localhost/consent");
   });
 
   it("lets /call?guest=1 through without a visit cookie", async () => {

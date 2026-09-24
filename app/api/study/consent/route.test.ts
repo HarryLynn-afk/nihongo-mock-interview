@@ -13,6 +13,7 @@ const {
   upsert,
   joinCookie,
   consentGate,
+  visitId,
 } = vi.hoisted(() => ({
   getUser: vi.fn(),
   participantMaybeSingle: vi.fn(),
@@ -22,6 +23,7 @@ const {
   upsert: vi.fn(),
   joinCookie: { value: "T1" as string | undefined },
   consentGate: { value: "ok" as string | undefined },
+  visitId: { value: "visit-1" as string | undefined },
 }));
 
 vi.mock("next/headers", () => ({
@@ -32,6 +34,9 @@ vi.mock("next/headers", () => ({
       }
       if (name === CONSENT_GATE_COOKIE && consentGate.value) {
         return { value: consentGate.value };
+      }
+      if (name === "nihongo_visit_id" && visitId.value) {
+        return { value: visitId.value };
       }
       return undefined;
     },
@@ -89,6 +94,7 @@ describe("POST /api/study/consent join link", () => {
       NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
       SUPABASE_SERVICE_ROLE_KEY: "service",
+      STUDY_VISIT_SIGNING_KEY: "test-secret",
     };
     getUser.mockResolvedValue({
       data: { user: { id: "user-1", email: "classmate@school.org" } },
@@ -104,10 +110,14 @@ describe("POST /api/study/consent join link", () => {
       error: null,
     });
     insertParticipant.mockResolvedValue({ error: null });
-    rpc.mockResolvedValue({ data: true, error: null });
+    rpc.mockResolvedValue({
+      data: { status: "ok", participant_id: "P001" },
+      error: null,
+    });
     upsert.mockResolvedValue({ error: null });
     joinCookie.value = "T1";
     consentGate.value = "ok";
+    visitId.value = "visit-1";
   });
 
   it("lets a join-link Google user consent and become a Participant", async () => {
@@ -117,7 +127,61 @@ describe("POST /api/study/consent join link", () => {
     const body = (await res.json()) as { participantId?: string };
     expect(res.status).toBe(200);
     expect(body.participantId).toBe("P001");
-    expect(rpc).toHaveBeenCalledWith("consume_invite_slot", { invite_code: "T1" });
+    expect(rpc).toHaveBeenCalledWith("enroll_join_participant", {
+      google_user_id: "user-1",
+      google_email: "classmate@school.org",
+      invite_code: "T1",
+      version: "2026-09-08",
+    });
+  });
+
+  it("records a returning participant's consent for this visit", async () => {
+    participantMaybeSingle.mockResolvedValue({
+      data: { participant_id: "P001" },
+      error: null,
+    });
+    vi.resetModules();
+    const { POST } = await import("./route");
+    const res = await POST();
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ participantId: "P001" });
+    expect(res.headers.get("set-cookie") ?? "").toMatch(
+      /nihongo_visit_consented=[^;]+;.*HttpOnly/i,
+    );
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("enrolls a new join-link tester in one database operation", async () => {
+    rpc.mockResolvedValueOnce({
+      data: { status: "ok", participant_id: "P001" },
+      error: null,
+    });
+    vi.resetModules();
+    const { POST } = await import("./route");
+    const res = await POST();
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ participantId: "P001" });
+    expect(rpc).toHaveBeenCalledWith("enroll_join_participant", {
+      google_user_id: "user-1",
+      google_email: "classmate@school.org",
+      invite_code: "T1",
+      version: "2026-09-08",
+    });
+    expect(insertParticipant).not.toHaveBeenCalled();
+  });
+
+  it("does not grant classroom consent when the join link is full", async () => {
+    rpc.mockResolvedValueOnce({ data: { status: "full" }, error: null });
+    vi.resetModules();
+    const { POST } = await import("./route");
+    const res = await POST();
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: "join_full" });
+    expect(res.cookies.get("nihongo_visit_consented")).toBeUndefined();
+    expect(insertParticipant).not.toHaveBeenCalled();
   });
 
   it("lets an allowlisted Google login consent without consuming a join slot", async () => {

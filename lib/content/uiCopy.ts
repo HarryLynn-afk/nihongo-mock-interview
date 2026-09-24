@@ -35,6 +35,15 @@ const en = {
     linkSent: "If this email is eligible, a sign-in link has been sent.",
     errorNotInvited: "This Google account is not in the invited-tester list.",
   },
+  account: {
+    eyebrow: "Your space",
+    title: "Your interview starts here",
+    intro: "Check your Google account, then continue to the classroom.",
+    label: "Tester account",
+    signedInWith: "Signed in with Google",
+    signOut: "Sign out",
+    signOutError: "Could not sign out. Please try again.",
+  },
   consent: {
     title: "Study consent",
     body:
@@ -44,7 +53,7 @@ const en = {
     agree: "Agree and continue",
     guestInstead: "Try as guest instead",
     participantId: "Your participant id is",
-    participantIdNote: "This id is shown in the app; your email is not.",
+    participantIdNote: "The classroom and report show this id instead of your email.",
     errorSignedOut:
       "You are not signed in. Use Participant login, then agree.",
     errorNotInvited: "This email is not in the invited-tester list.",
@@ -235,7 +244,13 @@ const en = {
   },
 } as const;
 
-export type UiCopy = typeof en;
+type WidenStrings<T> = T extends string
+  ? string
+  : T extends object
+    ? { [K in keyof T]: WidenStrings<T[K]> }
+    : T;
+
+export type UiCopy = WidenStrings<typeof en>;
 
 const my: UiCopy = {
   start: {
@@ -272,6 +287,15 @@ const my: UiCopy = {
     linkSent: "ဤအီးမေးလ် ပါဝင်ခွင့်ရှိပါက ဆိုင်းအင်လင့်ခ် ပို့ပြီးဖြစ်သည်။",
     errorNotInvited: "ဤ Google အကောင့်သည် ဖိတ်ကြားစာရင်းတွင် မရှိပါ။",
   },
+  account: {
+    eyebrow: "သင့်နေရာ",
+    title: "သင့်အင်တာဗျူးကို ဤနေရာမှ စတင်ပါ",
+    intro: "Google အကောင့်ကို စစ်ဆေးပြီး စာသင်ခန်းသို့ ဆက်ပါ။",
+    label: "စမ်းသပ်သူ အကောင့်",
+    signedInWith: "Google ဖြင့် ဝင်ရောက်ထားသည်",
+    signOut: "ထွက်ရန်",
+    signOutError: "ထွက်မရပါ။ ထပ်ကြိုးစားပါ။",
+  },
   consent: {
     title: "လေ့လာမှု သဘောတူညီချက်",
     body: "ဤလေ့ကျင့် အင်တာဗျူးကို NihonGo အသုံးပြုသူလေ့လာမှုအတွက် သိမ်းနိုင်ပါသည် (သဘောတူညီချက် ဗားရှင်း {version})။ အဖြေနှင့် အမှတ်များကို ပါဝင်သူ id အောက်တွင် သိမ်းပါသည်။ နာမည် မသိမ်းပါ။ ဧည့်သည် စက်ရှင်များ သီးခြားဖြစ်ပြီး လေ့လာမှုထဲ မထည့်ပါ။",
@@ -280,7 +304,7 @@ const my: UiCopy = {
     agree: "သဘောတူပြီး ရှေ့ဆက်ရန်",
     guestInstead: "ဧည့်သည်အဖြစ် စမ်းကြည့်ရန်",
     participantId: "သင့်ပါဝင်သူ id မှာ",
-    participantIdNote: "ဤ id ကို အက်ပ်တွင် ပြပါသည်။ အီးမေးလ် မပြပါ။",
+    participantIdNote: "စာသင်ခန်းနှင့် report တွင် အီးမေးလ်အစား ဤ id ကို ပြပါသည်။",
     errorSignedOut:
       "သင် ဆိုင်းအင် မဝင်ရသေးပါ။ ပါဝင်သူ ဝင်ရောက်ရန်ကို သုံးပြီးမှ သဘောတူပါ။",
     errorNotInvited: "ဤအီးမေးလ်သည် ဖိတ်ကြားစာရင်းတွင် မရှိပါ။",

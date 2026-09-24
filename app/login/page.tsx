@@ -1,6 +1,6 @@
 "use client";
 
-import Home from "../page";
+import Home from "../components/Home";
 import { ParticipantLoginDialog } from "../components/ParticipantLoginDialog";
 
 /**

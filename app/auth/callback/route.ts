@@ -9,6 +9,11 @@ import {
 import { nextAfterAuth } from "@/lib/content/visitPolicy";
 import { createStudyAdminClient } from "@/lib/server/study/adminClients";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
+import { randomUUID } from "node:crypto";
+import {
+  VISIT_CONSENT_COOKIE,
+  VISIT_ID_COOKIE,
+} from "@/lib/server/study/visitConsent";
 
 const OTP_TYPES = new Set<EmailOtpType>([
   "invite",
@@ -28,6 +33,17 @@ function isOtpType(value: string | null): value is EmailOtpType {
 function applyConsentGate(response: NextResponse, open: boolean) {
   const gate = consentGateCookie(open);
   response.cookies.set(gate.name, gate.value, gate.options);
+  const options = {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  };
+  response.cookies.set(VISIT_ID_COOKIE, open ? randomUUID() : "", {
+    ...options,
+    ...(open ? {} : { maxAge: 0 }),
+  });
+  response.cookies.set(VISIT_CONSENT_COOKIE, "", { ...options, maxAge: 0 });
 }
 
 function redirectWithJoinFrom(

@@ -10,7 +10,7 @@ This is not a hackathon or event-day demo. The 29 Aug Launch Pack rebuild is voi
 A student joins a mock admission interview with Tanaka-sensei (Tokyo Pathway Japanese School), answers **by voice**, and sees an **Interview Readiness** report on `/call` (no `/report` route). Typing is not offered.
 
 - **Guest** (**Try as guest** on `/` → `/call?guest=1`): practice the three locked Questions. Not saved to study sessions.
-- **Participant** (`/login` → `/consent` → **Join interview** → `/call`): allowlisted invited tester after Google login and consent this visit. Shown as `P001`…, never the email. Topic bank + follow-ups. Study N.
+- **Participant** (`/login` or a capped join link → private tester account on `/consent` → **Join interview** → `/call`): invited tester after Google login and consent this visit. Their name and email appear on their own account page; the classroom and report show `P001`… instead. Topic bank + follow-ups. Study N.
 - **Pitch mode** was removed. `/pitch` and `/call?pitch=1` show the not-found page.
 
 On `/call`, Tanaka-sensei plays committed `public/question-{id}.mp3`. The student Speaks Japanese (Deepgram live captions, or browser SpeechRecognition if Deepgram is unset). **Hear again** (speaker left of the Japanese headline) replays the Question while idle or paused. **Answer again** (**1 retry**, left of the mic) is one content redo before Submit, per Question. Empty or no-kana takes get two more Speak attempts, then the Question is skipped. Camera is optional; mic is required.
@@ -53,6 +53,7 @@ Fill `.env.local`. Each key is one purpose — do not reuse a Groq or ElevenLabs
 | `NEXT_PUBLIC_SUPABASE_URL` | Study project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Study browser/server auth |
 | `SUPABASE_SERVICE_ROLE_KEY` | Study server writes. Never expose to the client |
+| `STUDY_VISIT_SIGNING_KEY` | Server-only key for consent during this sign-in visit; required when Participant login is enabled |
 
 Guest Join works with no Supabase vars.
 
@@ -69,8 +70,8 @@ npm run lint
 Desktop browser only. Phone visitors see “Open on a computer.”
 
 - Practice: http://localhost:3000 (**Try as guest** → device check → 15s lobby popup → `/call?guest=1`)
-- Participant login: http://localhost:3000/login (allowlisted Google email → `/consent` → Join)
-- Unique join link: http://localhost:3000/join?from=CODE (valid capped invite code → Google → `/consent` → Join)
+- Participant login: http://localhost:3000/login (allowlisted Google email → tester account and consent on `/consent` → Join)
+- Unique join link: http://localhost:3000/join?from=CODE (valid capped invite code → Google → tester account and consent on `/consent` → Join)
 
 ## Optional study database (Supabase)
 
@@ -80,7 +81,7 @@ Env vars alone are not enough. The app does **not** create tables. `npm run dev`
 
 ### 1. Confirm you have a project
 
-`.env.local` should already have `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` for that same project.
+`.env.local` should have `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` for that same project. Add a separate random `STUDY_VISIT_SIGNING_KEY` (for example, generated with `openssl rand -hex 32`). Configure the same key in the deployment environment. Changing it signs out all active Participant visits.
 
 ### 2. Paste the migration
 
@@ -105,14 +106,14 @@ values ('tester@gmail.com');
 
 Use the real Google address, lowercase. Public sign-up is not supported.
 
-For classmates you have not listed yet, use a capped join link instead. Paste `supabase/migrations/002_invite_links.sql`, then create a code:
+For classmates you have not listed yet, use a capped join link instead. Paste `supabase/migrations/002_invite_links.sql` and then `supabase/migrations/004_atomic_join_enrollment.sql` into the SQL editor, in that order. Then create a code:
 
 ```sql
 insert into invite_links (code, max_signups)
 values ('rsu-k7m2', 11);
 ```
 
-Send `/join?from=rsu-k7m2`. The valid invite code is the permission to join: the tester signs in with Google, agrees to consent, one invite slot is consumed, their email is added to `invited_emails`, and a normal Participant id is created.
+Send `/join?from=rsu-k7m2`. The valid invite code is the permission to join: the tester signs in with Google, sees their private tester account, agrees to consent, and enters the classroom. A slot is consumed only when a new Participant is created successfully. Returning testers do not consume another slot. **Sign out** on the tester account page ends the current session without consuming a slot and returns to the same join link (or `/login` for allowlisted entry).
 
 ### 4. Auth URLs
 
