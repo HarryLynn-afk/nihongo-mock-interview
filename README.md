@@ -69,11 +69,12 @@ npm run lint
 Desktop browser only. Phone visitors see “Open on a computer.”
 
 - Practice: http://localhost:3000 (**Try as guest** → device check → 15s lobby popup → `/call?guest=1`)
-- Participant login: http://localhost:3000/login (then `/consent`, then Join)
+- Participant login: http://localhost:3000/login (allowlisted Google email → `/consent` → Join)
+- Unique join link: http://localhost:3000/join?from=CODE (valid capped invite code → Google → `/consent` → Join)
 
 ## Optional study database (Supabase)
 
-Guest practice does **not** need this. Run it only if you want Participant magic-link, consent, and saved `study_sessions`.
+Guest practice does **not** need this. Run it only if you want Participant Google login, consent, capped join-links, and saved `study_sessions`.
 
 Env vars alone are not enough. The app does **not** create tables. `npm run dev` and Netlify do **not** apply `supabase/migrations/001_study.sql`. You paste that file once in the Supabase SQL editor.
 
@@ -93,16 +94,25 @@ Safe to run once. The `create table if not exists` statements will not wipe data
 
 ### 3. Allowlist testers
 
-Participant login (`/login`) lets an invited tester **Continue with Google** only if that Google email is already in `invited_emails`. Consent then creates `P001`…. A Gmail that is not on the list signs in to Google but **does not** become a Participant.
+Participant login (`/login`) lets an invited tester **Continue with Google** only if that Google email is already in `invited_emails`. Consent then creates `P001`.... A Gmail that is not on the list signs in to Google but **does not** become a Participant.
 
-The magic-link form on `/login` still sends mail only for allowlisted emails. In SQL Editor:
+In SQL Editor:
 
 ```sql
 insert into invited_emails (email)
 values ('tester@gmail.com');
 ```
 
-Use the real Google address, lowercase. Public sign-up is not supported. `/join?from=CODE` is a separate capped Google path for classmates you have not listed yet.
+Use the real Google address, lowercase. Public sign-up is not supported.
+
+For classmates you have not listed yet, use a capped join link instead. Paste `supabase/migrations/002_invite_links.sql`, then create a code:
+
+```sql
+insert into invite_links (code, max_signups)
+values ('rsu-k7m2', 11);
+```
+
+Send `/join?from=rsu-k7m2`. The valid invite code is the permission to join: the tester signs in with Google, agrees to consent, one invite slot is consumed, their email is added to `invited_emails`, and a normal Participant id is created.
 
 ### 4. Auth URLs
 
@@ -111,29 +121,11 @@ In the same project: **Authentication** → **URL Configuration**.
 - Site URL (local): `http://localhost:3000`
 - Redirect URLs: `http://localhost:3000/auth/callback`
 
-Dashboard **Invite user** is not the same as `/login` magic link. Invite emails redirect to the Site URL. If Site URL is only `/`, click the invite, wait to be sent to Study consent, then Agree. Do not type `/consent` yourself.
+Enable **Google** under **Authentication** → **Providers**. After Google OAuth, testers land on `/consent`, then Join. Google Cloud’s authorized redirect is `https://<project-ref>.supabase.co/auth/v1/callback`, not this app’s `/login` or `/join`.
 
-Leave **Email** provider enabled (magic link). Enable **Google** under **Authentication** → **Providers** (same OAuth client as `/join`). After Google or a magic-link click, testers land on `/consent`, then Join. Google Cloud’s authorized redirect is `https://<project-ref>.supabase.co/auth/v1/callback`, not this app’s `/login`.
+Dashboard **Invite user** and Supabase magic-link emails are not used by this app. `POST /api/auth/magic-link` intentionally returns `410 gone`.
 
-Without step 2, `/login` still shows the same “if eligible…” copy, but nothing is stored and returning testers will not get a `P001`… id.
-
-### 5. Magic Link email template (stops “already used” links)
-
-The default template links to Supabase's `/auth/v1/verify` URL. Mail providers such as Gmail open links to scan them, which **spends the one-time token before the tester clicks it**. The tester then sees “already opened or has expired” on a brand-new email.
-
-Fix it in **Authentication** → **Emails** → **Magic Link**. Point the link at this app and pass `token_hash`, so the token is only spent when a browser actually reaches `/auth/callback`:
-
-```html
-<h2>Your sign-in link</h2>
-<p>Follow the link below to sign in. This link can only be used once.</p>
-<p>
-  <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=magiclink">
-    Sign in
-  </a>
-</p>
-```
-
-Set **Site URL** to `http://localhost:3000` for this to resolve locally (and to the deployed origin later). `GET /auth/callback` verifies `token_hash` server-side and redirects to `/consent`.
+Without step 2, `/login` can still render, but nothing is stored and returning testers will not get a `P001`... id.
 
 ## Scoring (short)
 

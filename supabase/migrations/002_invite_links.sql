@@ -1,6 +1,6 @@
 -- NihonGo capped tester join-links.
 -- Paste in the SQL editor after 001_study.sql. Not applied by npm run dev.
--- Guest Join and Pitch mode work without this.
+-- Guest practice works without this.
 
 create table if not exists invite_links (
   code text primary key,

@@ -1,7 +1,7 @@
 -- NihonGo invited-tester study tables.
 -- Not applied by `npm run dev` or Netlify. Paste once into the Supabase
 -- SQL editor for the project whose URL is in NEXT_PUBLIC_SUPABASE_URL.
--- Guest Join and Pitch mode (`?pitch=1`) work without this.
+-- Guest practice works without this.
 
 create table if not exists invited_emails (
   email text primary key,
@@ -33,7 +33,7 @@ alter table invited_emails enable row level security;
 alter table participants enable row level security;
 alter table study_sessions enable row level security;
 
--- Magic-link, consent insert, and session save use the service role
+-- Consent insert and session save use the service role
 -- (bypasses RLS). GET /api/study/me uses the logged-in user, so they
 -- must be able to read their own participants row.
 drop policy if exists participants_select_own on participants;
