@@ -97,37 +97,37 @@ export default function Home({
             ✦
           </span>
         </Link>
-        <div className="flex items-center">
-          {view?.kind === "signedIn" ? (
-            <Link
-              href={`/profile?returnTo=${encodeURIComponent(view.origin)}`}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#d8f5b0] px-4 text-sm font-medium text-feather-dark shadow-[0_4px_7px_rgba(88,204,2,0.12)] transition-colors hover:bg-[#c8ee96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
-            >
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="size-5">
-                <circle cx="12" cy="8" r="3.5" />
-                <path d="M4.5 20a7.5 7.5 0 0115 0" />
-              </svg>
-              {copy.account.profile}
-            </Link>
-          ) : headerAction === undefined ? (
-            <Link
-              href="/login"
-              scroll={false}
-              className="inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full bg-[#d8f5b0] px-6 text-sm font-medium text-feather-dark shadow-[0_4px_7px_rgba(88,204,2,0.12)] transition-colors hover:bg-[#c8ee96]"
-            >
-              {copy.joinLink.login}
-            </Link>
-          ) : (
-            headerAction
-          )}
-        </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-x-4">
           <LanguageToggle
             locale={locale}
             onChange={setLocale}
             variant="light"
             tone="feather"
           />
+          <div className="flex items-center">
+            {view?.kind === "signedIn" ? (
+              <Link
+                href={`/profile?returnTo=${encodeURIComponent(view.origin)}`}
+                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#d8f5b0] px-4 text-sm font-medium text-feather-dark shadow-[0_4px_7px_rgba(88,204,2,0.12)] transition-colors hover:bg-[#c8ee96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="size-5">
+                  <circle cx="12" cy="8" r="3.5" />
+                  <path d="M4.5 20a7.5 7.5 0 0115 0" />
+                </svg>
+                {copy.account.profile}
+              </Link>
+            ) : headerAction === undefined ? (
+              <Link
+                href="/login"
+                scroll={false}
+                className="inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full bg-[#d8f5b0] px-6 text-sm font-medium text-feather-dark shadow-[0_4px_7px_rgba(88,204,2,0.12)] transition-colors hover:bg-[#c8ee96]"
+              >
+                {copy.joinLink.login}
+              </Link>
+            ) : (
+              headerAction
+            )}
+          </div>
         </div>
       </header>
 

@@ -106,13 +106,34 @@ describe("Home (start screen)", () => {
     expect(guest.parentElement).toHaveClass("justify-center");
   });
 
-  it("places Login on the left side of the header before the language control", () => {
+  it("places Login to the right of the language control in the header", () => {
     render(<Home />);
 
     const header = screen.getByRole("banner");
     const login = within(header).getByRole("link", { name: "Login" });
     const language = within(header).getByRole("group", { name: "Language" });
-    expect(login.compareDocumentPosition(language) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      login.compareDocumentPosition(language) & Node.DOCUMENT_POSITION_PRECEDING,
+    ).toBeTruthy();
+  });
+
+  it("places Profile to the right of the language control after sign-in", () => {
+    render(
+      <Home
+        view={{
+          kind: "signedIn",
+          origin: "/join?from=T1",
+          consentedThisVisit: false,
+        }}
+      />,
+    );
+
+    const header = screen.getByRole("banner");
+    const profile = within(header).getByRole("link", { name: "Profile" });
+    const language = within(header).getByRole("group", { name: "Language" });
+    expect(
+      profile.compareDocumentPosition(language) & Node.DOCUMENT_POSITION_PRECEDING,
+    ).toBeTruthy();
   });
 
   it("Try as guest leaves the landing for /guest, with no email dialog", async () => {
