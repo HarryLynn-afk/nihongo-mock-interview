@@ -3,7 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --font-myanmar: "Noto Sans Myanmar";
+  --font-myanmar: var(--font-noto-myanmar, "Noto Sans Myanmar");
 }
 
 @theme inline {
@@ -50,12 +50,12 @@ body {
 
 html[lang="my"],
 html[lang="my"] body {
-  font-family: "Noto Sans Myanmar", Arial, Helvetica, sans-serif;
+  font-family: var(--font-myanmar), "Noto Sans Myanmar", Arial, Helvetica, sans-serif;
 }
 
 html[lang="my"] .font-serif,
 html[lang="my"] .font-sans {
-  font-family: "Noto Sans Myanmar", Arial, Helvetica, sans-serif;
+  font-family: var(--font-myanmar), "Noto Sans Myanmar", Arial, Helvetica, sans-serif;
 }
 
 html[lang="my"] {

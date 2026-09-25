@@ -35,10 +35,13 @@ export function useDeliverySignals({
       started.current.add(answer.questionIndex);
 
       if (answer.audioClip.size === 0) {
-        setSignals((current) => ({
-          ...current,
-          [answer.questionIndex]: notAssessedClip(),
-        }));
+        void Promise.resolve(notAssessedClip()).then((signal) => {
+          if (droppedRef.current) return;
+          setSignals((current) => ({
+            ...current,
+            [answer.questionIndex]: signal,
+          }));
+        });
         continue;
       }
 

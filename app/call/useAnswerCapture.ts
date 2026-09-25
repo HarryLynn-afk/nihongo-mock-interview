@@ -71,28 +71,34 @@ export function useAnswerCapture({
   const audioChunksRef = useRef<Blob[]>([]);
   const transcriptBaseRef = useRef("");
   const recorderRef = useRef<MediaRecorderLike | null>(null);
-  const autoSpeakUsedRef = useRef(false);
   const attemptCountRef = useRef(0);
   const liveSessionRef = useRef<LiveTranscriptionSession | null>(null);
   const submitPendingRef = useRef(false);
-  const answerAgainUsedRef = useRef(false);
+  const [autoSpeakUsed, setAutoSpeakUsed] = useState(false);
+  const [answerAgainUsed, setAnswerAgainUsed] = useState(false);
 
   if (!active) {
-    autoSpeakUsedRef.current = false;
-    submitPendingRef.current = false;
-    answerAgainUsedRef.current = false;
     if (answerMode !== null) setAnswerMode(null);
     if (spokenCaption !== null) setSpokenCaption(null);
     if (speakPaused) setSpeakPaused(false);
     if (pushbackVisible) setPushbackVisible(false);
     if (submitPending) setSubmitPending(false);
+    if (autoSpeakUsed) setAutoSpeakUsed(false);
+    if (answerAgainUsed) setAnswerAgainUsed(false);
+  } else if (autoSpeak && answerMode === null && !autoSpeakUsed) {
+    setAutoSpeakUsed(true);
+    setAnswerMode("speak");
+  }
+
+  // Capture buffers are only mutated by event handlers/effects, never while
+  // drawing, so they reset after the inactive turn commits.
+  useEffect(() => {
+    if (active) return;
+    submitPendingRef.current = false;
     audioChunksRef.current = [];
     transcriptBaseRef.current = "";
     attemptCountRef.current = 0;
-  } else if (autoSpeak && answerMode === null && !autoSpeakUsedRef.current) {
-    autoSpeakUsedRef.current = true;
-    setAnswerMode("speak");
-  }
+  }, [active]);
 
   const listening =
     active && answerMode === "speak" && micOn && !speakPaused;
@@ -335,15 +341,13 @@ export function useAnswerCapture({
   }, [answerMode, onSubmit, spokenCaption]);
 
   const canAnswerAgain =
-    studentTurn === "speak" &&
-    !answerAgainUsedRef.current &&
-    !submitPending;
+    studentTurn === "speak" && !answerAgainUsed && !submitPending;
 
   function onAnswerAgain() {
     if (answerMode !== "speak") return;
     if (submitPendingRef.current) return;
-    if (answerAgainUsedRef.current) return;
-    answerAgainUsedRef.current = true;
+    if (answerAgainUsed) return;
+    setAnswerAgainUsed(true);
     resetSpeakSession();
     setAnswerMode(null);
   }

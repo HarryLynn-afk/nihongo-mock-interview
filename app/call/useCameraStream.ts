@@ -45,12 +45,14 @@ export function useCameraStream({ startOn = true }: { startOn?: boolean } = {}) 
   const [cameraState, setCameraState] = useState<CameraState>(
     startOn ? "on" : "off",
   );
+  const [prevStartOn, setPrevStartOn] = useState(startOn);
   const videoElRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  useEffect(() => {
+  if (startOn !== prevStartOn) {
+    setPrevStartOn(startOn);
     setCameraState(startOn ? "on" : "off");
-  }, [startOn]);
+  }
 
   const videoRef: RefCallback<HTMLVideoElement> = useCallback((node) => {
     videoElRef.current = node;

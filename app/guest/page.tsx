@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { InterviewLobby } from "../call/InterviewLobby";
 import { InterviewStartReminder } from "../call/InterviewStartReminder";
@@ -49,7 +50,7 @@ export default function GuestJoinPage() {
   return (
     <div className="relative min-h-dvh bg-[radial-gradient(circle_at_10%_55%,rgba(255,255,255,0.7),transparent_45%),linear-gradient(180deg,#e8f8d4_0%,#f4fbef_55%,#ffffff_100%)] text-eel">
       <header className="mx-auto flex w-full max-w-[1400px] items-center gap-4 px-5 py-6 md:px-12">
-        <a
+        <Link
           href="/"
           className="font-display text-[1.5rem] font-bold tracking-tight text-feather"
         >
@@ -60,7 +61,7 @@ export default function GuestJoinPage() {
           >
             ✦
           </span>
-        </a>
+        </Link>
         <div className="ml-auto">
           <LanguageToggle
             locale={locale}

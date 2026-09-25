@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Geist, Geist_Mono, Poppins, PT_Serif } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Sans_Myanmar, Poppins, PT_Serif } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,6 +27,13 @@ const poppins = Poppins({
   display: "swap",
 });
 
+const notoSansMyanmar = Noto_Sans_Myanmar({
+  variable: "--font-noto-myanmar",
+  subsets: ["myanmar"],
+  weight: ["400", "700"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "NihonGo",
   description:
@@ -40,20 +47,8 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${ptSerif.variable} ${poppins.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${ptSerif.variable} ${poppins.variable} ${notoSansMyanmar.variable} h-full antialiased`}
     >
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body className="min-h-full flex flex-col">
         <div id="nihongo-route" className="flex min-h-full flex-1 flex-col">
           {children}

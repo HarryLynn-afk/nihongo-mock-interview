@@ -129,7 +129,7 @@ export function analyzePcm({
     silent.push(frameRms(samples, start, start + frameSize) < SILENCE_RMS);
   }
 
-  let firstVoice = silent.findIndex((isSilent) => !isSilent);
+  const firstVoice = silent.findIndex((isSilent) => !isSilent);
   let lastVoice = silent.length - 1;
   while (lastVoice >= 0 && silent[lastVoice]) lastVoice -= 1;
   if (firstVoice === -1 || lastVoice < firstVoice) {

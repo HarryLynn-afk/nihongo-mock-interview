@@ -812,7 +812,6 @@ describe("useAnswerCapture", () => {
         this.ondataavailable?.({ data: recorded });
         this.onstop?.();
       };
-      constructor(_stream: unknown) {}
     }
 
     const created: Array<{
@@ -881,7 +880,6 @@ describe("useAnswerCapture", () => {
         this.ondataavailable?.({ data: recorded });
         this.onstop?.();
       };
-      constructor(_stream: unknown) {}
     }
 
     const created: Array<{
@@ -958,7 +956,6 @@ describe("useAnswerCapture", () => {
     class FakeMediaRecorder {
       start = vi.fn();
       stop = vi.fn();
-      constructor(_stream: unknown) {}
     }
     vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
 

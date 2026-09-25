@@ -13,11 +13,13 @@ export function useMicToggle({
   initialOn = true,
 }: { initialOn?: boolean } = {}) {
   const [micOn, setMicOn] = useState(initialOn);
+  const [prevInitialOn, setPrevInitialOn] = useState(initialOn);
   const streamRef = useRef<MediaStream | null>(null);
 
-  useEffect(() => {
+  if (initialOn !== prevInitialOn) {
+    setPrevInitialOn(initialOn);
     setMicOn(initialOn);
-  }, [initialOn]);
+  }
 
   useEffect(() => {
     if (!micOn) {

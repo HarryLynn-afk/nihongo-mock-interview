@@ -27,6 +27,8 @@ export function HashSessionCatcher({
     const intent = readAuthCallback(window.location.search, window.location.hash);
 
     if (intent.kind === "none") {
+      // Hydration safety: window.location is only readable after mount.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time external read
       if (!idle) setStatus(MAGIC_LINK_MISSING_COPY);
       return;
     }

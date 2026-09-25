@@ -91,6 +91,9 @@ export default function CallPage() {
   const { locale, setLocale, copy } = useCopy();
 
   useEffect(() => {
+    // Hydration safety: device prefs (sessionStorage) and the session kind
+    // (window.location) must be read after mount, not during render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time external read
     setDevicePrefs(loadDevicePrefs());
     setFullSessionSent(readFullSessionRequestSent());
     setFullSessionChecked(true);
@@ -109,6 +112,8 @@ export default function CallPage() {
   useEffect(() => {
     const guestJoin = callSessionKind(window.location.search) === "guest";
     if (guestJoin) {
+      // Hydration safety: window.location is only readable after mount.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time external read
       setStudyReady(true);
       return;
     }
@@ -144,14 +149,9 @@ export default function CallPage() {
   const displayQuestions = previewing ? questions : flowQuestions;
   const displayPhase = previewing ? "done" : phase;
 
-  useEffect(() => {
-    if (!report || !studyReady) return;
-    setSessionId(
-      (current) =>
-        current ??
-        createSessionId(participantId ? "participant" : "guest"),
-    );
-  }, [report, studyReady, participantId]);
+  if (report && studyReady && sessionId === null) {
+    setSessionId(createSessionId(participantId ? "participant" : "guest"));
+  }
 
   useEffect(() => {
     if (!report || previewing || sessionKind === "guest") return;

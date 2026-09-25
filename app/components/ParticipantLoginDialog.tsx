@@ -30,6 +30,8 @@ export function ParticipantLoginDialog({
 
   useEffect(() => {
     const error = new URLSearchParams(window.location.search ?? "").get("error");
+    // Hydration safety: the query string is only readable after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time external read
     if (error === "not_invited") setNotInvited(true);
   }, []);
 

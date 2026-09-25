@@ -37,20 +37,33 @@ export function useQuestionFlow(
 ) {
   const { enableFollowUps = false } = options;
   const [items, setItems] = useState<InterviewQuestion[] | null>(() =>
-    sessionQuestions === undefined ? [...questions] : null,
+    sessionQuestions === undefined
+      ? [...questions]
+      : sessionQuestions && sessionQuestions.length > 0
+        ? [...sessionQuestions]
+        : null,
   );
   const [index, setIndex] = useState(0);
   const [turn, setTurn] = useState<"sensei" | "student">("sensei");
   const [answers, setAnswers] = useState<StoredAnswer[]>([]);
   const followUpsUsedRef = useRef(0);
   const storedQuestionIdsRef = useRef(new Set<number>());
+  const [prevSessionQuestions, setPrevSessionQuestions] = useState(
+    sessionQuestions,
+  );
+
+  if (sessionQuestions !== prevSessionQuestions) {
+    setPrevSessionQuestions(sessionQuestions);
+    if (sessionQuestions && sessionQuestions.length > 0) {
+      setItems([...sessionQuestions]);
+      setIndex(0);
+      setTurn("sensei");
+      setAnswers([]);
+    }
+  }
 
   useEffect(() => {
     if (!sessionQuestions || sessionQuestions.length === 0) return;
-    setItems([...sessionQuestions]);
-    setIndex(0);
-    setTurn("sensei");
-    setAnswers([]);
     followUpsUsedRef.current = 0;
     storedQuestionIdsRef.current = new Set();
   }, [sessionQuestions]);

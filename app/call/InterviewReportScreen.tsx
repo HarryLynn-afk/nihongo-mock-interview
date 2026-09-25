@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { UiLocale } from "@/lib/content/locale";
 import { uiCopy } from "@/lib/content/uiCopy";
 import type { ReportQuestionCard, ReportView } from "./buildReportView";
@@ -201,12 +201,17 @@ export function InterviewReportScreen({
   const copy = uiCopy(locale);
   const [stage, setStage] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const onRevealCompleteRef = useRef(onRevealComplete);
+
+  useEffect(() => {
+    onRevealCompleteRef.current = onRevealComplete;
+  }, [onRevealComplete]);
 
   useEffect(() => {
     const stamp = window.setTimeout(() => setStage(1), REPORT_STAMP_REVEAL_MS);
     const coaching = window.setTimeout(() => {
       setStage(2);
-      onRevealComplete?.();
+      onRevealCompleteRef.current?.();
     }, REPORT_COACHING_REVEAL_MS);
     return () => {
       window.clearTimeout(stamp);
