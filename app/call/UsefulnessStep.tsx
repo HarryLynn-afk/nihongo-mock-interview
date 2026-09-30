@@ -73,7 +73,7 @@ export function UsefulnessStep({
           <button
             type="button"
             onClick={() => onFinished?.("dismissed")}
-            className="rounded-full px-3 py-1 text-sm text-eel/80"
+            className="rounded-full px-3 py-1 text-sm text-eel/90"
           >
             {chrome.usefulness.close}
           </button>
@@ -87,7 +87,7 @@ export function UsefulnessStep({
               ? view.copy.usefulness.burmese
               : view.copy.usefulness.english}
           </legend>
-          <p className="text-xs text-eel/60">
+          <p className="text-xs text-eel/80">
             1 ={" "}
             {locale === "my"
               ? view.copy.usefulness.scaleLowBurmese
@@ -118,7 +118,7 @@ export function UsefulnessStep({
               ? view.copy.usability.burmese
               : view.copy.usability.english}
           </legend>
-          <p className="text-xs text-eel/60">
+          <p className="text-xs text-eel/80">
             1 ={" "}
             {locale === "my"
               ? view.copy.usability.scaleLowBurmese

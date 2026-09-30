@@ -335,7 +335,7 @@ export default function CallPage() {
                 setPreviewReport(getSampleReport(null));
                 setFormEnabled(true);
               }}
-              className="text-xs text-eel/40 underline-offset-2 hover:text-eel/70 hover:underline"
+              className="text-xs text-eel/70 underline-offset-2 hover:text-eel/85 hover:underline"
             >
               {copy.call.skipInterview}
             </button>
@@ -343,7 +343,7 @@ export default function CallPage() {
           <LanguageToggle locale={locale} onChange={setLocale} />
         </div>
         {participantId ? (
-          <p className="w-full text-center text-sm text-eel/70">
+          <p className="w-full text-center text-sm text-eel/85">
             {copy.call.participant} {participantId}
           </p>
         ) : null}
@@ -499,7 +499,7 @@ export default function CallPage() {
               data-testid="live-transcript"
               className="w-full rounded-2xl border border-eel/10 bg-eel/5 px-4 py-3 text-center"
             >
-              <p className="text-xs font-medium tracking-wide text-eel/60">
+              <p className="text-xs font-medium tracking-wide text-eel/80">
                 {copy.call.liveTranscript}
               </p>
               <p className="mt-1.5 text-base leading-relaxed text-eel">
@@ -516,7 +516,7 @@ export default function CallPage() {
                     type="button"
                     onClick={handleAnswerAgain}
                     aria-label={copy.call.answerAgain}
-                    className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-eel/70 transition-colors hover:bg-eel/10 hover:text-eel focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-eel"
+                    className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-eel/85 transition-colors hover:bg-eel/10 hover:text-eel focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-eel"
                   >
                     <svg
                       viewBox="0 0 24 24"

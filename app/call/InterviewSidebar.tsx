@@ -41,11 +41,11 @@ export function InterviewSidebar({
           total: view.questionCount,
         })}
       </p>
-      <p className="text-sm text-eel/70">{statusLabel}</p>
-      <ol className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1 text-xs leading-relaxed text-eel/80">
+      <p className="text-sm text-eel/85">{statusLabel}</p>
+      <ol className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1 text-xs leading-relaxed text-eel/90">
         {view.entries.map((entry, index) => (
           <li key={`${entry.speaker}-${index}`}>
-            <p className="text-[10px] font-medium tracking-wide text-eel/50">
+            <p className="text-[10px] font-medium tracking-wide text-eel/75">
               {entry.speaker === "sensei" ? "Tanaka-sensei" : copy.call.you}
             </p>
             <p>{entry.text}</p>

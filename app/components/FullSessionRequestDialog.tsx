@@ -81,14 +81,14 @@ export function FullSessionRequestDialog({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full px-3 py-1 text-sm text-eel/80"
+            className="rounded-full px-3 py-1 text-sm text-eel/90"
           >
             {text.close}
           </button>
         </div>
         {step === "form" ? (
           <>
-            <p className="text-sm leading-relaxed text-eel/80">
+            <p className="text-sm leading-relaxed text-eel/90">
               {text.formBody}
             </p>
             <label className="flex flex-col gap-1 text-sm">
@@ -106,10 +106,10 @@ export function FullSessionRequestDialog({
               />
             </label>
             {error === "invalid" ? (
-              <p className="text-sm text-eel/80">{text.invalidEmail}</p>
+              <p className="text-sm text-eel/90">{text.invalidEmail}</p>
             ) : null}
             {error === "save" ? (
-              <p className="text-sm text-eel/80">{text.saveError}</p>
+              <p className="text-sm text-eel/90">{text.saveError}</p>
             ) : null}
             <button
               type="button"
@@ -123,7 +123,7 @@ export function FullSessionRequestDialog({
         ) : null}
 
         {step === "saved" ? (
-          <p className="text-sm leading-relaxed text-eel/80">
+          <p className="text-sm leading-relaxed text-eel/90">
             {text.savedBody}
           </p>
         ) : null}

@@ -91,7 +91,7 @@ function QuestionCard({
           <p className="text-sm font-medium text-eel">
             {copy.report.questionLabel} {card.questionIndex + 1} · {card.navLabel}
           </p>
-          <p className="mt-1 text-eel/80">{card.japanese}</p>
+          <p className="mt-1 text-eel/90">{card.japanese}</p>
         </div>
         <p className="rounded-full bg-feather/20 px-3 py-1 text-sm text-eel">
           {card.ratingLabel ? `${card.ratingLabel} · ` : ""}
@@ -101,7 +101,7 @@ function QuestionCard({
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
         <div className="flex flex-col gap-3">
           <div>
-            <p className="text-xs font-medium tracking-wide text-eel/50">
+            <p className="text-xs font-medium tracking-wide text-eel/75">
               {copy.report.yourAnswer}
             </p>
             <div className="mt-2 rounded-xl border border-eel/10 bg-eel/5 px-4 py-3 text-sm leading-relaxed">
@@ -137,7 +137,7 @@ function QuestionCard({
                   </li>
                 ))
               ) : (
-                <li className="text-eel/50">{copy.report.noStrength}</li>
+                <li className="text-eel/75">{copy.report.noStrength}</li>
               )}
             </ul>
           </div>
@@ -154,14 +154,14 @@ function QuestionCard({
                   </li>
                 ))
               ) : (
-                <li className="text-eel/50">{copy.report.noExtra}</li>
+                <li className="text-eel/75">{copy.report.noExtra}</li>
               )}
             </ul>
           </div>
         </div>
       </div>
       <div>
-        <p className="text-xs font-medium tracking-wide text-eel/50">
+        <p className="text-xs font-medium tracking-wide text-eel/75">
           {card.rewriteHeading}
         </p>
         <p className="mt-2 rounded-xl border border-feather/30 bg-feather/10 px-4 py-3 text-sm leading-relaxed text-eel">
@@ -169,7 +169,7 @@ function QuestionCard({
         </p>
       </div>
       {card.quote || card.evidence ? (
-        <p className="text-xs text-eel/50">
+        <p className="text-xs text-eel/75">
           {card.quote && card.quote !== "（無言）" ? (
             <>
               {copy.report.evidence}: 「<span>{card.quote}</span>」. {card.evidence}
@@ -259,17 +259,17 @@ export function InterviewReportScreen({
           >
             <div>
               <h1 className="text-xl font-medium">{view.title}</h1>
-              <p className="mt-1 text-sm font-medium text-eel/80">
+              <p className="mt-1 text-sm font-medium text-eel/90">
                 {view.answerQualityTitle}
               </p>
               {view.banner ? (
-                <p className="mt-1 text-sm text-eel/80">{view.banner}</p>
+                <p className="mt-1 text-sm text-eel/90">{view.banner}</p>
               ) : null}
-              <p className="mt-2 text-sm text-eel/60">{view.disclaimer}</p>
+              <p className="mt-2 text-sm text-eel/80">{view.disclaimer}</p>
               {sessionId ? (
                 <p
                   data-testid="session-id"
-                  className="mt-2 text-[10px] tracking-wide text-eel/40"
+                  className="mt-2 text-[10px] tracking-wide text-eel/70"
                 >
                   {sessionId}
                 </p>
@@ -343,7 +343,7 @@ export function InterviewReportScreen({
             >
               {view.scores.map((score) => (
                 <li key={score.key} className="flex items-center gap-3">
-                  <span className="w-44 shrink-0 text-eel/80">
+                  <span className="w-44 shrink-0 text-eel/90">
                     {score.label}
                   </span>
                   {score.assessed ? (
@@ -356,7 +356,7 @@ export function InterviewReportScreen({
                           }}
                         />
                       </span>
-                      <span className="w-20 shrink-0 text-right text-xs text-eel/60">
+                      <span className="w-20 shrink-0 text-right text-xs text-eel/80">
                         {score.ratingLabel}
                       </span>
                       <span className="w-12 shrink-0 text-right tabular-nums">
@@ -364,19 +364,19 @@ export function InterviewReportScreen({
                       </span>
                     </>
                   ) : (
-                    <span className="text-eel/50">
+                    <span className="text-eel/75">
                       {copy.report.deliveryHeadline.notAssessed}
                     </span>
                   )}
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-eel/50 lg:col-span-2">
+            <p className="text-xs text-eel/75 lg:col-span-2">
               {view.listeningNote}
               {view.voiceNote ? ` ${view.voiceNote}` : null}
             </p>
             {view.notes.map((line) => (
-              <p key={line} className="text-xs text-eel/60 lg:col-span-2">
+              <p key={line} className="text-xs text-eel/80 lg:col-span-2">
                 {line}
               </p>
             ))}
@@ -387,15 +387,15 @@ export function InterviewReportScreen({
               data-testid="speech-delivery-signals"
               className="rounded-2xl border border-eel/10 bg-eel/5 p-4"
             >
-              <p className="text-xs font-medium tracking-wide text-eel/50">
+              <p className="text-xs font-medium tracking-wide text-eel/75">
                 {view.deliveryTitle}
               </p>
               <p className="mt-1 text-lg font-medium">
                 {view.delivery.headline}
               </p>
-              <p className="mt-1 text-sm text-eel/70">{view.delivery.note}</p>
+              <p className="mt-1 text-sm text-eel/85">{view.delivery.note}</p>
               {view.delivery.answers[0]?.observations.slice(0, 4).map((line) => (
-                <p key={line} className="mt-1 text-xs text-eel/60">
+                <p key={line} className="mt-1 text-xs text-eel/80">
                   {line}
                 </p>
               ))}
@@ -408,7 +408,7 @@ export function InterviewReportScreen({
             data-testid="report-question-nav"
             className="flex flex-col gap-2"
           >
-            <p className="text-xs font-medium tracking-wide text-eel/50">
+            <p className="text-xs font-medium tracking-wide text-eel/75">
               {copy.report.transcript}
             </p>
             <nav className="flex flex-wrap gap-2">
@@ -424,13 +424,13 @@ export function InterviewReportScreen({
                     className={`rounded-full px-3 py-1.5 text-left text-sm ${
                       selectedNav
                         ? "bg-feather/30 text-eel"
-                        : "bg-eel/5 text-eel/80"
+                        : "bg-eel/5 text-eel/90"
                     }`}
                   >
                     <span className="font-medium">
                       Q{card.questionIndex + 1} {card.navLabel}
                     </span>
-                    <span className="ml-2 text-xs text-eel/60">
+                    <span className="ml-2 text-xs text-eel/80">
                       {card.scoreText}
                     </span>
                   </button>
