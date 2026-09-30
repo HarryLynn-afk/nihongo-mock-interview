@@ -1,4 +1,5 @@
-import { concatFloat32, downsampleTo16k, floatToLinear16 } from "./pcmAudio";
+import { downsampleTo16k, floatToLinear16 } from "./pcmAudio";
+import { startPcmCapture, type PcmAudioContext, type PcmCapture } from "./pcmCapture";
 import {
   closeStreamMessage,
   deepgramListenUrl,
@@ -42,41 +43,20 @@ function waitForListenOpen(
   });
 }
 
-type ProcessorNode = {
-  connect: (destination: unknown) => void;
-  disconnect: () => void;
-  onaudioprocess: ((event: { inputBuffer: { getChannelData: (channel: number) => Float32Array } }) => void) | null;
-};
-
-type GainNodeLike = {
-  gain: { value: number };
-  connect: (destination: unknown) => void;
-};
-
-type AudioContextLike = {
-  sampleRate: number;
-  createMediaStreamSource: (stream: MediaStream) => { connect: (node: ProcessorNode) => void };
-  createScriptProcessor: (bufferSize: number, inputChannels: number, outputChannels: number) => ProcessorNode;
-  createGain?: () => GainNodeLike;
-  destination: unknown;
-  resume?: () => Promise<void> | void;
-  close: () => Promise<void> | void;
-};
-
 export async function startLiveTranscriptionSession({
   onEvent,
   fetchImpl = fetch,
   getUserMedia = () => navigator.mediaDevices.getUserMedia({ audio: true }),
   WebSocketImpl = globalThis.WebSocket,
   AudioContextImpl = (
-    globalThis as typeof globalThis & { AudioContext?: new () => AudioContextLike }
+    globalThis as typeof globalThis & { AudioContext?: new () => PcmAudioContext }
   ).AudioContext,
 }: {
   onEvent: (event: ParsedTranscriptionEvent) => void;
   fetchImpl?: typeof fetch;
   getUserMedia?: () => Promise<MediaStream>;
   WebSocketImpl?: typeof WebSocket;
-  AudioContextImpl?: new () => AudioContextLike;
+  AudioContextImpl?: new () => PcmAudioContext;
 }): Promise<LiveTranscriptionSession | null> {
   if (typeof WebSocketImpl !== "function" || typeof AudioContextImpl !== "function") {
     return null;
@@ -96,35 +76,18 @@ export async function startLiveTranscriptionSession({
 
   let finalized = "";
   let interim = "";
-  let stream: MediaStream | null = null;
-  let audioContext: AudioContextLike | null = null;
-  let processor: ProcessorNode | null = null;
-  let mute: GainNodeLike | null = null;
+  let capture: PcmCapture | null = null;
   let socket: WebSocket | null = null;
   let maxTimer: ReturnType<typeof setTimeout> | undefined;
-  const pcmChunks: Float32Array[] = [];
-  let pcmSampleRate = 16000;
 
   function getTranscript(): string {
     return joinJapanese(finalized, interim);
   }
 
-  function getPcm(): LivePcmCapture {
-    return {
-      samples: concatFloat32(pcmChunks),
-      sampleRate: pcmSampleRate,
-    };
-  }
-
   function stopSession() {
     if (maxTimer) clearTimeout(maxTimer);
-    processor?.disconnect();
-    processor = null;
-    mute = null;
-    void audioContext?.close();
-    audioContext = null;
-    stream?.getTracks().forEach((track) => track.stop());
-    stream = null;
+    capture?.stop();
+    capture = null;
     if (socket) {
       socket.close();
     }
@@ -140,34 +103,17 @@ export async function startLiveTranscriptionSession({
       stopSession();
       return null;
     }
-    stream = await getUserMedia();
-    audioContext = new AudioContextImpl();
-    await audioContext.resume?.();
-    const source = audioContext.createMediaStreamSource(stream);
-    // ScriptProcessorNode is deprecated; AudioWorklet is later technical debt.
-    processor = audioContext.createScriptProcessor(4096, 1, 1);
-    pcmSampleRate = audioContext.sampleRate;
-    processor.onaudioprocess = (event) => {
-      const input = event.inputBuffer.getChannelData(0);
-      // Copy: ScriptProcessor reuses the same buffer on the next callback.
-      pcmChunks.push(new Float32Array(input));
-      if (!socket || socket.readyState !== WebSocketImpl.OPEN) return;
-      const pcm = floatToLinear16(
-        downsampleTo16k(input, audioContext?.sampleRate ?? 16000),
-      );
-      socket.send(pcm);
-    };
-    source.connect(processor);
-    // Keep the graph alive without playing the mic through the speakers.
-    // An unmuted tap into destination can silence a second MediaRecorder
-    // via echo cancellation; delivery now uses this PCM, not that recorder.
-    mute = audioContext.createGain?.() ?? null;
-    if (mute) {
-      mute.gain.value = 0;
-      processor.connect(mute);
-      mute.connect(audioContext.destination);
-    } else {
-      processor.connect(audioContext.destination);
+    capture = await startPcmCapture({
+      getUserMedia,
+      AudioContextImpl,
+      onChunk: (samples, sampleRate) => {
+        if (!socket || socket.readyState !== WebSocketImpl.OPEN) return;
+        socket.send(floatToLinear16(downsampleTo16k(samples, sampleRate)));
+      },
+    });
+    if (!capture) {
+      stopSession();
+      return null;
     }
 
     socket.addEventListener("message", (event: MessageEvent<string | ArrayBuffer>) => {
@@ -205,6 +151,9 @@ export async function startLiveTranscriptionSession({
       }
     },
     getTranscript,
-    getPcm,
+    getPcm: () =>
+      capture
+        ? { samples: capture.getSamples(), sampleRate: capture.sampleRate }
+        : { samples: new Float32Array(0), sampleRate: 16000 },
   };
 }

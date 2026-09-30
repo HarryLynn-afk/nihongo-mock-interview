@@ -5,6 +5,7 @@ import {
   useAnswerCapture,
 } from "./useAnswerCapture";
 import * as liveTranscription from "./startLiveTranscription";
+import * as pcmCapture from "./pcmCapture";
 
 describe("useAnswerCapture", () => {
   afterEach(() => {
@@ -800,19 +801,21 @@ describe("useAnswerCapture", () => {
     expect(result.current.studentTurn).toBe("speak");
   });
 
-  it("submits the recorded audio clip from MediaRecorder on Speak submit", async () => {
-    const recorded = new Blob([new Uint8Array([7, 7, 7])], { type: "audio/webm" });
-    const stream = { getTracks: () => [{ stop: vi.fn() }] };
-
-    class FakeMediaRecorder {
-      ondataavailable: ((event: { data: Blob }) => void) | null = null;
-      onstop: (() => void) | null = null;
-      start = vi.fn();
-      stop = () => {
-        this.ondataavailable?.({ data: recorded });
-        this.onstop?.();
-      };
+  it("saves a WAV delivery clip from one local PCM capture when live transcription is unavailable", async () => {
+    const samples = new Float32Array(1600);
+    for (let index = 0; index < samples.length; index += 1) {
+      samples[index] = 0.3 * Math.sin(index / 10);
     }
+    const startCapture = vi
+      .spyOn(pcmCapture, "startPcmCapture")
+      .mockResolvedValue({
+        sampleRate: 16_000,
+        getSamples: () => samples,
+        stop: vi.fn(),
+      });
+    const stopLive = vi
+      .spyOn(liveTranscription, "startLiveTranscriptionSession")
+      .mockResolvedValue(null);
 
     const created: Array<{
       onresult: ((event: { results: unknown[] }) => void) | null;
@@ -822,65 +825,64 @@ describe("useAnswerCapture", () => {
       interimResults = false;
       continuous = false;
       onresult: ((event: { results: unknown[] }) => void) | null = null;
+      onend = null;
+      onerror = null;
       start = vi.fn();
       stop = vi.fn();
       constructor() {
         created.push(this);
       }
     }
-
-    vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
     vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
-    vi.stubGlobal("navigator", {
-      mediaDevices: {
-        getUserMedia: vi.fn().mockResolvedValue(stream),
-      },
-    });
+    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
 
     const onSubmit = vi.fn();
     const { result } = renderHook(() =>
       useAnswerCapture({
         active: true,
         micOn: true,
+        liveStt: true,
         onSubmit,
       }),
     );
 
     act(() => result.current.onSpeakAnswer());
-
     await act(async () => {
+      await Promise.resolve();
       await Promise.resolve();
     });
 
     act(() => {
-      const spoken = Object.assign([{ transcript: "こんにちは" }], {
-        isFinal: true,
+      created[0]?.onresult?.({
+        results: [Object.assign([{ transcript: "こんにちは" }], { isFinal: true })],
       });
-      created[0]?.onresult?.({ results: [spoken] });
     });
     act(() => result.current.onSubmitClick());
 
     expect(onSubmit).toHaveBeenCalledOnce();
-    expect(onSubmit.mock.calls[0][0]).toEqual(
-      expect.objectContaining({
-        status: "answered",
-        transcript: "こんにちは",
-      }),
-    );
-    expect(onSubmit.mock.calls[0][0].audioClip.size).toBe(recorded.size);
+    const clip = onSubmit.mock.calls[0][0].audioClip as Blob;
+    expect(clip.type).toBe("audio/wav");
+    expect(clip.size).toBeGreaterThan(44);
+
+    startCapture.mockRestore();
+    stopLive.mockRestore();
   });
 
   it("does not keep the previous turn's audio clip after the student turn resets", async () => {
-    const recorded = new Blob([new Uint8Array([7, 7, 7])], { type: "audio/webm" });
-    class FakeMediaRecorder {
-      ondataavailable: ((event: { data: Blob }) => void) | null = null;
-      onstop: (() => void) | null = null;
-      start = vi.fn();
-      stop = () => {
-        this.ondataavailable?.({ data: recorded });
-        this.onstop?.();
-      };
-    }
+    const firstTurn = new Float32Array(100).fill(0.2);
+    const secondTurn = new Float32Array(200).fill(0.2);
+    const startCapture = vi
+      .spyOn(pcmCapture, "startPcmCapture")
+      .mockResolvedValueOnce({
+        sampleRate: 16_000,
+        getSamples: () => firstTurn,
+        stop: vi.fn(),
+      })
+      .mockResolvedValueOnce({
+        sampleRate: 16_000,
+        getSamples: () => secondTurn,
+        stop: vi.fn(),
+      });
 
     const created: Array<{
       onresult: ((event: { results: unknown[] }) => void) | null;
@@ -890,6 +892,8 @@ describe("useAnswerCapture", () => {
       interimResults = false;
       continuous = false;
       onresult: ((event: { results: unknown[] }) => void) | null = null;
+      onend = null;
+      onerror = null;
       start = vi.fn();
       stop = vi.fn();
       constructor() {
@@ -897,18 +901,8 @@ describe("useAnswerCapture", () => {
       }
     }
 
-    vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
     vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
-    vi.stubGlobal("navigator", {
-      mediaDevices: {
-        getUserMedia: vi
-          .fn()
-          .mockResolvedValueOnce({
-            getTracks: () => [{ stop: vi.fn() }],
-          })
-          .mockReturnValueOnce(new Promise(() => {})),
-      },
-    });
+    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
 
     const onSubmit = vi.fn();
     const { result, rerender } = renderHook(
@@ -931,13 +925,16 @@ describe("useAnswerCapture", () => {
       });
     });
     act(() => result.current.onSubmitClick());
-    expect(onSubmit.mock.calls[0][0].audioClip.size).toBe(recorded.size);
+    const firstSize = (onSubmit.mock.calls[0][0].audioClip as Blob).size;
 
     rerender({ active: false });
     created.length = 0;
     rerender({ active: true });
 
     act(() => result.current.onSpeakAnswer());
+    await act(async () => {
+      await Promise.resolve();
+    });
     act(() => {
       created[0]?.onresult?.({
         results: [Object.assign([{ transcript: "ええ" }], { isFinal: true })],
@@ -946,7 +943,11 @@ describe("useAnswerCapture", () => {
     act(() => result.current.onSubmitClick());
 
     expect(onSubmit.mock.calls[1][0].transcript).toBe("ええ");
-    expect(onSubmit.mock.calls[1][0].audioClip.size).not.toBe(recorded.size);
+    const secondSize = (onSubmit.mock.calls[1][0].audioClip as Blob).size;
+    expect(secondSize).not.toBe(firstSize);
+    expect(secondSize).toBeGreaterThan(firstSize);
+
+    startCapture.mockRestore();
   });
 
   it("submits a WAV clip from live PCM and does not open a second microphone", async () => {

@@ -5,6 +5,7 @@ import { startLiveTranscriptionSession } from "./startLiveTranscription";
 import type { LiveTranscriptionSession } from "./startLiveTranscription";
 import { joinJapanese } from "./transcriptionEvents";
 import { floatToWavBlob } from "./pcmAudio";
+import { startPcmCapture, type PcmCapture } from "./pcmCapture";
 
 export const MAX_SPEAK_ATTEMPTS = 3;
 /** Auto-pause Speak after this long with no new live transcript. */
@@ -31,22 +32,7 @@ type SpeechRecognitionLike = {
   stop: () => void;
 };
 
-type MediaRecorderLike = {
-  start: () => void;
-  stop: () => void;
-  ondataavailable: ((event: { data: Blob }) => void) | null;
-  onstop: (() => void) | null;
-};
-
-type MediaRecorderCtor = new (stream: MediaStream) => MediaRecorderLike;
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
-
-function getMediaRecorderCtor(): MediaRecorderCtor | undefined {
-  const w = globalThis as typeof globalThis & {
-    MediaRecorder?: MediaRecorderCtor;
-  };
-  return w.MediaRecorder;
-}
 
 function getSpeechRecognitionCtor(): SpeechRecognitionCtor | undefined {
   const w = globalThis as typeof globalThis & {
@@ -68,9 +54,8 @@ export function useAnswerCapture({
   const [speakPaused, setSpeakPaused] = useState(false);
   const [pushbackVisible, setPushbackVisible] = useState(false);
   const [submitPending, setSubmitPending] = useState(false);
-  const audioChunksRef = useRef<Blob[]>([]);
   const transcriptBaseRef = useRef("");
-  const recorderRef = useRef<MediaRecorderLike | null>(null);
+  const captureRef = useRef<PcmCapture | null>(null);
   const attemptCountRef = useRef(0);
   const liveSessionRef = useRef<LiveTranscriptionSession | null>(null);
   const submitPendingRef = useRef(false);
@@ -95,7 +80,6 @@ export function useAnswerCapture({
   useEffect(() => {
     if (active) return;
     submitPendingRef.current = false;
-    audioChunksRef.current = [];
     transcriptBaseRef.current = "";
     attemptCountRef.current = 0;
   }, [active]);
@@ -123,7 +107,6 @@ export function useAnswerCapture({
     let recognition: SpeechRecognitionLike | undefined;
     let allowRecognitionRestart = true;
     let cancelled = false;
-    let stream: MediaStream | null = null;
     function startBrowserRecognition() {
       if (!Ctor) return;
       recognition = new Ctor();
@@ -162,25 +145,14 @@ export function useAnswerCapture({
       recognition.start();
     }
 
-    function startMicRecorder() {
-      const Recorder = getMediaRecorderCtor();
-      if (!Recorder || !navigator.mediaDevices?.getUserMedia) return;
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then((micStream) => {
-          if (cancelled) {
-            micStream.getTracks().forEach((track) => track.stop());
-            return;
-          }
-          stream = micStream;
-          const recorder = new Recorder(micStream);
-          recorder.ondataavailable = (event) => {
-            if (event.data.size > 0) audioChunksRef.current.push(event.data);
-          };
-          recorder.start();
-          recorderRef.current = recorder;
-        })
-        .catch(() => {});
+    function startLocalCapture() {
+      void startPcmCapture().then((capture) => {
+        if (cancelled) {
+          capture?.stop();
+          return;
+        }
+        captureRef.current = capture;
+      });
     }
 
     if (liveStt) {
@@ -209,11 +181,11 @@ export function useAnswerCapture({
           return;
         }
         startBrowserRecognition();
-        startMicRecorder();
+        startLocalCapture();
       });
     } else {
       startBrowserRecognition();
-      startMicRecorder();
+      startLocalCapture();
     }
 
     return () => {
@@ -227,16 +199,13 @@ export function useAnswerCapture({
         recognition.onerror = null;
         recognition.stop();
       }
-      const recorder = recorderRef.current;
-      recorderRef.current = null;
-      recorder?.stop();
-      stream?.getTracks?.().forEach((track) => track.stop());
+      captureRef.current?.stop();
+      captureRef.current = null;
     };
   }, [listening, liveStt]);
 
   function resetSpeakSession() {
     setSpeakPaused(false);
-    audioChunksRef.current = [];
     transcriptBaseRef.current = "";
     setSpokenCaption(null);
   }
@@ -294,27 +263,9 @@ export function useAnswerCapture({
       onSubmit({
         status: "answered",
         transcript,
-        audioClip:
-          clip ??
-          new Blob(
-            audioChunksRef.current.length > 0
-              ? audioChunksRef.current
-              : [new Blob()],
-            { type: "audio/webm" },
-          ),
+        audioClip: clip ?? new Blob(),
         pushbackCount: result.pushbackCount,
       });
-    };
-
-    const finishSpeak = (transcript: string) => {
-      const recorder = recorderRef.current;
-      if (recorder) {
-        recorderRef.current = null;
-        recorder.onstop = () => submitVoice(transcript);
-        recorder.stop();
-        return;
-      }
-      submitVoice(transcript);
     };
 
     const live = liveSessionRef.current;
@@ -337,7 +288,13 @@ export function useAnswerCapture({
       return;
     }
 
-    finishSpeak(spokenCaption ?? "");
+    const capture = captureRef.current;
+    const samples = capture?.getSamples();
+    const localClip =
+      capture && samples && samples.length > 0
+        ? floatToWavBlob(samples, capture.sampleRate)
+        : undefined;
+    submitVoice(spokenCaption ?? "", localClip);
   }, [answerMode, onSubmit, spokenCaption]);
 
   const canAnswerAgain =
