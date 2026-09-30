@@ -44,6 +44,7 @@ describe("useDeliverySignals", () => {
     expect(analyzeClip).not.toHaveBeenCalled();
     if (result.current.status === "ready") {
       expect(result.current.delivery.status).toBe("notAssessed");
+      expect(result.current.delivery.answers[0]?.notAssessedReason).toBe("empty");
     }
   });
 

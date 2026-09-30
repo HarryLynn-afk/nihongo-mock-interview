@@ -5,7 +5,7 @@ export async function analyzeAudioClip(
   clip: Blob,
   transcript: string,
 ): Promise<AnalyzedClip> {
-  if (clip.size === 0) return notAssessedClip();
+  if (clip.size === 0) return notAssessedClip("empty");
   const buffer = await clip.arrayBuffer();
   const wav = wavBlobToPcm(buffer);
   if (wav) {

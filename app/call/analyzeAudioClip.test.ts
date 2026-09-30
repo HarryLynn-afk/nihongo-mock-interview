@@ -24,5 +24,6 @@ describe("analyzeAudioClip", () => {
     const result = await analyzeAudioClip(new Blob(), "はじめまして");
 
     expect(result.recordingQuality).toBe("notAssessed");
+    expect(result.notAssessedReason).toBe("empty");
   });
 });

@@ -35,7 +35,7 @@ export function useDeliverySignals({
       started.current.add(answer.questionIndex);
 
       if (answer.audioClip.size === 0) {
-        void Promise.resolve(notAssessedClip()).then((signal) => {
+        void Promise.resolve(notAssessedClip("empty")).then((signal) => {
           if (droppedRef.current) return;
           setSignals((current) => ({
             ...current,
@@ -57,7 +57,7 @@ export function useDeliverySignals({
           if (droppedRef.current) return;
           setSignals((current) => ({
             ...current,
-            [answer.questionIndex]: notAssessedClip(),
+            [answer.questionIndex]: notAssessedClip("empty"),
           }));
         });
     }

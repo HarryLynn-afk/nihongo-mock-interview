@@ -1,5 +1,7 @@
 export type RecordingQuality = "pass" | "warning" | "notAssessed";
 
+export type NotAssessedReason = "tooShort" | "tooQuiet" | "noSpeech" | "empty";
+
 export type DeliveryStatus =
   | "unavailable"
   | "notAssessed"
@@ -12,6 +14,8 @@ export type AnalyzedClip = {
   speechRateCps: number | null;
   longPauseCount: number | null;
   fillerCount: number;
+  /** Present only when recordingQuality is "notAssessed". */
+  notAssessedReason?: NotAssessedReason;
   observations: string[];
 };
 
@@ -40,9 +44,12 @@ const LONG_PAUSE_SEC = 1.5;
 const MIN_DURATION_SEC = 0.4;
 const FILLER_PATTERN = /えーと|えっと|うーん|あの|えー|んー/g;
 
-const NOT_ASSESSED_OBS = [
-  "Audio was too quiet or too short to analyze.",
-];
+const NOT_ASSESSED_OBS: Record<NotAssessedReason, string> = {
+  tooShort: "Answer was shorter than 0.4 seconds.",
+  tooQuiet: "Recording level was too low to analyze.",
+  noSpeech: "No speech was detected in the recording.",
+  empty: "No audio was saved for this answer.",
+};
 
 export const DELIVERY_HEADLINE: Record<DeliveryStatus, string> = {
   unavailable: "Not assessed",
@@ -61,14 +68,17 @@ export const DELIVERY_NOTE: Record<DeliveryStatus, string> = {
     "Audio was clear enough for basic timing analysis. These are timing signals, not a Japanese proficiency score.",
 };
 
-export function notAssessedClip(): AnalyzedClip {
+export function notAssessedClip(
+  reason: NotAssessedReason = "empty",
+): AnalyzedClip {
   return {
     recordingQuality: "notAssessed",
     durationSec: null,
     speechRateCps: null,
     longPauseCount: null,
     fillerCount: 0,
-    observations: [...NOT_ASSESSED_OBS],
+    notAssessedReason: reason,
+    observations: [NOT_ASSESSED_OBS[reason]],
   };
 }
 
@@ -108,7 +118,7 @@ export function analyzePcm({
   const fillerCount = countFillers(transcript);
   const durationSec = samples.length / sampleRate;
   if (!Number.isFinite(durationSec) || durationSec < MIN_DURATION_SEC) {
-    return notAssessedClip();
+    return notAssessedClip("tooShort");
   }
 
   let peak = 0;
@@ -119,7 +129,7 @@ export function analyzePcm({
     energy += abs * abs;
   }
   const rms = Math.sqrt(energy / samples.length);
-  if (rms < QUIET_RMS) return notAssessedClip();
+  if (rms < QUIET_RMS) return notAssessedClip("tooQuiet");
 
   const frameSize = Math.max(1, Math.round((sampleRate * FRAME_MS) / 1000));
   const frameCount = Math.floor(samples.length / frameSize);
@@ -133,7 +143,7 @@ export function analyzePcm({
   let lastVoice = silent.length - 1;
   while (lastVoice >= 0 && silent[lastVoice]) lastVoice -= 1;
   if (firstVoice === -1 || lastVoice < firstVoice) {
-    return notAssessedClip();
+    return notAssessedClip("noSpeech");
   }
 
   let longPauseCount = 0;

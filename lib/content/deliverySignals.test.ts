@@ -31,7 +31,7 @@ function concat(...parts: Float32Array[]): Float32Array {
 }
 
 describe("analyzePcm", () => {
-  it("marks near-silence as not assessed", () => {
+  it("marks near-silence as too quiet", () => {
     const result = analyzePcm({
       samples: silence(2),
       sampleRate: 16_000,
@@ -40,7 +40,32 @@ describe("analyzePcm", () => {
 
     expect(result.recordingQuality).toBe("notAssessed");
     expect(result.durationSec).toBeNull();
-    expect(result.observations[0]).toMatch(/too quiet or too short/i);
+    expect(result.notAssessedReason).toBe("tooQuiet");
+    expect(result.observations[0]).toMatch(/level was too low/i);
+  });
+
+  it("marks a clip shorter than 0.4s as too short", () => {
+    const result = analyzePcm({
+      samples: tone(0.2),
+      sampleRate: 16_000,
+      transcript: "はい",
+    });
+
+    expect(result.notAssessedReason).toBe("tooShort");
+    expect(result.observations[0]).toMatch(/shorter than/i);
+  });
+
+  it("marks a quiet clip with no voiced frame as no speech", () => {
+    // amplitude 0.02 → RMS ≈ 0.014, above the overall quiet floor (0.008)
+    // but every 30 ms frame stays below the 0.02 silence floor.
+    const result = analyzePcm({
+      samples: tone(2, 16_000, 0.02),
+      sampleRate: 16_000,
+      transcript: "はい",
+    });
+
+    expect(result.notAssessedReason).toBe("noSpeech");
+    expect(result.observations[0]).toMatch(/no speech/i);
   });
 
   it("counts long mid-answer pauses and does not call it proficiency", () => {
