@@ -158,8 +158,6 @@ const en = {
     questionLabel: "Question",
     deliveryTitle: "Speech Delivery",
     tryNextLabel: "Try next",
-    deliveryReviewOne: "Review 1 point",
-    deliveryReviewMany: "Review {n} points",
     noAnswerTranscript: "No answer was captured for this Question.",
     noAnswerNextHeading: "Try this Question again next practice",
     noAnswerNextStep:
@@ -206,20 +204,6 @@ const en = {
       educationWork: "Education & work",
       japaneseLevel: "Japanese level",
       lifeInJapan: "Life in Japan",
-    },
-    deliveryHeadline: {
-      unavailable: "Unable to assess",
-      unableToAssess: "Unable to assess",
-      noIssue: "No notable issue detected",
-      review: "Review points",
-    },
-    deliveryNote: {
-      unavailable: "No spoken answer was captured to analyze.",
-      unableToAssess:
-        "Reliable word timing was not available for pause coaching.",
-      noIssue: "No clear mid-answer pause was detected from word timing.",
-      review:
-        "Each tip pairs measured timing evidence with a short practice suggestion.",
     },
   },
   fullSessionRequest: {
@@ -422,8 +406,6 @@ const my: UiCopy = {
     questionLabel: "မေးခွန်း",
     deliveryTitle: "အသံ ပေးပို့မှု",
     tryNextLabel: "နောက်တစ်ကြိမ် လေ့ကျင့်ရန်",
-    deliveryReviewOne: "၁ ချက် ပြန်လည်ကြည့်ရန်",
-    deliveryReviewMany: "{n} ချက် ပြန်လည်ကြည့်ရန်",
     noAnswerTranscript: "ဤမေးခွန်းအတွက် အဖြေ မရရှိပါ။",
     noAnswerNextHeading: "နောက်လေ့ကျင့်မှုတွင် ဤမေးခွန်းကို ထပ်ကြိုးစားပါ",
     noAnswerNextStep:
@@ -470,20 +452,6 @@ const my: UiCopy = {
       educationWork: "ပညာရေးနှင့် အလုပ်",
       japaneseLevel: "ဂျပန်စာ အဆင့်",
       lifeInJapan: "ဂျပန်တွင် နေထိုင်ရေး",
-    },
-    deliveryHeadline: {
-      unavailable: "သုံးသပ်၍ မရပါ",
-      unableToAssess: "သုံးသပ်၍ မရပါ",
-      noIssue: "ထူးခြားသော ပြဿနာ မတွေ့ပါ",
-      review: "ပြန်လည်ကြည့်ရန် အချက်များ",
-    },
-    deliveryNote: {
-      unavailable: "သုံးသပ်ရန် ပြောထားသော အဖြေ မရရှိပါ။",
-      unableToAssess:
-        "ယုံကြည်ရသော စကားလုံး အချိန် မရသဖြင့် ခဏရပ်မှု အကြံ မပေးနိုင်ပါ။",
-      noIssue: "စကားလုံး အချိန်အရ ရှင်းလင်းသော အလယ်ပိုင်း ခဏရပ်မှု မတွေ့ပါ။",
-      review:
-        "အောက်ပါ အကြံများသည် တိုင်းတာထားသော အချိန်နှင့် လေ့ကျင့်ရန် အကြံပြုချက် ဖြစ်သည်။",
     },
   },
   fullSessionRequest: {

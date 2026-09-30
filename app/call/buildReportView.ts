@@ -13,7 +13,7 @@ import {
   isAffirmingCritique,
   type FormattedCritique,
 } from "@/lib/content/critiqueCopy";
-import { type SessionDelivery } from "@/lib/content/deliverySignals";
+import type { DeliveryAnswer, SessionDelivery } from "@/lib/content/deliverySignals";
 import { DEFAULT_UI_LOCALE, type UiLocale } from "@/lib/content/locale";
 import { uiCopy, type UiCopy } from "@/lib/content/uiCopy";
 
@@ -65,6 +65,7 @@ export type ReportQuestionCard = {
   burmese: string;
   evidence: string;
   affirming: boolean;
+  delivery: DeliveryAnswer | null;
 };
 
 export type ReportView = {
@@ -82,8 +83,6 @@ export type ReportView = {
   questions: ReportQuestionCard[];
   critiques: FormattedCritique[];
   notes: string[];
-  delivery: SessionDelivery | null;
-  deliveryTitle: string;
 };
 
 export type ReportAnswerInput =
@@ -130,21 +129,6 @@ export function buildReportView({
 }): ReportView {
   const copy = uiCopy(locale);
   const notes: string[] = [];
-  const localizedDelivery = delivery
-    ? {
-        ...delivery,
-        headline:
-          delivery.status === "review"
-            ? delivery.tipCount === 1
-              ? copy.report.deliveryReviewOne
-              : copy.report.deliveryReviewMany.replace(
-                  "{n}",
-                  String(delivery.tipCount),
-                )
-            : copy.report.deliveryHeadline[delivery.status],
-        note: copy.report.deliveryNote[delivery.status],
-      }
-    : null;
 
   return {
     title: copy.report.title,
@@ -171,8 +155,6 @@ export function buildReportView({
         assessed: true,
       };
     }),
-    delivery: localizedDelivery,
-    deliveryTitle: copy.report.deliveryTitle,
     questions: sessionQuestions.map((question, index) => {
       const answer = answers.find((item) => item.questionIndex === index);
       const bank = getBankQuestionById(question.id);
@@ -198,6 +180,7 @@ export function buildReportView({
           burmese: "",
           evidence: "",
           affirming: false,
+          delivery: null,
         };
       }
 
@@ -253,6 +236,8 @@ export function buildReportView({
         burmese: formatted?.burmese ?? "",
         evidence: formatted ? formatted.explanation : "",
         affirming,
+        delivery:
+          delivery?.answers.find((item) => item.questionIndex === index) ?? null,
       };
     }),
     critiques: report.critiques.map(formatQuotedCritique),

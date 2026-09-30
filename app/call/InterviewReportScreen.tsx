@@ -162,6 +162,31 @@ function QuestionCard({
           </div>
         </div>
       </div>
+      {card.delivery ? (
+        <div
+          data-testid="speech-delivery"
+          className="rounded-xl border border-eel/10 bg-white px-4 py-3"
+        >
+          <p className="text-xs font-medium tracking-wide text-eel/75">
+            {copy.report.deliveryTitle}
+          </p>
+          {card.delivery.tip ? (
+            <>
+              <p className="mt-1 text-sm text-eel/90">
+                {card.delivery.tip.evidence}
+              </p>
+              <p className="mt-1 text-sm text-eel/90">
+                <span className="font-medium">{copy.report.tryNextLabel}:</span>{" "}
+                {card.delivery.tip.tryNext}
+              </p>
+            </>
+          ) : (
+            <p className="mt-1 text-sm text-eel/85">
+              {card.delivery.observations.join(" ")}
+            </p>
+          )}
+        </div>
+      ) : null}
       <div>
         <p className="text-xs font-medium tracking-wide text-eel/75">
           {card.rewriteHeading}
@@ -386,36 +411,6 @@ export function InterviewReportScreen({
             ))}
           </div>
 
-          {view.delivery ? (
-            <div
-              data-testid="speech-delivery-signals"
-              className="rounded-2xl border border-eel/10 bg-eel/5 p-4"
-            >
-              <p className="text-xs font-medium tracking-wide text-eel/75">
-                {view.deliveryTitle}
-              </p>
-              <p className="mt-1 text-lg font-medium">
-                {view.delivery.headline}
-              </p>
-              <p className="mt-1 text-sm text-eel/85">{view.delivery.note}</p>
-              {view.delivery.tips.map((tip) => (
-                <div
-                  key={`${tip.questionIndex}-${tip.gapSec}`}
-                  className="mt-3 border-t border-eel/10 pt-3"
-                  data-testid="speech-delivery-tip"
-                >
-                  <p className="text-sm font-medium text-eel">
-                    {tip.questionLabel}
-                  </p>
-                  <p className="mt-1 text-xs text-eel/80">{tip.evidence}</p>
-                  <p className="mt-1 text-xs text-eel/80">
-                    <span className="font-medium">{copy.report.tryNextLabel}:</span>{" "}
-                    {tip.tryNext}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : null}
         </div>
 
         <div data-testid="report-review" className="flex flex-col gap-3">
