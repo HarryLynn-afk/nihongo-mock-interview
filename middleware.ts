@@ -5,6 +5,7 @@ import { consentGateCookie, shouldRewriteAuthCallback } from "@/lib/content/stud
 import {
   CONSENT_GATE_COOKIE,
   mustSignIn,
+  isGuestCall,
   isParticipantCall,
   isRemovedPitchUrl,
 } from "@/lib/content/visitPolicy";
@@ -120,6 +121,10 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  if (pathname === "/call" && isGuestCall(search) && user) {
+    // Guest practice is anonymous-only; a signed-in tester belongs on the landing.
+    return NextResponse.redirect(landingForVisit(request));
+  }
   if (isParticipantCall(pathname, search)) {
     if (!user) {
       return redirectToLoginAndSignOut(request, url, anon);

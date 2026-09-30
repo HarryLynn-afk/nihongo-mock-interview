@@ -170,13 +170,6 @@ export default function ConsentPage() {
                 >
                   {copy.consent.agree}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => push("/")}
-                  className="self-start text-sm font-medium text-feather-dark hover:underline"
-                >
-                  {copy.consent.guestInstead}
-                </button>
               </div>
             ) : null}
             {error ? <p role="alert" className="mt-5 text-sm text-red-700">{error}</p> : null}

@@ -140,18 +140,13 @@ export default function Home({
         </p>
 
         {view?.kind === "signedIn" ? (
-          <div className="mt-10 hidden flex-col items-center gap-3 md:flex">
+          <div className="mt-10 hidden justify-center md:flex">
             {joinDisabled ? null : (
               <JoinInterview
                 consentRequired={!view.consentedThisVisit}
                 className="!text-xl"
               />
             )}
-            <JoinInterview
-              guest
-              label={copy.start.tryAsGuest}
-              className="!min-h-11 !bg-transparent !text-feather-dark !shadow-none hover:!bg-feather/10 hover:!shadow-none"
-            />
           </div>
         ) : hero ?? (
           <div className="mt-10 hidden justify-center md:flex">

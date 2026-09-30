@@ -75,4 +75,23 @@ describe("participant classroom consent gate", () => {
 
     expect(response.headers.get("location")).toBe("http://localhost/");
   });
+
+  it("sends a signed-in tester off a Guest call to the landing", async () => {
+    const request = new NextRequest("http://localhost/call?guest=1");
+    const { middleware } = await import("./middleware");
+    const response = await middleware(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("http://localhost/");
+  });
+
+  it("lets an anonymous visitor run the Guest call", async () => {
+    getUser.mockResolvedValue({ data: { user: null } });
+    const request = new NextRequest("http://localhost/call?guest=1");
+    const { middleware } = await import("./middleware");
+    const response = await middleware(request);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+  });
 });

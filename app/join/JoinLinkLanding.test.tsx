@@ -127,7 +127,7 @@ describe("JoinLinkLanding", () => {
     expect(screen.getByRole("dialog", { name: "This sign-up link is full." })).toBeInTheDocument();
   });
 
-  it("does not offer Join interview on a full unique link even with a saved sign-in", () => {
+  it("offers no CTA on a full unique link even with a saved sign-in", () => {
     render(
       <JoinLinkLanding
         from="T1"
@@ -137,7 +137,9 @@ describe("JoinLinkLanding", () => {
     );
 
     expect(screen.queryByRole("button", { name: "Join Interview" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Try a short practice" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Try a short practice" }),
+    ).not.toBeInTheDocument();
   });
 
   it("starts Google sign-up through POST /api/auth/join-google", async () => {

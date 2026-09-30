@@ -77,7 +77,9 @@ describe("JoinPage", () => {
     render(await JoinPage({ searchParams: Promise.resolve({ from: "rsu-k7m" }) }));
 
     expect(screen.getByRole("button", { name: "Join Interview" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Try a short practice" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Try a short practice" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Profile" })).toBeInTheDocument();
   });
 

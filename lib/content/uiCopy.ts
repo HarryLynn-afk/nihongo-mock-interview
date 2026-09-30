@@ -55,7 +55,6 @@ const en = {
     checkbox:
       "I agree to take part and to save this session under a participant id.",
     agree: "Agree and continue",
-    guestInstead: "Try as guest instead",
     participantId: "Your participant id is",
     participantIdNote: "The classroom and report show this id instead of your email.",
     errorSignedOut:
@@ -318,7 +317,6 @@ const my: UiCopy = {
     checkbox:
       "ပါဝင်ရန်နှင့် ဤစက်ရှင်ကို ပါဝင်သူ id အောက်တွင် သိမ်းရန် သဘောတူပါသည်။",
     agree: "သဘောတူပြီး ရှေ့ဆက်ရန်",
-    guestInstead: "ဧည့်သည်အဖြစ် စမ်းကြည့်ရန်",
     participantId: "သင့်ပါဝင်သူ id မှာ",
     participantIdNote: "စာသင်ခန်းနှင့် report တွင် အီးမေးလ်အစား ဤ id ကို ပြပါသည်။",
     errorSignedOut:

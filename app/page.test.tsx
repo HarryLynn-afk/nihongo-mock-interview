@@ -89,7 +89,7 @@ describe("Home (start screen)", () => {
     );
   });
 
-  it("shows Join interview, guest practice, and Profile after Google sign-in", () => {
+  it("shows Join interview and Profile, with no guest practice, after Google sign-in", () => {
     render(
       <Home
         view={{
@@ -101,7 +101,9 @@ describe("Home (start screen)", () => {
     );
 
     expect(screen.getByRole("button", { name: "Join Interview" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Try a short practice" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Try a short practice" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Profile" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Participant login" })).not.toBeInTheDocument();
   });
