@@ -53,12 +53,14 @@ export function GoogleSignInDialog({
   onContinue,
   onClose,
   message,
+  messageAction,
 }: {
   title: string;
   body?: string;
   onContinue: () => Promise<void>;
   onClose: () => void;
   message?: string | null;
+  messageAction?: { label: string; onClick: () => void };
 }) {
   const { locale, copy } = useCopy();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -174,6 +176,15 @@ export function GoogleSignInDialog({
           <p className="mt-3 text-sm leading-relaxed text-[#9b1c1c]">
             {localizeAuthMessage(message, locale)}
           </p>
+        ) : null}
+        {message && messageAction ? (
+          <button
+            type="button"
+            onClick={messageAction.onClick}
+            className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full border border-feather px-5 text-sm font-semibold text-feather transition-colors hover:bg-polar focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
+          >
+            {messageAction.label}
+          </button>
         ) : null}
         {body ? (
           <p className="mx-auto mt-4 max-w-[34ch] text-[0.92rem] leading-relaxed text-wolf">

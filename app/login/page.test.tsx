@@ -34,6 +34,9 @@ describe("Login page", () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(
+      screen.queryByRole("button", { name: "Request an invite" }),
+    ).not.toBeInTheDocument();
+    expect(
       screen.queryByRole("button", { name: "Send sign-in link" }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("Or send a sign-in link")).not.toBeInTheDocument();
@@ -82,6 +85,57 @@ describe("Login page", () => {
       screen.queryByText(/already opened or has expired/i),
     ).not.toBeInTheDocument();
     vi.unstubAllGlobals();
+  });
+
+  it("offers to request an invite when the Google account is not invited", async () => {
+    vi.stubGlobal("location", {
+      assign: vi.fn(),
+      search: "?error=not_invited",
+      hash: "",
+    });
+    const user = userEvent.setup();
+    render(<LoginPage />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Request an invite" }),
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: "Ask for the full Interview" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Sign in to NihonGo" }),
+    ).not.toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it("confirms the invite request from the not-invited dialog", async () => {
+    vi.stubGlobal("location", {
+      assign: vi.fn(),
+      search: "?error=not_invited",
+      hash: "",
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<LoginPage />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Request an invite" }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: /email/i }),
+      "ada@example.com",
+    );
+    await user.click(screen.getByRole("button", { name: /^send$/i }));
+
+    expect(
+      await screen.findByRole("dialog", { name: /you will get an email/i }),
+    ).toBeInTheDocument();
+    vi.unstubAllGlobals();
+    sessionStorage.clear();
   });
 
   it("closes back to the start screen from the close control, Escape, and the backdrop", async () => {

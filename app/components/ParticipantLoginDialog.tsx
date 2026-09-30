@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FullSessionRequestDialog } from "./FullSessionRequestDialog";
 import { GoogleSignInDialog } from "./GoogleSignInDialog";
 import { useCopy } from "./useUiLocale";
 
@@ -21,6 +22,7 @@ export function ParticipantLoginDialog({
   const { copy } = useCopy();
   const [notInvited, setNotInvited] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [requestStep, setRequestStep] = useState<"form" | "saved" | null>(null);
   const message = notInvited ? copy.login.errorNotInvited : notice;
 
   function close() {
@@ -51,11 +53,29 @@ export function ParticipantLoginDialog({
     }
   }
 
+  if (requestStep) {
+    return (
+      <FullSessionRequestDialog
+        step={requestStep}
+        onClose={() => setRequestStep(null)}
+        onSent={() => setRequestStep("saved")}
+      />
+    );
+  }
+
   return (
     <GoogleSignInDialog
       title={copy.login.title}
       body={copy.login.body}
       message={message}
+      messageAction={
+        notInvited
+          ? {
+              label: copy.login.requestInvite,
+              onClick: () => setRequestStep("form"),
+            }
+          : undefined
+      }
       onClose={close}
       onContinue={startGoogle}
     />
