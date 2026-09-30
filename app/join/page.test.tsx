@@ -76,7 +76,7 @@ describe("JoinPage", () => {
 
     render(await JoinPage({ searchParams: Promise.resolve({ from: "rsu-k7m" }) }));
 
-    expect(screen.getByRole("button", { name: "Join research session" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Join Interview" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Try a short practice" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Profile" })).toBeInTheDocument();
   });
@@ -92,7 +92,7 @@ describe("JoinPage", () => {
 
     render(await JoinPage({ searchParams: Promise.resolve({ from: "rsu-k7m" }) }));
 
-    expect(screen.queryByRole("button", { name: "Join research session" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Join Interview" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
   });
 

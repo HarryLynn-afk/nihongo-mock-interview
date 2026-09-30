@@ -3,9 +3,8 @@ import type { UiLocale } from "./locale";
 const en = {
   start: {
     headline: "Practice your Japanese language-school interview",
-    coachLabel: "With Tanaka-sensei, your AI interview coach",
     subhead:
-      "Answer mock interview questions in Japanese and receive structured AI-generated feedback on your responses.",
+      "Answer mock interview questions in Japanese and receive AI feedback.",
     tryAsGuest: "Try a short practice",
     practiceOnly:
       "Practice and coaching only—not an admission, visa, or COE assessment.",
@@ -17,15 +16,15 @@ const en = {
       steps: {
         join: {
           title: "Set up your practice",
-          body: "Camera is optional. A microphone is required.",
+          body: "Camera optional. Microphone required.",
         },
         speak: {
           title: "Answer in Japanese",
-          body: "Respond aloud to Japanese language-school interview questions.",
+          body: "Respond aloud in Japanese.",
         },
         report: {
           title: "Review your coaching report",
-          body: "Receive feedback on relevance, grammar and politeness, motivation, study plan, and consistency.",
+          body: "Get feedback on relevance, grammar and politeness, motivation, study plan, and consistency.",
         },
       },
     },
@@ -75,7 +74,7 @@ const en = {
     participantLogin: "Participant login",
   },
   join: {
-    joinInterview: "Join research session",
+    joinInterview: "Join Interview",
   },
   joinLink: {
     explanation: "Sign in with Google for the full interview. Guest practice is shorter and isn't saved.",
@@ -269,9 +268,8 @@ export type UiCopy = WidenStrings<typeof en>;
 const my: UiCopy = {
   start: {
     headline: "ဂျပန်ဘာသာစကားကျောင်း အင်တာဗျူးကို လေ့ကျင့်ပါ",
-    coachLabel: "Tanaka-sensei နှင့်အတူ — သင့် AI အင်တာဗျူး နည်းပြ",
     subhead:
-      "ဂျပန်လို အတုအယောင် အင်တာဗျူးမေးခွန်းများကို ဖြေဆိုပြီး သင့်အဖြေများအတွက် စနစ်တကျ AI ဖန်တီးထားသော အကြံပြုချက်ကို ရယူပါ။",
+      "ဂျပန်လို အတုအယောင် အင်တာဗျူးမေးခွန်းများကို ဖြေဆိုပြီး AI အကြံပြုချက် ရယူပါ။",
     tryAsGuest: "လေ့ကျင့်မှု တိုတိုကို စမ်းကြည့်ရန်",
     practiceOnly:
       "လေ့ကျင့်မှုနှင့် coaching အတွက်သာဖြစ်သည် — ဝင်ခွင့်၊ ဗီဇာ သို့မဟုတ် COE ဆုံးဖြတ်ချက် မဟုတ်ပါ။",
@@ -287,7 +285,7 @@ const my: UiCopy = {
         },
         speak: {
           title: "ဂျပန်လို ဖြေဆိုပါ",
-          body: "ဂျပန်ဘာသာစကားကျောင်း အင်တာဗျူးမေးခွန်းများကို ကျယ်ကျယ် ဖြေပါ။",
+          body: "ဂျပန်လို ကျယ်ကျယ် ဖြေပါ။",
         },
         report: {
           title: "သင့် coaching report ကို ပြန်ကြည့်ပါ",
@@ -340,7 +338,7 @@ const my: UiCopy = {
     participantLogin: "ပါဝင်သူ ဝင်ရောက်ရန်",
   },
   join: {
-    joinInterview: "သုတေသန စက်ရှင်တွင် ပါဝင်ရန်",
+    joinInterview: "အင်တာဗျူးတွင် ပါဝင်ရန်",
   },
   joinLink: {
     explanation: "အင်တာဗျူးအပြည့်အစုံအတွက် Google ဖြင့် ဝင်ရောက်ပါ။ ဧည့်သည် လေ့ကျင့်မှုမှာ ပိုတိုပြီး သိမ်းဆည်းမည် မဟုတ်ပါ။",

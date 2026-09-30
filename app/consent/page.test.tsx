@@ -10,7 +10,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("../components/JoinInterview", () => ({
-  JoinInterview: () => <button type="button">Join research session</button>,
+  JoinInterview: () => <button type="button">Join Interview</button>,
 }));
 
 function mockStudyMe(body: {
@@ -108,7 +108,7 @@ describe("Study consent page", () => {
       screen.getByText(/I agree to take part and to save this session/),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Join research session" }),
+      screen.queryByRole("button", { name: "Join Interview" }),
     ).not.toBeInTheDocument();
     expect(fetch).not.toHaveBeenCalledWith(
       "/api/study/consent",
@@ -152,7 +152,7 @@ describe("Study consent page", () => {
     await user.click(agree);
 
     expect(
-      await screen.findByRole("button", { name: "Join research session" }),
+      await screen.findByRole("button", { name: "Join Interview" }),
     ).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/study/consent",
@@ -173,7 +173,7 @@ describe("Study consent page", () => {
     render(<ConsentPage />);
 
     expect(
-      await screen.findByRole("button", { name: "Join research session" }),
+      await screen.findByRole("button", { name: "Join Interview" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/P001/)).toBeInTheDocument();
     expect(

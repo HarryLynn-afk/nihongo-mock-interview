@@ -135,16 +135,18 @@ export default function Home({
         >
           <AccentHeadline text={copy.start.headline} />
         </h1>
-        <p className="mx-auto mt-4 max-w-[46ch] text-base font-medium leading-relaxed text-wolf md:text-lg">
-          {copy.start.coachLabel}
-        </p>
         <p className="mx-auto mt-8 max-w-[40ch] text-lg leading-relaxed text-wolf md:text-xl">
           {copy.start.subhead}
         </p>
 
         {view?.kind === "signedIn" ? (
           <div className="mt-10 hidden flex-col items-center gap-3 md:flex">
-            {joinDisabled ? null : <JoinInterview consentRequired={!view.consentedThisVisit} />}
+            {joinDisabled ? null : (
+              <JoinInterview
+                consentRequired={!view.consentedThisVisit}
+                className="!text-xl"
+              />
+            )}
             <JoinInterview
               guest
               label={copy.start.tryAsGuest}

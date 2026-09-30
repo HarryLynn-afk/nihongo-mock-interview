@@ -41,7 +41,7 @@ describe("normal landing route", () => {
 
     render(await Page());
 
-    expect(screen.getByRole("button", { name: "Join research session" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Join Interview" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Try a short practice" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Profile" })).toBeInTheDocument();
   });

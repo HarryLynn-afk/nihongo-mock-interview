@@ -136,7 +136,7 @@ describe("JoinLinkLanding", () => {
       />,
     );
 
-    expect(screen.queryByRole("button", { name: "Join research session" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Join Interview" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Try a short practice" })).toBeInTheDocument();
   });
 

@@ -31,7 +31,7 @@ describe("Home (start screen)", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Answer mock interview questions in Japanese and receive structured AI-generated feedback on your responses.",
+        "Answer mock interview questions in Japanese and receive AI feedback.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -57,8 +57,17 @@ describe("Home (start screen)", () => {
     expect(screen.queryByText("Coaching report")).not.toBeInTheDocument();
     expect(screen.queryByText("10–15 min")).not.toBeInTheDocument();
     expect(
-      screen.getByText("With Tanaka-sensei, your AI interview coach"),
+      screen.getByText("Camera optional. Microphone required."),
     ).toBeInTheDocument();
+    expect(screen.getByText("Respond aloud in Japanese.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Get feedback on relevance, grammar and politeness, motivation, study plan, and consistency.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("With Tanaka-sensei, your AI interview coach"),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByText("Tokyo Pathway Japanese School"),
     ).not.toBeInTheDocument();
@@ -91,7 +100,7 @@ describe("Home (start screen)", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Join research session" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Join Interview" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Try a short practice" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Profile" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Participant login" })).not.toBeInTheDocument();
