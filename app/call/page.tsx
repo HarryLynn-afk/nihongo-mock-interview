@@ -305,9 +305,7 @@ export default function CallPage() {
     formEnabled,
   });
   const usefulnessView =
-    topAction === "help" && sessionId !== null
-      ? buildUsefulnessView({ formEnabled, sessionId })
-      : null;
+    topAction === "help" ? buildUsefulnessView({ formEnabled }) : null;
   const { open: usefulnessOpen, openNow: openUsefulness, close: closeUsefulness } =
     useUsefulnessNudge(Boolean(usefulnessView && revealDone));
   const askForFullSession =
@@ -502,13 +500,6 @@ export default function CallPage() {
         {usefulnessView && report && !allSkipped && usefulnessOpen ? (
           <UsefulnessStep
             view={usefulnessView}
-            report={report}
-            answers={displayAnswers.map((answer) => ({
-              questionIndex: answer.questionIndex,
-              pushbackCount:
-                answer.status === "answered" ? answer.pushbackCount : 2,
-              forced: false,
-            }))}
             locale={locale}
             onFinished={(outcome) => {
               closeUsefulness();

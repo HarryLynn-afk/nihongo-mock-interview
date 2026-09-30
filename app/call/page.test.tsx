@@ -1457,8 +1457,11 @@ describe("Call screen", () => {
     });
     await user.click(screen.getByRole("button", { name: /help the study/i }));
 
-    await user.click(screen.getByRole("radio", { name: /usefulness 4/i }));
-    await user.click(screen.getByRole("radio", { name: /usability 5/i }));
+    for (const radio of screen
+      .getAllByRole("radio")
+      .filter((el) => (el as HTMLInputElement).value === "4")) {
+      await user.click(radio);
+    }
     await user.click(screen.getByRole("button", { name: /^submit$/i }));
 
     expect(

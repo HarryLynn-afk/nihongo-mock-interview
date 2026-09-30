@@ -2,91 +2,88 @@ import { describe, expect, it, vi } from "vitest";
 import { postSurvey } from "./postSurvey";
 import type { SurveyPayload } from "@/lib/content/survey";
 
-const skipPayload: SurveyPayload = {
-  sessionId: "11111111-1111-4111-8111-111111111111",
-  headline: "AlmostReady",
-  total: 70,
-  source: "live",
-  answers: [
-    { questionIndex: 0, pushbackCount: 0, forced: false },
-    { questionIndex: 1, pushbackCount: 1, forced: false },
-    { questionIndex: 2, pushbackCount: 2, forced: true },
-  ],
-  skipped: true,
+const submitPayload: SurveyPayload = {
+  skipped: false,
+  ratings: {
+    improveUnderstanding: 5,
+    identifyWeaknesses: 4,
+    rewriteUseful: 5,
+    useAgain: 4,
+    easyToUse: 5,
+    clearSteps: 4,
+    reportClear: 5,
+    completeEasily: 4,
+    transcriptAccurate: 3,
+    feedbackConsistent: 4,
+  },
+  openEnded: {
+    mostHelpful: "The rewrite.",
+    unclear: "Nothing.",
+    improvement: "More questions.",
+  },
 };
 
 describe("postSurvey", () => {
-  it("POSTs the payload to the form URL", async () => {
+  it("POSTs the payload to the form URL as form-urlencoded", async () => {
     const fakeFetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
 
     await postSurvey({
       url: "https://example.com/formResponse",
-      payload: skipPayload,
+      payload: submitPayload,
       fetchImpl: fakeFetch,
     });
 
     expect(fakeFetch).toHaveBeenCalledWith(
       "https://example.com/formResponse",
-      expect.objectContaining({ method: "POST" }),
-    );
-  });
-
-  it("sends session id, Headline, total, live/sample, Pushback, and skipped as form fields", async () => {
-    const fakeFetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
-
-    await postSurvey({
-      url: "https://example.com/formResponse",
-      payload: skipPayload,
-      fetchImpl: fakeFetch,
-    });
-
-    const init = fakeFetch.mock.calls[0][1] as RequestInit;
-    expect(init.headers).toEqual(
       expect.objectContaining({
-        "Content-Type": "application/x-www-form-urlencoded",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
       }),
     );
-    const params = new URLSearchParams(String(init.body));
-    expect(params.get("entry.1571804127")).toBe(skipPayload.sessionId);
-    expect(params.get("entry.118245774")).toBe("AlmostReady");
-    expect(params.get("entry.629201507")).toBe("70");
-    expect(params.get("entry.1636094148")).toBe("live");
-    expect(params.get("entry.820831902")).toBe("0");
-    expect(params.get("entry.1351365414")).toBe("false");
-    expect(params.get("entry.1200746092")).toBe("1");
-    expect(params.get("entry.550204019")).toBe("false");
-    expect(params.get("entry.1832827395")).toBe("2");
-    expect(params.get("entry.833059275")).toBe("true");
-    expect(params.get("entry.414556491")).toBe("true");
-    expect(params.get("entry.56970328")).toBe("");
-    expect(params.get("entry.589615942")).toBe("");
-    expect(params.get("entry.1855296635")).toBe("");
-    expect(params.get("entry.sessionId")).toBeNull();
   });
 
-  it("sends usefulness, usability, and comment on Submit", async () => {
+  it("maps every rating and open-ended answer onto its entry id", async () => {
     const fakeFetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
-    const payload: SurveyPayload = {
-      ...skipPayload,
-      skipped: false,
-      usefulness: 4,
-      usability: 5,
-      comment: "Clear rewrite.",
-    };
 
     await postSurvey({
       url: "https://example.com/formResponse",
-      payload,
+      payload: submitPayload,
       fetchImpl: fakeFetch,
     });
 
     const params = new URLSearchParams(
       String((fakeFetch.mock.calls[0][1] as RequestInit).body),
     );
-    expect(params.get("entry.414556491")).toBe("false");
-    expect(params.get("entry.56970328")).toBe("4");
-    expect(params.get("entry.589615942")).toBe("5");
-    expect(params.get("entry.1855296635")).toBe("Clear rewrite.");
+    expect(params.get("entry.56970328")).toBe("5");
+    expect(params.get("entry.1117609917")).toBe("4");
+    expect(params.get("entry.1584949759")).toBe("5");
+    expect(params.get("entry.580383874")).toBe("4");
+    expect(params.get("entry.2078568494")).toBe("5");
+    expect(params.get("entry.1587213975")).toBe("4");
+    expect(params.get("entry.649058710")).toBe("5");
+    expect(params.get("entry.1140789477")).toBe("4");
+    expect(params.get("entry.535422587")).toBe("3");
+    expect(params.get("entry.793287150")).toBe("4");
+    expect(params.get("entry.740580120")).toBe("The rewrite.");
+    expect(params.get("entry.589615942")).toBe("Nothing.");
+    expect(params.get("entry.1855296635")).toBe("More questions.");
+  });
+
+  it("sends no entry fields on Skip", async () => {
+    const fakeFetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+
+    await postSurvey({
+      url: "https://example.com/formResponse",
+      payload: { skipped: true },
+      fetchImpl: fakeFetch,
+    });
+
+    const params = new URLSearchParams(
+      String((fakeFetch.mock.calls[0][1] as RequestInit).body),
+    );
+    expect([...params.keys()]).toEqual([]);
   });
 
   it("never throws even when fetch rejects", async () => {
@@ -95,7 +92,7 @@ describe("postSurvey", () => {
     await expect(
       postSurvey({
         url: "https://example.com/formResponse",
-        payload: skipPayload,
+        payload: submitPayload,
         fetchImpl: fakeFetch,
       }),
     ).resolves.toBeUndefined();

@@ -51,11 +51,6 @@ describe("POST /api/survey", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionId: "11111111-1111-4111-8111-111111111111",
-          headline: "Ready",
-          total: 92,
-          source: "live",
-          answers: [],
           skipped: true,
         }),
       }),
@@ -71,18 +66,7 @@ describe("POST /api/survey", () => {
     const fakeFetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
     vi.stubGlobal("fetch", fakeFetch);
     const { POST } = await import("./route");
-    const payload = {
-      sessionId: "11111111-1111-4111-8111-111111111111",
-      headline: "Ready",
-      total: 92,
-      source: "live",
-      answers: [
-        { questionIndex: 0, pushbackCount: 0, forced: false },
-        { questionIndex: 1, pushbackCount: 0, forced: false },
-        { questionIndex: 2, pushbackCount: 0, forced: false },
-      ],
-      skipped: true,
-    };
+    const payload = { skipped: true };
     const res = await POST(
       new Request("http://localhost/api/survey", {
         method: "POST",

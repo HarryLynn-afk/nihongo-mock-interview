@@ -240,7 +240,6 @@ const en = {
     title: "Help the study",
     close: "Close",
     submit: "Submit",
-    comment: "Comment",
   },
   micTrouble: {
     title: "We couldn't hear you",
@@ -503,7 +502,6 @@ const my: UiCopy = {
     title: "လေ့လာမှုကို ကူညီရန်",
     close: "ပိတ်ရန်",
     submit: "ပို့ရန်",
-    comment: "မှတ်ချက်",
   },
   micTrouble: {
     title: "သင့်အသံ မကြားရပါ",
