@@ -940,6 +940,8 @@ describe("useAnswerCapture", () => {
       samples[index] = 0.3 * Math.sin(index / 10);
     }
     const stopLive = vi.fn();
+    const setPausedLive = vi.fn();
+    const commitLive = vi.fn();
     let onEvent:
       | ((event: { kind: "completed"; itemId: string; transcript: string }) => void)
       | undefined;
@@ -949,7 +951,8 @@ describe("useAnswerCapture", () => {
         onEvent = args.onEvent as typeof onEvent;
         return {
           stop: stopLive,
-          commit: vi.fn(),
+          setPaused: setPausedLive,
+          commit: commitLive,
           getTranscript: () => "こんにちは。",
           getPcm: () => ({ samples, sampleRate: 16_000 }),
           getWords: () => [],
@@ -981,17 +984,20 @@ describe("useAnswerCapture", () => {
       vi.advanceTimersByTime(SPEAK_IDLE_PAUSE_MS);
     });
     expect(result.current.speakPaused).toBe(true);
-    expect(stopLive).toHaveBeenCalled();
+    expect(setPausedLive).toHaveBeenCalledWith(true);
+    expect(stopLive).not.toHaveBeenCalled();
 
     act(() => result.current.onSubmitClick());
     await act(async () => {
-      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(800);
     });
 
+    expect(commitLive).toHaveBeenCalled();
     expect(onSubmit).toHaveBeenCalledOnce();
     const clip = onSubmit.mock.calls[0][0].audioClip as Blob;
     expect(clip.type).toBe("audio/wav");
     expect(clip.size).toBeGreaterThan(44);
+    expect(stopLive).toHaveBeenCalled();
 
     startLive.mockRestore();
     vi.useRealTimers();
@@ -1097,6 +1103,7 @@ describe("useAnswerCapture", () => {
       .spyOn(liveTranscription, "startLiveTranscriptionSession")
       .mockResolvedValue({
         stop: vi.fn(),
+        setPaused: vi.fn(),
         commit: vi.fn(),
         getTranscript: () => "こんにちは。",
         getPcm: () => ({ samples, sampleRate: 16000 }),
@@ -1145,6 +1152,7 @@ describe("useAnswerCapture", () => {
       .spyOn(liveTranscription, "startLiveTranscriptionSession")
       .mockResolvedValue({
         stop: vi.fn(),
+        setPaused: vi.fn(),
         commit: vi.fn(),
         getTranscript: () => "こんにちは。",
         getPcm: () => ({ samples: new Float32Array(), sampleRate: 16000 }),
@@ -1191,6 +1199,7 @@ describe("useAnswerCapture", () => {
       .spyOn(liveTranscription, "startLiveTranscriptionSession")
       .mockResolvedValue({
         stop: vi.fn(),
+        setPaused: vi.fn(),
         commit: vi.fn(),
         getTranscript: () => "こんにちは。",
         getPcm: () => ({ samples: new Float32Array(), sampleRate: 16000 }),
