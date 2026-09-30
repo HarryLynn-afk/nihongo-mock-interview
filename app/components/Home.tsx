@@ -135,6 +135,9 @@ export default function Home({
         >
           <AccentHeadline text={copy.start.headline} />
         </h1>
+        <p className="mx-auto mt-4 max-w-[46ch] text-base font-medium leading-relaxed text-wolf md:text-lg">
+          {copy.start.coachLabel}
+        </p>
         <p className="mx-auto mt-8 max-w-[40ch] text-lg leading-relaxed text-wolf md:text-xl">
           {copy.start.subhead}
         </p>
@@ -162,6 +165,9 @@ export default function Home({
             {copy.start.guestCaption}
           </p>
         )}
+        <p className="mx-auto mt-5 max-w-[52ch] text-sm leading-relaxed text-wolf">
+          {copy.start.practiceOnly}
+        </p>
         {inviteNote && view?.kind !== "signedIn" ? (
           <p className="mx-auto mt-5 max-w-[48ch] text-sm leading-relaxed text-wolf">
             {copy.joinLink.explanation}

@@ -219,7 +219,7 @@ describe("Call screen", () => {
     expect(root.className).toMatch(/linear-gradient/);
     expect(root).not.toHaveClass("bg-ink");
     expect(screen.getByRole("group", { name: "Language" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "ENG" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "English" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -298,7 +298,7 @@ describe("Call screen", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("You")).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Language" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "ENG" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "English" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -351,7 +351,7 @@ describe("Call screen", () => {
   it("MM shows Burmese on the student-turn HUD instead of English", async () => {
     const user = await startStudentTurn();
 
-    await user.click(screen.getByRole("button", { name: "MM" }));
+    await user.click(screen.getByRole("button", { name: "မြန်မာ" }));
 
     expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
     expect(hud().getByText(questions[0].burmeseTranslation)).toBeInTheDocument();

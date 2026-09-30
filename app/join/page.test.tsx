@@ -57,7 +57,7 @@ describe("JoinPage", () => {
     expect(lookupJoinLinkMock).toHaveBeenCalledWith("rsu-k7m");
     expect(
       screen.getByRole("heading", {
-        name: "Practice your interview with Tanaka-sensei",
+        name: "Practice your Japanese language-school interview",
       }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
@@ -76,8 +76,8 @@ describe("JoinPage", () => {
 
     render(await JoinPage({ searchParams: Promise.resolve({ from: "rsu-k7m" }) }));
 
-    expect(screen.getByRole("button", { name: "Join interview" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Try as guest" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Join research session" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try a short practice" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Profile" })).toBeInTheDocument();
   });
 
@@ -92,7 +92,7 @@ describe("JoinPage", () => {
 
     render(await JoinPage({ searchParams: Promise.resolve({ from: "rsu-k7m" }) }));
 
-    expect(screen.queryByRole("button", { name: "Join interview" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Join research session" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
   });
 

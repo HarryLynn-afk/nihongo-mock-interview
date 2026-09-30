@@ -18,11 +18,11 @@ describe("JoinLinkLanding", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Practice your interview with Tanaka-sensei",
+        name: "Practice your Japanese language-school interview",
       }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Try as guest" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try a short practice" })).toBeInTheDocument();
     expect(screen.getByText(/Sign in with Google for the full interview/)).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "Participant login" }),
@@ -65,10 +65,10 @@ describe("JoinLinkLanding", () => {
       within(dialog).getByRole("button", { name: "Continue with Google" }),
     ).toBeInTheDocument();
     expect(
-      within(dialog).queryByRole("button", { name: "ENG" }),
+      within(dialog).queryByRole("button", { name: "English" }),
     ).not.toBeInTheDocument();
     expect(
-      within(dialog).queryByRole("button", { name: "MM" }),
+      within(dialog).queryByRole("button", { name: "မြန်မာ" }),
     ).not.toBeInTheDocument();
     expect(
       within(dialog).getByText(
@@ -89,7 +89,7 @@ describe("JoinLinkLanding", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Practice your interview with Tanaka-sensei",
+        name: "Practice your Japanese language-school interview",
       }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Login" })).not.toBeInTheDocument();
@@ -104,15 +104,15 @@ describe("JoinLinkLanding", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Practice your interview with Tanaka-sensei",
+        name: "Practice your Japanese language-school interview",
       }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Login" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Try as guest" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try a short practice" })).toBeInTheDocument();
     const dialog = screen.getByRole("dialog", { name: "This sign-up link is full." });
     await user.click(within(dialog).getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("dialog", { name: "This sign-up link is full." })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Try as guest" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try a short practice" })).toBeInTheDocument();
   });
 
   it("opens the full popup again for a different full invite", async () => {
@@ -136,8 +136,8 @@ describe("JoinLinkLanding", () => {
       />,
     );
 
-    expect(screen.queryByRole("button", { name: "Join interview" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Try as guest" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Join research session" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try a short practice" })).toBeInTheDocument();
   });
 
   it("starts Google sign-up through POST /api/auth/join-google", async () => {
