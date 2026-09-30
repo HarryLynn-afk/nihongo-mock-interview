@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { InterviewReport } from "@/lib/content/sampleReport";
 import { formatQuotedCritique } from "@/lib/content/critiqueCopy";
 import { questions } from "@/lib/content/questions";
-import { summarizeDelivery } from "@/lib/content/deliverySignals";
 import { buildReportView } from "./buildReportView";
 
 const report: InterviewReport = {
@@ -38,17 +37,6 @@ const voiceAnswers = [
   { questionIndex: 2, status: "answered" as const, transcript: "専門学校に行きます" },
 ];
 
-const clearDelivery = summarizeDelivery([
-  {
-    questionIndex: 0,
-    questionId: 1,
-    words: [
-      { word: "はじめ", start: 0, end: 0.3 },
-      { word: "まして", start: 0.4, end: 0.7 },
-    ],
-  },
-]);
-
 describe("buildReportView", () => {
   it("does not treat a speaking Gate as Japanese-ability coaching", () => {
     const view = buildReportView({
@@ -63,7 +51,6 @@ describe("buildReportView", () => {
     const view = buildReportView({
       report,
       answers: voiceAnswers,
-      delivery: clearDelivery,
     });
 
     expect(view.title).toBe("AI Interview Practice Feedback");
@@ -83,9 +70,6 @@ describe("buildReportView", () => {
       "consistency",
     ]);
     expect(view).not.toHaveProperty("delivery");
-    expect(view.questions[0].delivery?.recordingQuality).toBe("pass");
-    expect(view.questions[0].delivery?.tip).toBeNull();
-    expect(view.questions[1].delivery).toBeNull();
     expect(view.voiceNote).toBeNull();
   });
 
@@ -99,38 +83,6 @@ describe("buildReportView", () => {
       "Answer relevance",
     );
     expect(view.listeningNote).toMatch(/listening comprehension is not scored/i);
-  });
-
-  it("attaches each question's own delivery answer to its card", () => {
-    const view = buildReportView({
-      report,
-      answers: voiceAnswers,
-      delivery: summarizeDelivery([
-        {
-          questionIndex: 0,
-          questionId: 1,
-          words: [
-            { word: "はじめ", start: 0, end: 0.3 },
-            { word: "まして", start: 3.9, end: 4.2 },
-          ],
-        },
-        {
-          questionIndex: 1,
-          questionId: 2,
-          words: [
-            { word: "日本", start: 0, end: 0.3 },
-            { word: "で", start: 0.4, end: 0.6 },
-          ],
-        },
-      ]),
-    });
-
-    expect(view.questions[0].delivery?.tip?.gapSec).toBe(3.6);
-    expect(view.questions[1].delivery?.tip).toBeNull();
-    expect(view.questions[1].delivery?.observations).toEqual([
-      "No clear mid-answer pause was detected.",
-    ]);
-    expect(view.questions[2].delivery).toBeNull();
   });
 
   it("builds one question card per Interview Question", () => {

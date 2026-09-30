@@ -5,7 +5,6 @@ import { InterviewReportScreen } from "./InterviewReportScreen";
 import { buildReportView } from "./buildReportView";
 import type { InterviewReport } from "@/lib/content/sampleReport";
 import { questions } from "@/lib/content/questions";
-import { summarizeDelivery } from "@/lib/content/deliverySignals";
 
 const report: InterviewReport = {
   headline: "Ready",
@@ -55,25 +54,6 @@ const voiceView = buildReportView({
     { questionIndex: 1, status: "answered", transcript: "日本で勉強したいです" },
     { questionIndex: 2, status: "answered", transcript: "専門学校に行きます" },
   ],
-  delivery: summarizeDelivery([
-    {
-      questionIndex: 0,
-      questionId: 1,
-      words: [
-        { word: "はじめ", start: 0, end: 0.3 },
-        { word: "まして", start: 0.4, end: 0.7 },
-      ],
-    },
-  ]),
-});
-
-const noDeliveryView = buildReportView({
-  report,
-  answers: [
-    { questionIndex: 0, status: "answered", transcript: "はじめまして" },
-    { questionIndex: 1, status: "answered", transcript: "日本で勉強したいです" },
-    { questionIndex: 2, status: "answered", transcript: "専門学校に行きます" },
-  ],
 });
 
 const skippedQ2View = buildReportView({
@@ -83,33 +63,6 @@ const skippedQ2View = buildReportView({
     { questionIndex: 1, status: "skipped" },
     { questionIndex: 2, status: "answered", transcript: "専門学校に行きます" },
   ],
-});
-
-const tipView = buildReportView({
-  report,
-  answers: [
-    { questionIndex: 0, status: "answered", transcript: "はじめまして" },
-    { questionIndex: 1, status: "answered", transcript: "日本で勉強したいです" },
-    { questionIndex: 2, status: "answered", transcript: "専門学校に行きます" },
-  ],
-  delivery: summarizeDelivery([
-    {
-      questionIndex: 0,
-      questionId: 1,
-      words: [
-        { word: "はじめ", start: 0, end: 0.3 },
-        { word: "まして", start: 3.9, end: 4.2 },
-      ],
-    },
-    {
-      questionIndex: 1,
-      questionId: 2,
-      words: [
-        { word: "日本", start: 0, end: 0.3 },
-        { word: "で", start: 0.4, end: 0.6 },
-      ],
-    },
-  ]),
 });
 
 describe("InterviewReportScreen", () => {
@@ -142,7 +95,7 @@ describe("InterviewReportScreen", () => {
     expect(within(overview).getByText("Interview Answer Quality")).toBeInTheDocument();
   });
 
-  it("shows Speech Delivery inside the selected question card, not the overview", () => {
+  it("shows answer feedback without Speech Delivery", () => {
     render(<InterviewReportScreen view={voiceView} />);
 
     expect(
@@ -151,10 +104,11 @@ describe("InterviewReportScreen", () => {
       ),
     ).not.toBeInTheDocument();
     expect(
-      within(screen.getByTestId("report-critiques")).getByTestId(
+      within(screen.getByTestId("report-critiques")).queryByTestId(
         "speech-delivery",
       ),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Clear self-introduction.")).toBeInTheDocument();
   });
 
   it("shows AI Interview Practice Feedback, the stamp in its locked color, criterion scores as points/weight, and the /100 total", () => {
@@ -188,8 +142,8 @@ describe("InterviewReportScreen", () => {
     expect(screen.getByText(/Listening comprehension is not scored/i)).toBeInTheDocument();
   });
 
-  it("hides Speech Delivery when no delivery data was collected", () => {
-    render(<InterviewReportScreen view={noDeliveryView} />);
+  it("keeps pronunciation out of the report radar", () => {
+    render(<InterviewReportScreen view={voiceView} />);
 
     expect(screen.queryByTestId("speech-delivery")).not.toBeInTheDocument();
     const radar = within(screen.getByTestId("readiness-radar"));
@@ -288,41 +242,6 @@ describe("InterviewReportScreen", () => {
     expect(radar.getByText("Consistency")).toBeInTheDocument();
     expect(radar.getByText("Relevance")).toBeInTheDocument();
     expect(radar.queryByText("Listening")).not.toBeInTheDocument();
-  });
-
-  it("shows per-question Speech Delivery without a speaking score", () => {
-    render(<InterviewReportScreen view={voiceView} />);
-
-    const delivery = within(
-      within(screen.getByTestId("report-critiques")).getByTestId(
-        "speech-delivery",
-      ),
-    );
-    expect(delivery.getByText("Speech Delivery")).toBeInTheDocument();
-    expect(
-      delivery.getByText(/No clear mid-answer pause was detected/i),
-    ).toBeInTheDocument();
-  });
-
-  it("shows each question's own pause tip or no-pause note", async () => {
-    const user = userEvent.setup();
-    render(<InterviewReportScreen view={tipView} />);
-
-    const q1 = within(screen.getByTestId("report-critiques"));
-    expect(
-      q1.getByText(/3\.6-second pause occurred mid-answer/i),
-    ).toBeInTheDocument();
-    expect(
-      q1.getByText(/Practise your self-introduction in two short sentences/i),
-    ).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /q2 motivation/i }));
-
-    const q2 = within(screen.getByTestId("report-critiques"));
-    expect(
-      q2.getByText(/No clear mid-answer pause was detected/i),
-    ).toBeInTheDocument();
-    expect(q2.queryByText(/pause occurred mid-answer/i)).not.toBeInTheDocument();
   });
 
   it("reveals radar, then stamp, then critiques — never all at once", async () => {

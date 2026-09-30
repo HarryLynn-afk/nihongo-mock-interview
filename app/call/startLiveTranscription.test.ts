@@ -205,7 +205,7 @@ describe("startLiveTranscriptionSession", () => {
     expect(close).toHaveBeenCalled();
   });
 
-  it("mutes the ScriptProcessor tap and keeps a copy of the heard PCM", async () => {
+  it("mutes the ScriptProcessor tap", async () => {
     const created: Array<{
       processor: FakeProcessor;
       gain: FakeGain;
@@ -225,15 +225,7 @@ describe("startLiveTranscriptionSession", () => {
     expect(created[0]?.processor.connect).toHaveBeenCalledWith(created[0]?.gain);
     expect(created[0]?.gain.connect).toHaveBeenCalledWith(created[0]?.destination);
 
-    const tone = new Float32Array([0.2, -0.2, 0.4]);
-    created[0]?.processor.onaudioprocess?.({
-      inputBuffer: { getChannelData: () => tone },
-    });
-
-    const pcm = session!.getPcm();
-    expect(Array.from(pcm.samples)).toEqual(Array.from(tone));
-    expect(pcm.sampleRate).toBe(16000);
-    expect(session!.getWords()).toEqual([]);
+    session!.stop();
   });
 
   it("sends audio captured before the listen socket opens, in order", async () => {
@@ -373,51 +365,4 @@ describe("startLiveTranscriptionSession", () => {
     vi.useRealTimers();
   });
 
-  it("keeps the delivery PCM captured before a pause", async () => {
-    vi.useFakeTimers();
-    let socket: { open: () => void } | null = null;
-    const created: Array<{
-      processor: FakeProcessor;
-      gain: FakeGain;
-      destination: object;
-    }> = [];
-
-    const sessionPromise = startLiveTranscriptionSession({
-      onEvent: vi.fn(),
-      fetchImpl: tokenFetch(true),
-      getUserMedia: emptyMic,
-      WebSocketImpl: ControllableListenSocket({
-        onConstruct: (instance) => {
-          socket = instance;
-        },
-      }),
-      AudioContextImpl: FakeAudioContext(undefined, created),
-    });
-
-    await vi.advanceTimersByTimeAsync(0);
-    socket?.open();
-    const session = await sessionPromise;
-    expect(session).not.toBeNull();
-
-    const before = new Float32Array([0.5]);
-    created[0]?.processor.onaudioprocess?.({
-      inputBuffer: { getChannelData: () => before },
-    });
-
-    session!.setPaused(true);
-    session!.setPaused(false);
-    await vi.advanceTimersByTimeAsync(0);
-
-    const after = new Float32Array([1]);
-    created[1]?.processor.onaudioprocess?.({
-      inputBuffer: { getChannelData: () => after },
-    });
-
-    const pcm = session!.getPcm();
-    expect(Array.from(pcm.samples)).toEqual([0.5, 1]);
-    expect(pcm.sampleRate).toBe(16000);
-
-    session!.stop();
-    vi.useRealTimers();
-  });
 });

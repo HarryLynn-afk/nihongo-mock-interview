@@ -13,7 +13,6 @@ import {
   isAffirmingCritique,
   type FormattedCritique,
 } from "@/lib/content/critiqueCopy";
-import type { DeliveryAnswer, SessionDelivery } from "@/lib/content/deliverySignals";
 import { DEFAULT_UI_LOCALE, type UiLocale } from "@/lib/content/locale";
 import { uiCopy, type UiCopy } from "@/lib/content/uiCopy";
 
@@ -65,7 +64,6 @@ export type ReportQuestionCard = {
   burmese: string;
   evidence: string;
   affirming: boolean;
-  delivery: DeliveryAnswer | null;
 };
 
 export type ReportView = {
@@ -118,13 +116,11 @@ export function buildReportView({
   report,
   answers,
   sessionQuestions = questions,
-  delivery = null,
   locale = DEFAULT_UI_LOCALE,
 }: {
   report: InterviewReport;
   answers: readonly ReportAnswerInput[];
   sessionQuestions?: readonly InterviewQuestion[];
-  delivery?: SessionDelivery | null;
   locale?: UiLocale;
 }): ReportView {
   const copy = uiCopy(locale);
@@ -180,7 +176,6 @@ export function buildReportView({
           burmese: "",
           evidence: "",
           affirming: false,
-          delivery: null,
         };
       }
 
@@ -236,8 +231,6 @@ export function buildReportView({
         burmese: formatted?.burmese ?? "",
         evidence: formatted ? formatted.explanation : "",
         affirming,
-        delivery:
-          delivery?.answers.find((item) => item.questionIndex === index) ?? null,
       };
     }),
     critiques: report.critiques.map(formatQuotedCritique),

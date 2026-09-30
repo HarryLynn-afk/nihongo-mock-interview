@@ -1,7 +1,7 @@
 # Bug — Speech Delivery Signals always "Not assessed" (no audio saved)
 
 **Severity:** Medium (report section broken; transcript + Answer Quality unaffected)
-**Status:** Open
+**Status:** Retired — Speech Delivery and its recording/coaching logic removed on 2026-10-01; retained below as historical evidence.
 **Base commit:** `4a962f0 Make guest practice anonymous-only`
 **Date:** 2026-10-01
 

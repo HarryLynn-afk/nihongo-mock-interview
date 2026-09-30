@@ -52,10 +52,6 @@ describe("Deepgram live transcript helpers", () => {
       kind: "completed",
       itemId: "0.2",
       transcript: "はじめまして。",
-      words: [
-        { word: "はじめ", start: 0.2, end: 0.5 },
-        { word: "まして", start: 0.5, end: 0.9 },
-      ],
     });
 
     expect(

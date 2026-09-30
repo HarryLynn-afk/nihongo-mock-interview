@@ -8,7 +8,6 @@ import type { AnswerSubmission } from "./useQuestionFlow";
 const answered = (transcript = "ok"): AnswerSubmission => ({
   status: "answered",
   transcript,
-  audioClip: new Blob(),
   pushbackCount: 0,
 });
 
@@ -63,7 +62,6 @@ describe("useQuestionFlow", () => {
       result.current.submitAnswer({
         status: "answered",
         transcript: "はじめまして。アウンミンハントです。",
-        audioClip: new Blob(),
         pushbackCount: 0,
       }),
     );
@@ -75,7 +73,6 @@ describe("useQuestionFlow", () => {
         isFollowUp: false,
         status: "answered",
         transcript: "はじめまして。アウンミンハントです。",
-        audioClip: expect.any(Blob),
         pushbackCount: 0,
       },
     ]);

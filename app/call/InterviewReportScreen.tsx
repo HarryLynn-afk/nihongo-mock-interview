@@ -162,31 +162,6 @@ function QuestionCard({
           </div>
         </div>
       </div>
-      {card.delivery ? (
-        <div
-          data-testid="speech-delivery"
-          className="rounded-xl border border-eel/10 bg-white px-4 py-3"
-        >
-          <p className="text-xs font-medium tracking-wide text-eel/75">
-            {copy.report.deliveryTitle}
-          </p>
-          {card.delivery.tip ? (
-            <>
-              <p className="mt-1 text-sm text-eel/90">
-                {card.delivery.tip.evidence}
-              </p>
-              <p className="mt-1 text-sm text-eel/90">
-                <span className="font-medium">{copy.report.tryNextLabel}:</span>{" "}
-                {card.delivery.tip.tryNext}
-              </p>
-            </>
-          ) : (
-            <p className="mt-1 text-sm text-eel/85">
-              {card.delivery.observations.join(" ")}
-            </p>
-          )}
-        </div>
-      ) : null}
       <div>
         <p className="text-xs font-medium tracking-wide text-eel/75">
           {card.rewriteHeading}

@@ -1,6 +1,5 @@
-import { concatFloat32, downsampleTo16k, floatToLinear16 } from "./pcmAudio";
+import { downsampleTo16k, floatToLinear16 } from "./pcmAudio";
 import { startPcmCapture, type PcmAudioContext, type PcmCapture } from "./pcmCapture";
-import type { WordTiming } from "@/lib/content/deliveryCoaching";
 import {
   closeStreamMessage,
   deepgramListenUrl,
@@ -10,18 +9,11 @@ import {
   type ParsedTranscriptionEvent,
 } from "./transcriptionEvents";
 
-export type LivePcmCapture = {
-  samples: Float32Array;
-  sampleRate: number;
-};
-
 export type LiveTranscriptionSession = {
   stop: () => void;
   setPaused: (paused: boolean) => void;
   commit: () => void;
   getTranscript: () => string;
-  getPcm: () => LivePcmCapture;
-  getWords: () => WordTiming[];
 };
 
 const MAX_LISTEN_MS = 20 * 60 * 1000;
@@ -82,7 +74,6 @@ export async function startLiveTranscriptionSession({
 
   let finalized = "";
   let interim = "";
-  const words: WordTiming[] = [];
   let capture: PcmCapture | null = null;
   let socket: WebSocket | null = null;
   let maxTimer: ReturnType<typeof setTimeout> | undefined;
@@ -90,7 +81,6 @@ export async function startLiveTranscriptionSession({
   let paused = false;
   let stopped = false;
   let keepAliveTimer: ReturnType<typeof setInterval> | undefined;
-  let savedPcm: LivePcmCapture | null = null;
 
   function getTranscript(): string {
     return joinJapanese(finalized, interim);
@@ -124,27 +114,12 @@ export async function startLiveTranscriptionSession({
     });
   }
 
-  /** Keep the pre-pause PCM so a paused answer still has a delivery clip. */
-  function snapshotCapturePcm() {
-    if (!capture) return;
-    const samples = capture.getSamples();
-    const sampleRate = capture.sampleRate;
-    capture.stop();
-    capture = null;
-    if (samples.length === 0) return;
-    savedPcm = savedPcm
-      ? {
-          samples: concatFloat32([savedPcm.samples, samples]),
-          sampleRate: savedPcm.sampleRate,
-        }
-      : { samples, sampleRate };
-  }
-
   function setPaused(next: boolean) {
     if (next === paused) return;
     paused = next;
     if (paused) {
-      snapshotCapturePcm();
+      capture?.stop();
+      capture = null;
       keepAliveTimer = setInterval(() => {
         if (socket && socket.readyState === WebSocketImpl.OPEN) {
           socket.send(keepAliveMessage());
@@ -193,7 +168,6 @@ export async function startLiveTranscriptionSession({
       } else {
         finalized = joinJapanese(finalized, parsed.transcript);
         interim = "";
-        words.push(...parsed.words);
       }
       onEvent(parsed);
     });
@@ -226,19 +200,5 @@ export async function startLiveTranscriptionSession({
       }
     },
     getTranscript,
-    getPcm: () => {
-      const current = capture
-        ? { samples: capture.getSamples(), sampleRate: capture.sampleRate }
-        : null;
-      if (!savedPcm) {
-        return current ?? { samples: new Float32Array(0), sampleRate: 16000 };
-      }
-      if (!current || current.samples.length === 0) return savedPcm;
-      return {
-        samples: concatFloat32([savedPcm.samples, current.samples]),
-        sampleRate: savedPcm.sampleRate,
-      };
-    },
-    getWords: () => words.slice(),
   };
 }

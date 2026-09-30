@@ -1,8 +1,4 @@
-import type { WordTiming } from "@/lib/content/deliveryCoaching";
-
 export const DEEPGRAM_LISTEN_PATH = "wss://api.deepgram.com/v1/listen";
-
-export type { WordTiming };
 
 export function deepgramListenQuery(): URLSearchParams {
   return new URLSearchParams({
@@ -32,29 +28,11 @@ export type TranscriptionCompleted = {
   kind: "completed";
   itemId: string;
   transcript: string;
-  words: WordTiming[];
 };
 
 export type ParsedTranscriptionEvent =
   | TranscriptionDelta
   | TranscriptionCompleted;
-
-function parseWords(value: unknown): WordTiming[] {
-  if (!Array.isArray(value)) return [];
-  const words: WordTiming[] = [];
-  for (const entry of value) {
-    if (typeof entry !== "object" || entry === null) continue;
-    const row = entry as Record<string, unknown>;
-    const word = row.word;
-    const start = row.start;
-    const end = row.end;
-    if (typeof word !== "string" || word === "") continue;
-    if (typeof start !== "number" || typeof end !== "number") continue;
-    if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) continue;
-    words.push({ word, start, end });
-  }
-  return words;
-}
 
 export function parseDeepgramMessage(
   event: unknown,
@@ -76,7 +54,6 @@ export function parseDeepgramMessage(
       kind: "completed",
       itemId,
       transcript,
-      words: parseWords((first as { words?: unknown }).words),
     };
   }
   return { kind: "delta", itemId, delta: transcript };

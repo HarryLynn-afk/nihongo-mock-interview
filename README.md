@@ -137,7 +137,8 @@ Without step 2, `/login` can still render, but nothing is stored and returning t
 `POST /api/score` is the only client grading entry. Groq emits raw 1–5 scores; weights, Gates, Headline, and Stamp are computed in `lib/content/rubric.ts` (`scoreReport`). Speaking is not a Gate and is omitted from `/100`.
 
 - **Interview Answer Quality** — transcript radar / bars / `/100` (Answer relevance, grammar, Motivation, Study plan, Consistency) for answered Questions. A skipped Question gets a no-answer card. If every Question was skipped, `/call` shows mic-troubleshooting copy instead of the report and never POSTs `/api/score`.
-- **Speech Delivery Signals** — browser clip timing from the spoken take (practice uses the same PCM sent to Deepgram). Not a speaking grade. Hidden when no spoken clip was captured.
+
+Speech Delivery has been removed. Audio streams for live captions; answers retain transcripts and attempt metadata, without recorded clips or word timestamps.
 
 If Groq misses (timeout, bad JSON, or 429/503/529 capacity skip), the last screen is the locked sample InterviewReport plus a scoring-unavailable banner.
 

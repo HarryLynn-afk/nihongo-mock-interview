@@ -18,7 +18,6 @@ import { reportTopAction } from "./reportTopAction";
 import { playQuestionAudio } from "./playQuestionAudio";
 import { useAnswerCapture } from "./useAnswerCapture";
 import { useGradeAnswers } from "./useGradeAnswers";
-import { useDeliverySignals } from "./useDeliverySignals";
 import { useCameraStream } from "./useCameraStream";
 import { useInterviewScore } from "./useInterviewScore";
 import { useMicToggle } from "./useMicToggle";
@@ -62,7 +61,6 @@ const DEBUG_PREVIEW_ANSWERS: StoredAnswer[] = questions.map(
   (question, questionIndex) => ({
     status: "answered" as const,
     transcript: DEBUG_PREVIEW_TRANSCRIPTS[questionIndex] ?? "はい、そうです。",
-    audioClip: new Blob(),
     pushbackCount: 0 as const,
     questionIndex,
     questionId: question.id,
@@ -154,7 +152,6 @@ export default function CallPage() {
         followUpsForCallSession(sessionKind) && sessionQuestions !== null,
     });
   const gradeAnswers = useGradeAnswers({ answers, phase });
-  const delivery = useDeliverySignals({ answers, phase });
   const { report: scoredReport, scoringFailed } =
     useInterviewScore(gradeAnswers);
   const previewing = previewReport !== null;
@@ -412,11 +409,6 @@ export default function CallPage() {
                         status: "skipped" as const,
                       },
                 ),
-                delivery: previewing
-                  ? null
-                  : delivery.status === "ready"
-                    ? delivery.delivery
-                    : null,
               })}
               sessionId={sessionId ?? undefined}
               onRevealComplete={() => setRevealDone(true)}

@@ -156,8 +156,6 @@ const en = {
     evidence: "Evidence",
     missingElement: "Missing element",
     questionLabel: "Question",
-    deliveryTitle: "Speech Delivery",
-    tryNextLabel: "Try next",
     noAnswerTranscript: "No answer was captured for this Question.",
     noAnswerNextHeading: "Try this Question again next practice",
     noAnswerNextStep:
@@ -404,8 +402,6 @@ const my: UiCopy = {
     evidence: "အထောက်အထား",
     missingElement: "ပျောက်နေသော အချက်",
     questionLabel: "မေးခွန်း",
-    deliveryTitle: "အသံ ပေးပို့မှု",
-    tryNextLabel: "နောက်တစ်ကြိမ် လေ့ကျင့်ရန်",
     noAnswerTranscript: "ဤမေးခွန်းအတွက် အဖြေ မရရှိပါ။",
     noAnswerNextHeading: "နောက်လေ့ကျင့်မှုတွင် ဤမေးခွန်းကို ထပ်ကြိုးစားပါ",
     noAnswerNextStep:

@@ -17,7 +17,6 @@ describe("useGradeAnswers", () => {
         questionIndex: 0,
         status: "answered",
         transcript: "SUBMITTED",
-        audioClip: new Blob([new Uint8Array([1])], { type: "audio/webm" }),
         pushbackCount: 0,
       },
       { questionIndex: 1, status: "skipped" },
@@ -46,7 +45,6 @@ describe("useGradeAnswers", () => {
         questionIndex: 0,
         status: "answered",
         transcript: "SUBMITTED",
-        audioClip: new Blob(),
         pushbackCount: 0,
       },
     ];
