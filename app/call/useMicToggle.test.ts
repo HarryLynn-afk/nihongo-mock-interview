@@ -68,6 +68,29 @@ describe("useMicToggle", () => {
     });
   });
 
+  it("reports the mic error name when permission is denied", async () => {
+    getUserMedia.mockRejectedValue(
+      new DOMException("Denied", "NotAllowedError"),
+    );
+
+    const { result } = renderHook(() => useMicToggle());
+
+    await waitFor(() => {
+      expect(result.current.micErrorName).toBe("NotAllowedError");
+    });
+  });
+
+  it("clears the mic error once the microphone opens", async () => {
+    getUserMedia.mockResolvedValue(makeStream());
+
+    const { result } = renderHook(() => useMicToggle());
+
+    await waitFor(() => {
+      expect(result.current.micOn).toBe(true);
+    });
+    expect(result.current.micErrorName).toBeNull();
+  });
+
   it("stops the mic stream when toggled off", async () => {
     const stream = makeStream();
     const tracks = stream.getTracks();

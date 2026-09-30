@@ -103,6 +103,18 @@ describe("useCameraStream", () => {
     await waitFor(() => {
       expect(result.current.cameraState).toBe("blocked");
     });
+    expect(result.current.cameraErrorName).toBe("NotAllowedError");
+  });
+
+  it("clears the camera error once the camera opens", async () => {
+    getUserMedia.mockResolvedValue({} as MediaStream);
+
+    const { result } = renderHook(() => useCameraStream());
+
+    await waitFor(() => {
+      expect(result.current.cameraState).toBe("on");
+    });
+    expect(result.current.cameraErrorName).toBeNull();
   });
 
   it("stops the camera stream when toggled off", async () => {

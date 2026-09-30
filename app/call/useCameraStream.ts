@@ -45,6 +45,7 @@ export function useCameraStream({ startOn = true }: { startOn?: boolean } = {}) 
   const [cameraState, setCameraState] = useState<CameraState>(
     startOn ? "on" : "off",
   );
+  const [cameraErrorName, setCameraErrorName] = useState<string | null>(null);
   const [prevStartOn, setPrevStartOn] = useState(startOn);
   const videoElRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -81,9 +82,11 @@ export function useCameraStream({ startOn = true }: { startOn?: boolean } = {}) 
         stopStream(streamRef.current);
         streamRef.current = result.stream;
         if (videoElRef.current) playPreview(videoElRef.current, result.stream);
+        setCameraErrorName(null);
         setCameraState("on");
         return;
       }
+      setCameraErrorName(result.errorName);
       setCameraState("blocked");
     });
 
@@ -96,8 +99,9 @@ export function useCameraStream({ startOn = true }: { startOn?: boolean } = {}) 
   }, [cameraState]);
 
   function toggleCamera() {
+    setCameraErrorName(null);
     setCameraState((current) => (current === "off" ? "on" : "off"));
   }
 
-  return { cameraState, toggleCamera, videoRef };
+  return { cameraState, toggleCamera, videoRef, cameraErrorName };
 }

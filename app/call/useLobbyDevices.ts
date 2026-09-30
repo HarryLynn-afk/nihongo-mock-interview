@@ -72,6 +72,7 @@ export function useLobbyDevices({ active }: { active: boolean }) {
   const videoElRef = useRef<HTMLVideoElement | null>(null);
   const videoStreamRef = useRef<MediaStream | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
+  const [micStream, setMicStream] = useState<MediaStream | null>(null);
   const cameraOnRef = useRef(false);
   const micOnRef = useRef(false);
   const micBlockedRef = useRef(false);
@@ -134,6 +135,7 @@ export function useLobbyDevices({ active }: { active: boolean }) {
         stopStream(audioStreamRef.current);
         videoStreamRef.current = null;
         audioStreamRef.current = null;
+        setMicStream(null);
       };
     }
     stopStream(videoStreamRef.current);
@@ -158,6 +160,7 @@ export function useLobbyDevices({ active }: { active: boolean }) {
     setCameraErrorName(null);
     setMicBlocked(false);
     setMicErrorName(null);
+    setMicStream(null);
     attachPreview(null);
   }, [attachPreview]);
 
@@ -206,6 +209,7 @@ export function useLobbyDevices({ active }: { active: boolean }) {
       setMicOn(false);
       stopStream(audioStreamRef.current);
       audioStreamRef.current = null;
+      setMicStream(null);
       return;
     }
 
@@ -229,6 +233,7 @@ export function useLobbyDevices({ active }: { active: boolean }) {
         }
         stopStream(audioStreamRef.current);
         audioStreamRef.current = stream;
+        setMicStream(stream);
         setMicBlocked(false);
         setMicErrorName(null);
       })
@@ -236,6 +241,7 @@ export function useLobbyDevices({ active }: { active: boolean }) {
         micOnRef.current = false;
         stopStream(audioStreamRef.current);
         audioStreamRef.current = null;
+        setMicStream(null);
         setMicOn(false);
         setMicErrorName(deviceErrorName(error));
         const state = await queryMicrophoneState();
@@ -250,6 +256,7 @@ export function useLobbyDevices({ active }: { active: boolean }) {
     cameraErrorName,
     micBlocked,
     micErrorName,
+    micStream,
     videoRef,
     toggleCamera,
     toggleMic,

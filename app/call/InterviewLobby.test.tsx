@@ -120,6 +120,27 @@ describe("InterviewLobby", () => {
     expect(screen.queryByTestId("camera-blocked-help")).not.toBeInTheDocument();
   });
 
+  it("shows a live mic level meter only while a microphone stream is present", () => {
+    const common = {
+      cameraEnabled: true,
+      micEnabled: true,
+      cameraBlocked: false,
+      videoRef: createRef<HTMLVideoElement>(),
+      onToggleCamera: vi.fn(),
+      onToggleMic: vi.fn(),
+      onContinue: vi.fn(),
+    };
+    const { rerender } = render(
+      <InterviewLobby {...common} micStream={null} />,
+    );
+    expect(screen.queryByRole("meter")).not.toBeInTheDocument();
+
+    rerender(
+      <InterviewLobby {...common} micStream={{} as MediaStream} />,
+    );
+    expect(screen.getByRole("meter")).toBeInTheDocument();
+  });
+
   it("says the camera is optional so a failed camera never looks fatal", () => {
     render(
       <InterviewLobby

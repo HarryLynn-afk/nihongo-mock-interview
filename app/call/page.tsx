@@ -10,6 +10,7 @@ import { ScoringUnavailableScreen } from "./ScoringUnavailableScreen";
 import { SpeakAnswerButton } from "./SpeakAnswerButton";
 import { SenseiTile } from "./SenseiTile";
 import { StudentTile } from "./StudentTile";
+import { CallDeviceNotice } from "./CallDeviceNotice";
 import { UsefulnessStep } from "./UsefulnessStep";
 import { FullSessionRequestDialog } from "../components/FullSessionRequestDialog";
 import { buildReportView } from "./buildReportView";
@@ -143,10 +144,10 @@ export default function CallPage() {
       .catch(() => {});
   }, []);
 
-  const { cameraState, toggleCamera, videoRef } = useCameraStream({
+  const { cameraState, toggleCamera, videoRef, cameraErrorName } = useCameraStream({
     startOn: devicePrefs.cameraOn,
   });
-  const { micOn, toggleMic } = useMicToggle({ initialOn: devicePrefs.micOn });
+  const { micOn, toggleMic, micErrorName } = useMicToggle({ initialOn: devicePrefs.micOn });
   const { phase, currentQuestion, answers, sessionQuestions: flowQuestions, endSenseiTurn, submitAnswer } =
     useQuestionFlow(sessionQuestions, {
       enableFollowUps:
@@ -374,6 +375,12 @@ export default function CallPage() {
         ) : null}
         {pushbackVisible && !previewing ? (
           <TryAgainBanner locale={locale} />
+        ) : null}
+        {displayPhase !== "done" ? (
+          <CallDeviceNotice
+            micErrorName={micErrorName}
+            cameraErrorName={cameraErrorName}
+          />
         ) : null}
         <div
           data-testid="call-stage"

@@ -1,5 +1,6 @@
 import type { Ref } from "react";
 import { useCopy } from "../components/useUiLocale";
+import { MicLevelMeter } from "./MicLevelMeter";
 import {
   cameraTroubleCopy,
   classifyDeviceError,
@@ -19,6 +20,7 @@ type InterviewLobbyProps = {
   onToggleCamera: () => void;
   onToggleMic: () => void;
   onContinue: () => void;
+  micStream?: MediaStream | null;
 };
 
 function MicIcon({ className }: { className?: string }) {
@@ -64,6 +66,7 @@ export function InterviewLobby({
   onToggleCamera,
   onToggleMic,
   onContinue,
+  micStream = null,
 }: InterviewLobbyProps) {
   const { copy } = useCopy();
   const showCameraPreview = cameraEnabled && !cameraBlocked;
@@ -164,6 +167,7 @@ export function InterviewLobby({
       </div>
 
       <div className="flex flex-col gap-3 px-4 py-4">
+        <MicLevelMeter stream={micStream} />
         <p className="text-center text-xs text-wolf">
           {copy.lobby.cameraOptional}
         </p>

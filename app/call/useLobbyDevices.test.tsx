@@ -51,6 +51,28 @@ describe("useLobbyDevices", () => {
     expect(getUserMedia).not.toHaveBeenCalled();
   });
 
+  it("exposes the live microphone stream while the mic is on", async () => {
+    const audioStream = makeStream(["audio"]);
+    getUserMedia.mockImplementation(async (constraints: MediaStreamConstraints) =>
+      constraints.audio ? audioStream : makeStream(["video"]),
+    );
+    const { result } = renderHook(() => useLobbyDevices({ active: true }));
+
+    expect(result.current.micStream).toBeNull();
+
+    act(() => {
+      result.current.toggleMic();
+    });
+    await waitFor(() => {
+      expect(result.current.micStream).toBe(audioStream);
+    });
+
+    act(() => {
+      result.current.toggleMic();
+    });
+    expect(result.current.micStream).toBeNull();
+  });
+
   it("asks only for the camera when the user turns Camera on", async () => {
     const videoStream = makeStream(["video"]);
     getUserMedia.mockImplementation(async (constraints: MediaStreamConstraints) => {

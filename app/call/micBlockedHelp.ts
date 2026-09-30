@@ -166,3 +166,33 @@ export function cameraTroubleCopy(
     after: retry,
   };
 }
+
+/** Microphone counterpart to `cameraTroubleCopy` for the call screen. */
+export function micTroubleCopy(
+  kind: DeviceErrorKind,
+  family: BrowserFamily,
+): { title: string; steps: string; after: string } {
+  const retry = "Then turn the mic back on.";
+
+  if (kind === "insecure") {
+    return insecurePageCopy();
+  }
+  if (kind === "in-use") {
+    return {
+      title: "Microphone is busy",
+      steps:
+        "Another app or tab is already using your microphone. Close Zoom, Google Meet, Voice Memos, and other tabs of this site, then turn the mic back on.",
+      after: retry,
+    };
+  }
+  if (kind === "missing") {
+    return {
+      title: "No microphone found",
+      steps:
+        "Connect a microphone, or check Mac System Settings → Sound → Input and pick the microphone you want to use.",
+      after: retry,
+    };
+  }
+
+  return micBlockedHelpCopy(family);
+}

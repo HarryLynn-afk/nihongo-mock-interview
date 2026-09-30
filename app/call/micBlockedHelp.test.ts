@@ -5,6 +5,7 @@ import {
   detectBrowserFamily,
   insecurePageCopy,
   micBlockedHelpCopy,
+  micTroubleCopy,
 } from "./micBlockedHelp";
 
 describe("micBlockedHelp", () => {
@@ -99,5 +100,31 @@ describe("micBlockedHelp", () => {
     const copy = cameraTroubleCopy("unknown", "other");
     expect(copy.title).toBe("Camera isn't available");
     expect(copy.steps.length).toBeGreaterThan(0);
+  });
+
+  it("explains a blocked microphone with browser unlock steps", () => {
+    const copy = micTroubleCopy("blocked", "chrome");
+    expect(copy.title).toBe("Microphone is blocked");
+    expect(copy.steps).toMatch(/lock icon/i);
+  });
+
+  it("explains that an IP address page cannot use the microphone", () => {
+    const copy = micTroubleCopy("insecure", "chrome");
+    expect(copy.title).toMatch(/camera or microphone/i);
+    expect(copy.steps).toMatch(/localhost:3000/);
+  });
+
+  it("explains a microphone another app is already using", () => {
+    const copy = micTroubleCopy("in-use", "chrome");
+    expect(copy.title).toBe("Microphone is busy");
+    expect(copy.steps).toMatch(/another app|another tab/i);
+    expect(copy.steps).not.toMatch(/lock icon/i);
+  });
+
+  it("explains a missing microphone without blaming permission", () => {
+    const copy = micTroubleCopy("missing", "chrome");
+    expect(copy.title).toBe("No microphone found");
+    expect(copy.steps).toMatch(/microphone/i);
+    expect(copy.steps).not.toMatch(/lock icon/i);
   });
 });

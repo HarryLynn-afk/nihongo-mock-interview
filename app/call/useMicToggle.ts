@@ -13,6 +13,7 @@ export function useMicToggle({
   initialOn = true,
 }: { initialOn?: boolean } = {}) {
   const [micOn, setMicOn] = useState(initialOn);
+  const [micErrorName, setMicErrorName] = useState<string | null>(null);
   const [prevInitialOn, setPrevInitialOn] = useState(initialOn);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -39,9 +40,14 @@ export function useMicToggle({
           return;
         }
         streamRef.current = stream;
+        setMicErrorName(null);
       })
-      .catch(() => {
-        if (!cancelled) setMicOn(false);
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          const name = (error as { name?: unknown } | null)?.name;
+          setMicErrorName(typeof name === "string" && name ? name : "UnknownError");
+          setMicOn(false);
+        }
       });
 
     return () => {
@@ -52,8 +58,9 @@ export function useMicToggle({
   }, [micOn]);
 
   function toggleMic() {
+    setMicErrorName(null);
     setMicOn((current) => !current);
   }
 
-  return { micOn, toggleMic };
+  return { micOn, toggleMic, micErrorName };
 }

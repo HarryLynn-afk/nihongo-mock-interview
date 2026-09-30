@@ -304,6 +304,18 @@ describe("Call screen", () => {
     );
   });
 
+  it("explains a blocked microphone on the call screen instead of failing silently", async () => {
+    getUserMedia.mockRejectedValue(new DOMException("Denied", "NotAllowedError"));
+
+    render(<CallPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("call-device-notice")).toHaveTextContent(
+        "Microphone is blocked",
+      );
+    });
+  });
+
   it("on mount, starts playing Q1 audio without a join dialog and does not warm n8n", async () => {
     render(<CallPage />);
 
