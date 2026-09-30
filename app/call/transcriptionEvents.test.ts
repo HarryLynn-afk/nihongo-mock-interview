@@ -15,7 +15,9 @@ describe("Deepgram live transcript helpers", () => {
     expect(url.searchParams.get("language")).toBe("ja");
     expect(url.searchParams.get("encoding")).toBe("linear16");
     expect(url.searchParams.get("sample_rate")).toBe("16000");
-    expect(url.searchParams.get("words")).toBe("true");
+    // Word timings are returned by default; a `words` query param is not a
+    // valid streaming option and breaks the handshake.
+    expect(url.searchParams.has("words")).toBe(false);
     expect(url.searchParams.get("token")).toBeNull();
   });
 

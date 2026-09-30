@@ -15,8 +15,6 @@ export function deepgramListenQuery(): URLSearchParams {
     channels: "1",
     endpointing: "300",
     utterance_end_ms: "1000",
-    // Word start/end times power mid-answer pause coaching (not RMS VAD).
-    words: "true",
   });
 }
 
