@@ -346,7 +346,7 @@ export default function CallPage() {
             <button
               type="button"
               onClick={() => setEndConfirmOpen(true)}
-              className="text-xs text-eel/70 underline-offset-2 hover:text-eel/85 hover:underline"
+              className="text-xs font-medium text-red-600 underline-offset-2 hover:text-red-700 hover:underline"
             >
               {copy.call.endInterview}
             </button>
@@ -521,7 +521,7 @@ export default function CallPage() {
                 </button>
                 <Link
                   href="/"
-                  className="rounded-full bg-feather px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-feather-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
+                  className="rounded-full bg-red-500 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                 >
                   {copy.call.endInterview}
                 </Link>
