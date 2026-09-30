@@ -58,7 +58,7 @@ function ProfileContent() {
         <div className="ml-auto"><LanguageToggle locale={locale} onChange={setLocale} variant="light" tone="feather" /></div>
       </header>
       <main className="mx-auto w-full max-w-[680px] px-5 pb-20 pt-10 md:pt-20">
-        <Link href={returnTo} className="inline-flex min-h-[60px] items-center justify-center gap-2.5 rounded-full bg-feather px-8 py-3 text-lg font-medium text-white shadow-[0_14px_30px_-10px_rgba(88,204,2,0.55)] transition-[transform,box-shadow,background-color] hover:-translate-y-0.5 hover:bg-feather-dark hover:shadow-[0_18px_34px_-10px_rgba(88,204,2,0.65)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather">← {copy.account.back}</Link>
+        <Link href={returnTo} className="inline-flex min-h-11 items-center justify-center gap-2.5 rounded-full bg-feather px-5 text-sm font-medium text-white shadow-[0_4px_7px_rgba(88,204,2,0.12)] transition-colors hover:bg-feather-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather">← {copy.account.back}</Link>
         <h1 className="mt-7 font-display text-4xl font-bold tracking-tight">{copy.account.profile}</h1>
         {profile?.account ? (
           <section className="mt-8 rounded-[24px] border border-eel/10 bg-white p-6 shadow-[0_16px_45px_-25px_rgba(28,71,46,0.25)] sm:p-8" aria-label={copy.account.label}>
@@ -67,7 +67,7 @@ function ProfileContent() {
               <div className="min-w-0"><p className="truncate text-xl font-semibold">{profile.account.displayName}</p><p className="mt-1 break-all text-sm text-wolf">{profile.account.email}</p></div>
             </div>
             {profile.participantId ? <div className="border-b border-eel/10 py-6"><p className="text-sm text-wolf">{copy.consent.participantId}</p><p className="mt-1 font-semibold">{profile.participantId}</p></div> : null}
-            <div className="pt-6"><p className="text-sm text-wolf">{copy.account.signedInWith}</p><button type="button" onClick={() => void signOut()} className="mt-4 min-h-11 rounded-full border border-eel/20 px-5 text-sm font-medium text-eel hover:bg-eel/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather">{copy.account.signOut}</button>{signOutError ? <p role="alert" className="mt-3 text-sm text-red-700">{copy.account.signOutError}</p> : null}</div>
+            <div className="pt-6"><p className="text-sm text-wolf">{copy.account.signedInWith}</p><button type="button" onClick={() => void signOut()} className="mt-4 min-h-11 rounded-full border border-red-300 px-5 text-sm font-medium text-red-600 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400">{copy.account.signOut}</button>{signOutError ? <p role="alert" className="mt-3 text-sm text-red-700">{copy.account.signOutError}</p> : null}</div>
           </section>
         ) : null}
       </main>

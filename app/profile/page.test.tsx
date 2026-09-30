@@ -45,14 +45,28 @@ describe("Profile page", () => {
     const back = await screen.findByRole("link", { name: /Back to interview/ });
     for (const pillClass of [
       "inline-flex",
-      "min-h-[60px]",
+      "min-h-11",
       "rounded-full",
       "bg-feather",
-      "px-8",
-      "text-lg",
+      "px-5",
+      "text-sm",
       "text-white",
     ]) {
       expect(back).toHaveClass(pillClass);
+    }
+  });
+
+  it("styles Sign out as a light red button", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ state: "ready", account: { displayName: "May", email: "may@gmail.com" } }),
+    }));
+
+    render(<ProfilePage />);
+
+    const signOut = await screen.findByRole("button", { name: "Sign out" });
+    for (const lightRed of ["border-red-300", "text-red-600", "hover:bg-red-50"]) {
+      expect(signOut).toHaveClass(lightRed);
     }
   });
 
