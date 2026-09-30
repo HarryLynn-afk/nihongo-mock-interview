@@ -81,6 +81,7 @@ export function JoinInterview({
     closeDevices,
     continueFromDevices,
     skipReminder,
+    cancelReminder,
   } = useInterviewLobby({ skipLobby: false, startIdle: true });
 
   const {
@@ -213,6 +214,7 @@ export function JoinInterview({
         <InterviewStartReminder
           secondsLeft={secondsLeft}
           onSkip={skipReminder}
+          onCancel={cancelReminder}
         />
       ) : null}
     </>

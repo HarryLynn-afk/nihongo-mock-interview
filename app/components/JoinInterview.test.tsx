@@ -141,6 +141,28 @@ describe("JoinInterview", () => {
     expect(stop).toHaveBeenCalled();
   });
 
+  it("cancels the start countdown back to the lobby without leaving", async () => {
+    const user = userEvent.setup();
+    render(<JoinInterview />);
+
+    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    await user.click(screen.getByRole("button", { name: /enter classroom/i }));
+
+    expect(
+      screen.getByRole("dialog", { name: /interview will start soon/i }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(
+      screen.queryByRole("dialog", { name: /interview will start soon/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: /ready to join/i }),
+    ).toBeInTheDocument();
+    expect(pushMock).not.toHaveBeenCalled();
+  });
+
   it("opens the device popup inline for a Guest, then Skip goes to /call?guest=1", async () => {
     const user = userEvent.setup();
     render(<JoinInterview guest label="Try as guest" />);

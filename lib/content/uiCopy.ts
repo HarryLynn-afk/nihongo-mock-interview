@@ -105,6 +105,7 @@ const en = {
     eyebrow: "Japanese interview with Tanaka-sensei",
     heading: "Interview will start soon",
     skip: "Skip",
+    cancel: "Cancel",
   },
   call: {
     participant: "Participant",
@@ -360,6 +361,7 @@ const my: UiCopy = {
     eyebrow: "Tanaka-sensei နှင့် ဂျပန် အင်တာဗျူး",
     heading: "အင်တာဗျူး မကြာမီ စပါမည်",
     skip: "ကျော်မည်",
+    cancel: "မလုပ်တော့ပါ",
   },
   call: {
     participant: "ပါဝင်သူ",
