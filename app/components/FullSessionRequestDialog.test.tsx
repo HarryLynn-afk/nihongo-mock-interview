@@ -76,4 +76,13 @@ describe("FullSessionRequestDialog", () => {
     await user.click(screen.getByTestId("full-session-request-backdrop"));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("renders as a light brand dialog", () => {
+    render(<FullSessionRequestDialog step="form" onClose={vi.fn()} />);
+
+    const dialog = screen.getByTestId("full-session-request");
+    expect(dialog).toHaveClass("bg-white");
+    expect(dialog).toHaveClass("text-eel");
+    expect(dialog).not.toHaveClass("bg-ink");
+  });
 });

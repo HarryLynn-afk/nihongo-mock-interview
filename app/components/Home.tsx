@@ -98,12 +98,7 @@ export default function Home({
           </span>
         </Link>
         <div className="ml-auto flex items-center gap-x-4">
-          <LanguageToggle
-            locale={locale}
-            onChange={setLocale}
-            variant="light"
-            tone="feather"
-          />
+          <LanguageToggle locale={locale} onChange={setLocale} />
           <div className="flex items-center">
             {view?.kind === "signedIn" ? (
               <Link
@@ -146,11 +141,10 @@ export default function Home({
 
         {view?.kind === "signedIn" ? (
           <div className="mt-10 hidden flex-col items-center gap-3 md:flex">
-            {joinDisabled ? null : <JoinInterview tone="feather" consentRequired={!view.consentedThisVisit} />}
+            {joinDisabled ? null : <JoinInterview consentRequired={!view.consentedThisVisit} />}
             <JoinInterview
               guest
               label={copy.start.tryAsGuest}
-              tone="feather"
               className="!min-h-11 !bg-transparent !text-feather-dark !shadow-none hover:!bg-feather/10 hover:!shadow-none"
             />
           </div>
@@ -159,7 +153,6 @@ export default function Home({
             <JoinInterview
               label={copy.start.tryAsGuest}
               guest
-              tone="feather"
               trailing={<CtaArrow />}
             />
           </div>

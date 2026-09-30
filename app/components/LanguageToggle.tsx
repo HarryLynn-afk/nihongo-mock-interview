@@ -5,28 +5,18 @@ import type { UiLocale } from "@/lib/content/locale";
 export function LanguageToggle({
   locale,
   onChange,
-  variant = "dark",
-  tone = "indigo",
 }: {
   locale: UiLocale;
   onChange: (locale: UiLocale) => void;
-  variant?: "light" | "dark";
-  tone?: "indigo" | "feather";
 }) {
-  const frame =
-    variant === "light"
-      ? "border-ink/10 bg-ink/5"
-      : "border-paper/15 bg-paper/5";
-  const idle =
-    variant === "light" ? "text-ink/55 hover:text-ink" : "text-paper/55 hover:text-paper";
-  const active =
-    tone === "feather" ? "bg-feather text-white" : "bg-indigo text-paper";
+  const idle = "text-eel/55 hover:text-eel";
+  const active = "bg-feather text-white";
 
   return (
     <div
       role="group"
       aria-label="Language"
-      className={`inline-flex shrink-0 rounded-full border p-0.5 text-xs font-medium ${frame}`}
+      className="inline-flex shrink-0 rounded-full border border-eel/10 bg-eel/5 p-0.5 text-xs font-medium"
     >
       <button
         type="button"

@@ -112,7 +112,7 @@ export default function ConsentPage() {
         <Link href="/" className="font-display text-[1.5rem] font-bold tracking-tight text-feather">
           NihonGo<span aria-hidden="true" className="ml-0.5 inline-block -translate-y-2 text-base text-macaw">✦</span>
         </Link>
-        <LanguageBar variant="light" className="ml-auto" />
+        <LanguageBar className="ml-auto" />
       </header>
       <main className="mx-auto flex w-full max-w-[850px] flex-1 flex-col items-center px-5 pb-16 pt-12 text-center md:px-6 md:pt-20">
         <p className="text-sm font-semibold tracking-[0.12em] text-feather-dark">{copy.account.eyebrow}</p>
@@ -146,7 +146,7 @@ export default function ConsentPage() {
                   {copy.consent.participantId} <strong className="text-eel">{participantId}</strong>.{" "}
                   {copy.consent.participantIdNote}
                 </p>
-                <JoinInterview tone="feather" />
+                <JoinInterview />
               </div>
             ) : ready && entryState === "consentRequired" ? (
               <div className="mt-5 flex flex-col gap-5">

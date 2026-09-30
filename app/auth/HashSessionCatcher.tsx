@@ -108,6 +108,6 @@ export function HashSessionCatcher({
 
   if (!status) return null;
   return (
-    <p className="text-sm text-ink/70">{localizeAuthMessage(status, locale)}</p>
+    <p className="text-sm text-eel/70">{localizeAuthMessage(status, locale)}</p>
   );
 }

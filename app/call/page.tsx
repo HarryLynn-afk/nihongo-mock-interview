@@ -340,12 +340,7 @@ export default function CallPage() {
               {copy.call.skipInterview}
             </button>
           ) : null}
-          <LanguageToggle
-            locale={locale}
-            onChange={setLocale}
-            variant="light"
-            tone="feather"
-          />
+          <LanguageToggle locale={locale} onChange={setLocale} />
         </div>
         {participantId ? (
           <p className="w-full text-center text-sm text-eel/70">

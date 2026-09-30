@@ -55,7 +55,7 @@ function ProfileContent() {
     <div className="min-h-screen bg-[linear-gradient(180deg,#e8f8d4_0%,#f4fbef_48%,#ffffff_100%)] text-eel">
       <header className="mx-auto flex w-full max-w-[1100px] items-center gap-5 px-5 py-6 md:px-8">
         <Link href="/" className="font-display text-[1.5rem] font-bold tracking-tight text-feather">NihonGo<span aria-hidden="true" className="ml-0.5 inline-block -translate-y-2 text-base text-macaw">✦</span></Link>
-        <div className="ml-auto"><LanguageToggle locale={locale} onChange={setLocale} variant="light" tone="feather" /></div>
+        <div className="ml-auto"><LanguageToggle locale={locale} onChange={setLocale} /></div>
       </header>
       <main className="mx-auto w-full max-w-[680px] px-5 pb-20 pt-10 md:pt-20">
         <Link href={returnTo} className="inline-flex min-h-11 items-center justify-center gap-2.5 rounded-full bg-feather px-5 text-sm font-medium text-white shadow-[0_4px_7px_rgba(88,204,2,0.12)] transition-colors hover:bg-feather-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather">← {copy.account.back}</Link>

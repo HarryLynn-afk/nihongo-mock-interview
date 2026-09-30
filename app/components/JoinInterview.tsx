@@ -17,7 +17,6 @@ type JoinInterviewProps = {
   /** Guest Join from `/` — `/call` must not reuse a leftover Participant session. */
   guest?: boolean;
   consentRequired?: boolean;
-  tone?: "indigo" | "feather";
   trailing?: ReactNode;
 };
 
@@ -31,7 +30,6 @@ export function JoinInterview({
   className = "",
   guest = false,
   consentRequired = false,
-  tone = "indigo",
   trailing,
 }: JoinInterviewProps) {
   const router = useRouter();
@@ -113,11 +111,7 @@ export function JoinInterview({
           if (needsConsent) setConsentVisible(true);
           else openDevices();
         }}
-        className={`inline-flex items-center justify-center gap-2.5 rounded-full px-5 text-lg font-medium ${
-          tone === "feather"
-            ? "min-h-[60px] w-auto px-8 bg-feather py-3 text-white shadow-[0_14px_30px_-10px_rgba(88,204,2,0.55)] transition-[transform,box-shadow,background-color] hover:-translate-y-0.5 hover:bg-feather-dark hover:shadow-[0_18px_34px_-10px_rgba(88,204,2,0.65)]"
-            : "h-[60px] w-full bg-indigo text-paper shadow-[0_4px_7px_rgba(0,0,0,0.05)] transition-colors hover:bg-[#4338ca]"
-        } ${className}`.trim()}
+        className={`inline-flex min-h-[60px] w-auto items-center justify-center gap-2.5 rounded-full bg-feather px-8 py-3 text-lg font-medium text-white shadow-[0_14px_30px_-10px_rgba(88,204,2,0.55)] transition-[transform,box-shadow,background-color] hover:-translate-y-0.5 hover:bg-feather-dark hover:shadow-[0_18px_34px_-10px_rgba(88,204,2,0.65)] ${className}`.trim()}
       >
         {buttonLabel}
         {trailing}

@@ -132,7 +132,7 @@ export function GoogleSignInDialog({
         aria-modal="true"
         aria-labelledby="google-sign-in-title"
         tabIndex={-1}
-        className="login-dialog-in relative w-full max-w-[440px] rounded-[20px] bg-paper px-6 pb-7 pt-14 text-center shadow-[0_40px_80px_-20px_rgba(20,30,20,0.35)] outline-none sm:px-8"
+        className="login-dialog-in relative w-full max-w-[440px] rounded-[20px] bg-white px-6 pb-7 pt-14 text-center shadow-[0_40px_80px_-20px_rgba(20,30,20,0.35)] outline-none sm:px-8"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <button

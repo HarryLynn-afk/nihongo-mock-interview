@@ -56,14 +56,14 @@ export function UsefulnessStep({
   return (
     <div
       data-testid="usefulness-backdrop"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-eel/40 p-6"
       onClick={() => onFinished?.("dismissed")}
     >
       <section
         role="dialog"
         aria-labelledby="help-the-study-title"
         data-testid="usefulness-step"
-        className="flex w-full max-w-xl flex-col gap-4 rounded-2xl border border-paper/10 bg-ink p-5 text-paper"
+        className="flex w-full max-w-xl flex-col gap-4 rounded-2xl border border-eel/10 bg-white p-5 text-eel"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
@@ -73,7 +73,7 @@ export function UsefulnessStep({
           <button
             type="button"
             onClick={() => onFinished?.("dismissed")}
-            className="rounded-full px-3 py-1 text-sm text-paper/80"
+            className="rounded-full px-3 py-1 text-sm text-eel/80"
           >
             {chrome.usefulness.close}
           </button>
@@ -87,7 +87,7 @@ export function UsefulnessStep({
               ? view.copy.usefulness.burmese
               : view.copy.usefulness.english}
           </legend>
-          <p className="text-xs text-paper/60">
+          <p className="text-xs text-eel/60">
             1 ={" "}
             {locale === "my"
               ? view.copy.usefulness.scaleLowBurmese
@@ -118,7 +118,7 @@ export function UsefulnessStep({
               ? view.copy.usability.burmese
               : view.copy.usability.english}
           </legend>
-          <p className="text-xs text-paper/60">
+          <p className="text-xs text-eel/60">
             1 ={" "}
             {locale === "my"
               ? view.copy.usability.scaleLowBurmese
@@ -147,7 +147,7 @@ export function UsefulnessStep({
           aria-label={chrome.usefulness.comment}
           value={comment}
           onChange={(event) => setComment(event.target.value)}
-          className="h-20 w-full rounded-xl border border-indigo/30 bg-ink px-4 py-3 text-paper"
+          className="h-20 w-full rounded-xl border border-feather/30 bg-white px-4 py-3 text-eel"
         />
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -163,7 +163,7 @@ export function UsefulnessStep({
               });
               onFinished?.("submitted");
             }}
-            className="rounded-full bg-indigo px-6 py-3 font-medium text-paper disabled:opacity-40"
+            className="rounded-full bg-feather px-6 py-3 font-medium text-white disabled:opacity-40"
           >
             {chrome.usefulness.submit}
           </button>
@@ -173,7 +173,7 @@ export function UsefulnessStep({
               post({ skipped: true });
               onFinished?.("skipped");
             }}
-            className="rounded-full bg-paper/10 px-6 py-3 font-medium text-paper"
+            className="rounded-full bg-eel/10 px-6 py-3 font-medium text-eel"
             aria-label="Skip"
           >
             {locale === "my" ? view.copy.skip.burmese : view.copy.skip.english}

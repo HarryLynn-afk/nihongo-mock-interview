@@ -64,14 +64,14 @@ export function FullSessionRequestDialog({
   return (
     <div
       data-testid="full-session-request-backdrop"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-eel/40 p-6"
       onClick={onClose}
     >
       <section
         role="dialog"
         aria-labelledby="full-session-request-title"
         data-testid="full-session-request"
-        className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-paper/10 bg-ink p-5 text-paper"
+        className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-eel/10 bg-white p-5 text-eel"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
@@ -81,14 +81,14 @@ export function FullSessionRequestDialog({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full px-3 py-1 text-sm text-paper/80"
+            className="rounded-full px-3 py-1 text-sm text-eel/80"
           >
             {text.close}
           </button>
         </div>
         {step === "form" ? (
           <>
-            <p className="text-sm leading-relaxed text-paper/80">
+            <p className="text-sm leading-relaxed text-eel/80">
               {text.formBody}
             </p>
             <label className="flex flex-col gap-1 text-sm">
@@ -102,20 +102,20 @@ export function FullSessionRequestDialog({
                   setEmail(event.target.value);
                   setError(null);
                 }}
-                className="rounded-xl border border-paper/20 bg-paper/5 px-3 py-2 text-paper"
+                className="rounded-xl border border-eel/20 bg-eel/5 px-3 py-2 text-eel"
               />
             </label>
             {error === "invalid" ? (
-              <p className="text-sm text-paper/80">{text.invalidEmail}</p>
+              <p className="text-sm text-eel/80">{text.invalidEmail}</p>
             ) : null}
             {error === "save" ? (
-              <p className="text-sm text-paper/80">{text.saveError}</p>
+              <p className="text-sm text-eel/80">{text.saveError}</p>
             ) : null}
             <button
               type="button"
               disabled={pending}
               onClick={() => void sendEmail()}
-              className="rounded-full bg-indigo px-5 py-3 font-medium text-paper disabled:opacity-60"
+              className="rounded-full bg-feather px-5 py-3 font-medium text-white disabled:opacity-60"
             >
               {text.send}
             </button>
@@ -123,7 +123,7 @@ export function FullSessionRequestDialog({
         ) : null}
 
         {step === "saved" ? (
-          <p className="text-sm leading-relaxed text-paper/80">
+          <p className="text-sm leading-relaxed text-eel/80">
             {text.savedBody}
           </p>
         ) : null}
