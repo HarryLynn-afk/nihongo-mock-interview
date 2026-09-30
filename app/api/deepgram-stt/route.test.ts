@@ -16,7 +16,9 @@ describe("POST /api/deepgram-stt", () => {
   it("returns 503 when the Deepgram STT key is missing", async () => {
     delete process.env.DEEPGRAM_STT_API_KEY;
     const { POST } = await import("./route");
-    const res = await POST();
+    const res = await POST(
+      new Request("http://localhost/api/deepgram-stt", { method: "POST" }),
+    );
     expect(res.status).toBe(503);
   });
 
@@ -30,7 +32,9 @@ describe("POST /api/deepgram-stt", () => {
       }),
     );
     const { POST } = await import("./route");
-    const res = await POST();
+    const res = await POST(
+      new Request("http://localhost/api/deepgram-stt", { method: "POST" }),
+    );
     const body = (await res.json()) as { accessToken?: string };
     expect(res.status).toBe(200);
     expect(body.accessToken).toBe("dg-live");

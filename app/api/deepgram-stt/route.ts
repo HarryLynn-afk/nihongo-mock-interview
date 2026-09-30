@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getDeepgramSttKey } from "@/lib/server/env/deepgramStt";
+import { withApiGuard } from "@/lib/server/security/guard";
 import { mintDeepgramListenToken } from "./mintListenToken";
 
-export async function POST() {
+export const POST = withApiGuard(async () => {
   const apiKey = getDeepgramSttKey();
   if (!apiKey) {
     return NextResponse.json({ error: "unavailable" }, { status: 503 });
@@ -17,4 +18,4 @@ export async function POST() {
   }
 
   return NextResponse.json({ accessToken: minted.accessToken });
-}
+}, "expensive");
