@@ -868,6 +868,135 @@ describe("useAnswerCapture", () => {
     stopLive.mockRestore();
   });
 
+  it("keeps the delivery WAV after pause so Submit is not an empty clip", async () => {
+    const samples = new Float32Array(1600);
+    for (let index = 0; index < samples.length; index += 1) {
+      samples[index] = 0.3 * Math.sin(index / 10);
+    }
+    const stopCapture = vi.fn();
+    const startCapture = vi
+      .spyOn(pcmCapture, "startPcmCapture")
+      .mockResolvedValue({
+        sampleRate: 16_000,
+        getSamples: () => samples,
+        stop: stopCapture,
+      });
+
+    const created: Array<{
+      onresult: ((event: { results: unknown[] }) => void) | null;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      onend = null;
+      onerror = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        created.push(this);
+      }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+    vi.stubGlobal("webkitSpeechRecognition", FakeSpeechRecognition);
+
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        onSubmit,
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    act(() => {
+      created[0]?.onresult?.({
+        results: [Object.assign([{ transcript: "こんにちは" }], { isFinal: true })],
+      });
+    });
+    act(() => result.current.onToggleSpeakPause());
+    expect(result.current.speakPaused).toBe(true);
+    expect(stopCapture).toHaveBeenCalled();
+
+    act(() => result.current.onSubmitClick());
+
+    expect(onSubmit).toHaveBeenCalledOnce();
+    const clip = onSubmit.mock.calls[0][0].audioClip as Blob;
+    expect(clip.type).toBe("audio/wav");
+    expect(clip.size).toBeGreaterThan(44);
+
+    startCapture.mockRestore();
+  });
+
+  it("keeps live delivery WAV after idle auto-pause", async () => {
+    vi.useFakeTimers();
+    const samples = new Float32Array(1600);
+    for (let index = 0; index < samples.length; index += 1) {
+      samples[index] = 0.3 * Math.sin(index / 10);
+    }
+    const stopLive = vi.fn();
+    let onEvent:
+      | ((event: { kind: "completed"; itemId: string; transcript: string }) => void)
+      | undefined;
+    const startLive = vi
+      .spyOn(liveTranscription, "startLiveTranscriptionSession")
+      .mockImplementation(async (args) => {
+        onEvent = args.onEvent as typeof onEvent;
+        return {
+          stop: stopLive,
+          commit: vi.fn(),
+          getTranscript: () => "こんにちは。",
+          getPcm: () => ({ samples, sampleRate: 16_000 }),
+          getWords: () => [],
+        };
+      });
+
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() =>
+      useAnswerCapture({
+        active: true,
+        micOn: true,
+        liveStt: true,
+        onSubmit,
+      }),
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    act(() => {
+      onEvent?.({
+        kind: "completed",
+        itemId: "1",
+        transcript: "こんにちは。",
+      });
+    });
+    act(() => {
+      vi.advanceTimersByTime(SPEAK_IDLE_PAUSE_MS);
+    });
+    expect(result.current.speakPaused).toBe(true);
+    expect(stopLive).toHaveBeenCalled();
+
+    act(() => result.current.onSubmitClick());
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(onSubmit).toHaveBeenCalledOnce();
+    const clip = onSubmit.mock.calls[0][0].audioClip as Blob;
+    expect(clip.type).toBe("audio/wav");
+    expect(clip.size).toBeGreaterThan(44);
+
+    startLive.mockRestore();
+    vi.useRealTimers();
+  });
+
   it("does not keep the previous turn's audio clip after the student turn resets", async () => {
     const firstTurn = new Float32Array(100).fill(0.2);
     const secondTurn = new Float32Array(200).fill(0.2);
@@ -971,6 +1100,10 @@ describe("useAnswerCapture", () => {
         commit: vi.fn(),
         getTranscript: () => "こんにちは。",
         getPcm: () => ({ samples, sampleRate: 16000 }),
+        getWords: () => [
+          { word: "こんにちは", start: 0, end: 0.4 },
+          { word: "。", start: 0.4, end: 0.5 },
+        ],
       });
 
     const onSubmit = vi.fn();
@@ -1015,6 +1148,7 @@ describe("useAnswerCapture", () => {
         commit: vi.fn(),
         getTranscript: () => "こんにちは。",
         getPcm: () => ({ samples: new Float32Array(), sampleRate: 16000 }),
+        getWords: () => [],
       });
 
     const onSubmit = vi.fn();
@@ -1060,6 +1194,7 @@ describe("useAnswerCapture", () => {
         commit: vi.fn(),
         getTranscript: () => "こんにちは。",
         getPcm: () => ({ samples: new Float32Array(), sampleRate: 16000 }),
+        getWords: () => [],
       });
 
     const onSubmit = vi.fn();

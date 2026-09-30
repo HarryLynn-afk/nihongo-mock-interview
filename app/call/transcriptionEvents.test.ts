@@ -15,6 +15,7 @@ describe("Deepgram live transcript helpers", () => {
     expect(url.searchParams.get("language")).toBe("ja");
     expect(url.searchParams.get("encoding")).toBe("linear16");
     expect(url.searchParams.get("sample_rate")).toBe("16000");
+    expect(url.searchParams.get("words")).toBe("true");
     expect(url.searchParams.get("token")).toBeNull();
   });
 
@@ -33,12 +34,26 @@ describe("Deepgram live transcript helpers", () => {
         type: "Results",
         is_final: true,
         start: 0.2,
-        channel: { alternatives: [{ transcript: "はじめまして。" }] },
+        channel: {
+          alternatives: [
+            {
+              transcript: "はじめまして。",
+              words: [
+                { word: "はじめ", start: 0.2, end: 0.5 },
+                { word: "まして", start: 0.5, end: 0.9 },
+              ],
+            },
+          ],
+        },
       }),
     ).toEqual({
       kind: "completed",
       itemId: "0.2",
       transcript: "はじめまして。",
+      words: [
+        { word: "はじめ", start: 0.2, end: 0.5 },
+        { word: "まして", start: 0.5, end: 0.9 },
+      ],
     });
 
     expect(

@@ -1,29 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { analyzeAudioClip } from "./analyzeAudioClip";
-import { floatToWavBlob } from "./pcmAudio";
-
-function tone(seconds: number, sampleRate = 16_000, amplitude = 0.3): Float32Array {
-  const samples = new Float32Array(Math.round(seconds * sampleRate));
-  for (let i = 0; i < samples.length; i += 1) {
-    samples[i] = amplitude * Math.sin((2 * Math.PI * 220 * i) / sampleRate);
-  }
-  return samples;
-}
 
 describe("analyzeAudioClip", () => {
-  it("analyzes a WAV clip without decodeAudioData", async () => {
-    const clip = floatToWavBlob(tone(1), 16_000);
+  it("marks an empty clip as unable with empty reason", async () => {
+    const result = await analyzeAudioClip(new Blob());
 
-    const result = await analyzeAudioClip(clip, "はじめまして");
-
-    expect(result.recordingQuality).toBe("pass");
-    expect(result.durationSec).toBe(1);
+    expect(result.recordingQuality).toBe("unableToAssess");
+    expect(result.unableReason).toBe("empty");
   });
 
-  it("marks an empty clip as not assessed", async () => {
-    const result = await analyzeAudioClip(new Blob(), "はじめまして");
+  it("does not invent RMS-based coaching for a non-empty clip", async () => {
+    const result = await analyzeAudioClip(
+      new Blob([new Uint8Array([1, 2, 3, 4])], { type: "audio/webm" }),
+    );
 
-    expect(result.recordingQuality).toBe("notAssessed");
-    expect(result.notAssessedReason).toBe("empty");
+    expect(result.recordingQuality).toBe("unableToAssess");
+    expect(result.unableReason).toBe("noTimestamps");
+    expect(result.tip).toBeNull();
   });
 });

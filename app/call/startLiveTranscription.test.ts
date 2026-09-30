@@ -200,5 +200,6 @@ describe("startLiveTranscriptionSession", () => {
     const pcm = session!.getPcm();
     expect(Array.from(pcm.samples)).toEqual(Array.from(tone));
     expect(pcm.sampleRate).toBe(16000);
+    expect(session!.getWords()).toEqual([]);
   });
 });

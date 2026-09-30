@@ -1,15 +1,47 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AnswerSubmission } from "./useQuestionFlow";
 import { transcriptPassesPushbackCheck } from "@/lib/content/pushbackCheck";
+import type { WordTiming } from "@/lib/content/deliveryCoaching";
 import { startLiveTranscriptionSession } from "./startLiveTranscription";
 import type { LiveTranscriptionSession } from "./startLiveTranscription";
 import { joinJapanese } from "./transcriptionEvents";
-import { floatToWavBlob } from "./pcmAudio";
+import { concatFloat32, floatToWavBlob } from "./pcmAudio";
 import { startPcmCapture, type PcmCapture } from "./pcmCapture";
 
 export const MAX_SPEAK_ATTEMPTS = 3;
 /** Auto-pause Speak after this long with no new live transcript. */
 export const SPEAK_IDLE_PAUSE_MS = 10_000;
+
+type SavedPcm = {
+  samples: Float32Array;
+  sampleRate: number;
+};
+
+/** Keep delivery PCM across pause/idle so Submit still has a clip. */
+function appendSavedPcm(
+  current: SavedPcm | null,
+  next: { samples: Float32Array; sampleRate: number } | null | undefined,
+): SavedPcm | null {
+  if (!next || next.samples.length === 0) return current;
+  if (!current) {
+    return {
+      samples: next.samples.slice(),
+      sampleRate: next.sampleRate,
+    };
+  }
+  return {
+    samples: concatFloat32([current.samples, next.samples]),
+    sampleRate: current.sampleRate,
+  };
+}
+
+function appendSavedWords(
+  current: WordTiming[],
+  next: readonly WordTiming[] | undefined,
+): WordTiming[] {
+  if (!next || next.length === 0) return current;
+  return current.concat(next);
+}
 
 type AnswerMode = "speak" | null;
 
@@ -56,6 +88,8 @@ export function useAnswerCapture({
   const [submitPending, setSubmitPending] = useState(false);
   const transcriptBaseRef = useRef("");
   const captureRef = useRef<PcmCapture | null>(null);
+  const savedPcmRef = useRef<SavedPcm | null>(null);
+  const savedWordsRef = useRef<WordTiming[]>([]);
   const attemptCountRef = useRef(0);
   const liveSessionRef = useRef<LiveTranscriptionSession | null>(null);
   const submitPendingRef = useRef(false);
@@ -82,6 +116,8 @@ export function useAnswerCapture({
     submitPendingRef.current = false;
     transcriptBaseRef.current = "";
     attemptCountRef.current = 0;
+    savedPcmRef.current = null;
+    savedWordsRef.current = [];
   }, [active]);
 
   const listening =
@@ -191,6 +227,20 @@ export function useAnswerCapture({
     return () => {
       allowRecognitionRestart = false;
       cancelled = true;
+      // Snapshot before stop: pause/idle must not wipe delivery clip or words.
+      const live = liveSessionRef.current;
+      if (live) {
+        savedPcmRef.current = appendSavedPcm(savedPcmRef.current, live.getPcm());
+        savedWordsRef.current = appendSavedWords(
+          savedWordsRef.current,
+          live.getWords?.() ?? [],
+        );
+      } else if (captureRef.current) {
+        savedPcmRef.current = appendSavedPcm(savedPcmRef.current, {
+          samples: captureRef.current.getSamples(),
+          sampleRate: captureRef.current.sampleRate,
+        });
+      }
       liveSessionRef.current?.stop();
       liveSessionRef.current = null;
       if (recognition) {
@@ -208,6 +258,14 @@ export function useAnswerCapture({
     setSpeakPaused(false);
     transcriptBaseRef.current = "";
     setSpokenCaption(null);
+    // Tear down before answerMode flips to null so the listening cleanup
+    // cannot re-snapshot this turn's PCM into the next attempt.
+    liveSessionRef.current?.stop();
+    liveSessionRef.current = null;
+    captureRef.current?.stop();
+    captureRef.current = null;
+    savedPcmRef.current = null;
+    savedWordsRef.current = [];
   }
 
   function resolveAttempt(transcript: string): {
@@ -242,7 +300,11 @@ export function useAnswerCapture({
       setSubmitPending(false);
     };
 
-    const submitVoice = (transcript: string, clip?: Blob) => {
+    const submitVoice = (
+      transcript: string,
+      clip?: Blob,
+      wordTimings?: WordTiming[],
+    ) => {
       const result = resolveAttempt(transcript);
       if (result.skip) {
         finishPending();
@@ -265,6 +327,8 @@ export function useAnswerCapture({
         transcript,
         audioClip: clip ?? new Blob(),
         pushbackCount: result.pushbackCount,
+        wordTimings:
+          wordTimings && wordTimings.length > 0 ? wordTimings : undefined,
       });
     };
 
@@ -277,24 +341,41 @@ export function useAnswerCapture({
         });
         const committed = live.getTranscript();
         const pcm = live.getPcm();
+        const words = appendSavedWords(
+          savedWordsRef.current,
+          live.getWords?.() ?? [],
+        );
         live.stop();
         liveSessionRef.current = null;
+        const combined = appendSavedPcm(savedPcmRef.current, pcm);
+        savedPcmRef.current = null;
+        savedWordsRef.current = [];
         const clip =
-          pcm.samples.length > 0
-            ? floatToWavBlob(pcm.samples, pcm.sampleRate)
+          combined && combined.samples.length > 0
+            ? floatToWavBlob(combined.samples, combined.sampleRate)
             : undefined;
-        submitVoice(committed || spokenCaption || "", clip);
+        submitVoice(committed || spokenCaption || "", clip, words);
       })();
       return;
     }
 
     const capture = captureRef.current;
     const samples = capture?.getSamples();
-    const localClip =
+    const liveSamples =
       capture && samples && samples.length > 0
-        ? floatToWavBlob(samples, capture.sampleRate)
+        ? { samples, sampleRate: capture.sampleRate }
+        : null;
+    const combined = appendSavedPcm(savedPcmRef.current, liveSamples);
+    const words = savedWordsRef.current.slice();
+    savedPcmRef.current = null;
+    savedWordsRef.current = [];
+    capture?.stop();
+    captureRef.current = null;
+    const localClip =
+      combined && combined.samples.length > 0
+        ? floatToWavBlob(combined.samples, combined.sampleRate)
         : undefined;
-    submitVoice(spokenCaption ?? "", localClip);
+    submitVoice(spokenCaption ?? "", localClip, words);
   }, [answerMode, onSubmit, spokenCaption]);
 
   const canAnswerAgain =

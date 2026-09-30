@@ -7,6 +7,7 @@ import {
   type BankQuestion,
 } from "@/lib/content/questionBank";
 import { shouldOfferFollowUp } from "@/lib/content/followUpCheck";
+import type { WordTiming } from "@/lib/content/deliveryCoaching";
 
 export type QuestionPhase = "senseiSpeaking" | "studentAnswering" | "done";
 
@@ -16,6 +17,7 @@ export type AnswerSubmission =
       transcript: string;
       audioClip: Blob;
       pushbackCount: 0 | 1 | 2;
+      wordTimings?: WordTiming[];
     }
   | {
       status: "skipped";

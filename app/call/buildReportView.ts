@@ -133,7 +133,15 @@ export function buildReportView({
   const localizedDelivery = delivery
     ? {
         ...delivery,
-        headline: copy.report.deliveryHeadline[delivery.status],
+        headline:
+          delivery.status === "review"
+            ? delivery.tipCount === 1
+              ? copy.report.deliveryReviewOne
+              : copy.report.deliveryReviewMany.replace(
+                  "{n}",
+                  String(delivery.tipCount),
+                )
+            : copy.report.deliveryHeadline[delivery.status],
         note: copy.report.deliveryNote[delivery.status],
       }
     : null;
@@ -252,4 +260,4 @@ export function buildReportView({
   };
 }
 
-export const REPORT_NOT_ASSESSED = uiCopy("en").report.deliveryHeadline.notAssessed;
+export const REPORT_NOT_ASSESSED = "Not assessed";

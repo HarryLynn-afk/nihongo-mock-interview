@@ -1,11 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useMemo } from "react";
 import {
-  notAssessedClip,
   summarizeDelivery,
-  type AnalyzedClip,
+  unableClip,
   type SessionDelivery,
 } from "@/lib/content/deliverySignals";
-import { analyzeAudioClip } from "./analyzeAudioClip";
 import type { QuestionPhase, StoredAnswer } from "./useQuestionFlow";
 
 export type DeliveryCollection =
@@ -15,87 +13,40 @@ export type DeliveryCollection =
 export function useDeliverySignals({
   answers,
   phase,
-  finishWaitMs = 3_000,
-  analyzeClip = analyzeAudioClip,
 }: {
   answers: StoredAnswer[];
   phase: QuestionPhase;
+  /** @deprecated PCM analysis is no longer used for coaching. */
   finishWaitMs?: number;
-  analyzeClip?: (clip: Blob, transcript: string) => Promise<AnalyzedClip>;
+  /** @deprecated PCM analysis is no longer used for coaching. */
+  analyzeClip?: unknown;
 }): DeliveryCollection {
-  const started = useRef(new Set<number>());
-  const droppedRef = useRef(false);
-  const [signals, setSignals] = useState<Record<number, AnalyzedClip>>({});
-  const [dropped, setDropped] = useState(false);
-
-  useEffect(() => {
-    for (const answer of answers) {
-      if (answer.status !== "answered") continue;
-      if (started.current.has(answer.questionIndex)) continue;
-      started.current.add(answer.questionIndex);
-
-      if (answer.audioClip.size === 0) {
-        void Promise.resolve(notAssessedClip("empty")).then((signal) => {
-          if (droppedRef.current) return;
-          setSignals((current) => ({
-            ...current,
-            [answer.questionIndex]: signal,
-          }));
-        });
-        continue;
-      }
-
-      void analyzeClip(answer.audioClip, answer.transcript)
-        .then((signal) => {
-          if (droppedRef.current) return;
-          setSignals((current) => ({
-            ...current,
-            [answer.questionIndex]: signal,
-          }));
-        })
-        .catch(() => {
-          if (droppedRef.current) return;
-          setSignals((current) => ({
-            ...current,
-            [answer.questionIndex]: notAssessedClip("empty"),
-          }));
-        });
-    }
-  }, [answers, analyzeClip]);
-
-  useEffect(() => {
-    if (phase !== "done") return;
-    const id = setTimeout(() => {
-      droppedRef.current = true;
-      setDropped(true);
-    }, finishWaitMs);
-    return () => clearTimeout(id);
-  }, [phase, finishWaitMs]);
-
-  const answeredPending =
-    !dropped &&
-    answers.some(
-      (answer) =>
-        answer.status === "answered" &&
-        answer.audioClip.size > 0 &&
-        signals[answer.questionIndex] === undefined,
+  const delivery = useMemo(() => {
+    const spoken = answers.filter(
+      (answer): answer is StoredAnswer & { status: "answered" } =>
+        answer.status === "answered",
     );
+    return summarizeDelivery(
+      spoken.map((answer) => {
+        if (answer.audioClip.size === 0 && !answer.wordTimings?.length) {
+          return {
+            questionIndex: answer.questionIndex,
+            questionId: answer.questionId,
+            signal: unableClip("empty"),
+          };
+        }
+        return {
+          questionIndex: answer.questionIndex,
+          questionId: answer.questionId,
+          words: answer.wordTimings,
+        };
+      }),
+    );
+  }, [answers]);
 
-  if (phase !== "done" || answeredPending) {
+  if (phase !== "done") {
     return { status: "collecting" };
   }
 
-  return {
-    status: "ready",
-    delivery: summarizeDelivery(
-      answers
-        .filter((answer): answer is StoredAnswer & { status: "answered" } =>
-          answer.status === "answered",
-        )
-        .map((answer) => ({
-          questionIndex: answer.questionIndex,
-          signal: signals[answer.questionIndex] ?? notAssessedClip(),
-        })),
-    ),
-  };
+  return { status: "ready", delivery };
 }

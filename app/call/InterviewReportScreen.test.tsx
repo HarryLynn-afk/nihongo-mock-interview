@@ -58,17 +58,11 @@ const voiceView = buildReportView({
   delivery: summarizeDelivery([
     {
       questionIndex: 0,
-      signal: {
-        recordingQuality: "pass",
-        durationSec: 2,
-        speechRateCps: 4,
-        longPauseCount: 0,
-        fillerCount: 0,
-        observations: [
-          "Answer lasted 2 seconds.",
-          "Audio was clear enough for basic timing analysis.",
-        ],
-      },
+      questionId: 1,
+      words: [
+        { word: "はじめ", start: 0, end: 0.3 },
+        { word: "まして", start: 0.4, end: 0.7 },
+      ],
     },
   ]),
 });
@@ -273,9 +267,11 @@ describe("InterviewReportScreen", () => {
     render(<InterviewReportScreen view={voiceView} />);
 
     const delivery = within(screen.getByTestId("speech-delivery-signals"));
-    expect(delivery.getByText("Speech Delivery Signals")).toBeInTheDocument();
-    expect(delivery.getByText("Clear enough")).toBeInTheDocument();
-    expect(screen.getByText(/timing signals, not a Japanese proficiency score/i)).toBeInTheDocument();
+    expect(delivery.getByText("Speech Delivery")).toBeInTheDocument();
+    expect(delivery.getByText("No notable issue detected")).toBeInTheDocument();
+    expect(
+      delivery.getByText(/No clear mid-answer pause was detected/i),
+    ).toBeInTheDocument();
   });
 
   it("reveals radar, then stamp, then critiques — never all at once", async () => {

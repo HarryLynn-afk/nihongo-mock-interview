@@ -508,6 +508,7 @@ describe("Call screen", () => {
         commit: vi.fn(),
         getTranscript: () => "こんにちは。",
         getPcm: () => ({ samples: new Float32Array(), sampleRate: 16000 }),
+        getWords: () => [],
       });
 
     const user = await startStudentTurn();

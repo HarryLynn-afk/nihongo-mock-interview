@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { UiLocale } from "@/lib/content/locale";
 import { uiCopy } from "@/lib/content/uiCopy";
 import type { ReportQuestionCard, ReportView } from "./buildReportView";
+import { REPORT_NOT_ASSESSED } from "./buildReportView";
 
 export const REPORT_STAMP_REVEAL_MS = 700;
 export const REPORT_COACHING_REVEAL_MS = 1400;
@@ -368,7 +369,7 @@ export function InterviewReportScreen({
                     </>
                   ) : (
                     <span className="text-eel/75">
-                      {copy.report.deliveryHeadline.notAssessed}
+                      {REPORT_NOT_ASSESSED}
                     </span>
                   )}
                 </li>
@@ -397,10 +398,21 @@ export function InterviewReportScreen({
                 {view.delivery.headline}
               </p>
               <p className="mt-1 text-sm text-eel/85">{view.delivery.note}</p>
-              {view.delivery.answers[0]?.observations.slice(0, 4).map((line) => (
-                <p key={line} className="mt-1 text-xs text-eel/80">
-                  {line}
-                </p>
+              {view.delivery.tips.map((tip) => (
+                <div
+                  key={`${tip.questionIndex}-${tip.gapSec}`}
+                  className="mt-3 border-t border-eel/10 pt-3"
+                  data-testid="speech-delivery-tip"
+                >
+                  <p className="text-sm font-medium text-eel">
+                    {tip.questionLabel}
+                  </p>
+                  <p className="mt-1 text-xs text-eel/80">{tip.evidence}</p>
+                  <p className="mt-1 text-xs text-eel/80">
+                    <span className="font-medium">{copy.report.tryNextLabel}:</span>{" "}
+                    {tip.tryNext}
+                  </p>
+                </div>
               ))}
             </div>
           ) : null}

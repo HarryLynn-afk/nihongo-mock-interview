@@ -1,5 +1,6 @@
 import { downsampleTo16k, floatToLinear16 } from "./pcmAudio";
 import { startPcmCapture, type PcmAudioContext, type PcmCapture } from "./pcmCapture";
+import type { WordTiming } from "@/lib/content/deliveryCoaching";
 import {
   closeStreamMessage,
   deepgramListenUrl,
@@ -18,6 +19,7 @@ export type LiveTranscriptionSession = {
   commit: () => void;
   getTranscript: () => string;
   getPcm: () => LivePcmCapture;
+  getWords: () => WordTiming[];
 };
 
 const MAX_LISTEN_MS = 20 * 60 * 1000;
@@ -76,6 +78,7 @@ export async function startLiveTranscriptionSession({
 
   let finalized = "";
   let interim = "";
+  const words: WordTiming[] = [];
   let capture: PcmCapture | null = null;
   let socket: WebSocket | null = null;
   let maxTimer: ReturnType<typeof setTimeout> | undefined;
@@ -131,6 +134,7 @@ export async function startLiveTranscriptionSession({
       } else {
         finalized = joinJapanese(finalized, parsed.transcript);
         interim = "";
+        words.push(...parsed.words);
       }
       onEvent(parsed);
     });
@@ -155,5 +159,6 @@ export async function startLiveTranscriptionSession({
       capture
         ? { samples: capture.getSamples(), sampleRate: capture.sampleRate }
         : { samples: new Float32Array(0), sampleRate: 16000 },
+    getWords: () => words.slice(),
   };
 }

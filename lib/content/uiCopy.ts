@@ -156,7 +156,10 @@ const en = {
     evidence: "Evidence",
     missingElement: "Missing element",
     questionLabel: "Question",
-    deliveryTitle: "Speech Delivery Signals",
+    deliveryTitle: "Speech Delivery",
+    tryNextLabel: "Try next",
+    deliveryReviewOne: "Review 1 point",
+    deliveryReviewMany: "Review {n} points",
     noAnswerTranscript: "No answer was captured for this Question.",
     noAnswerNextHeading: "Try this Question again next practice",
     noAnswerNextStep:
@@ -205,19 +208,18 @@ const en = {
       lifeInJapan: "Life in Japan",
     },
     deliveryHeadline: {
-      unavailable: "Not assessed",
-      notAssessed: "Not assessed",
-      needsPractice: "Needs practice",
-      clearEnough: "Clear enough",
+      unavailable: "Unable to assess",
+      unableToAssess: "Unable to assess",
+      noIssue: "No notable issue detected",
+      review: "Review points",
     },
     deliveryNote: {
       unavailable: "No spoken answer was captured to analyze.",
-      notAssessed:
-        "Recording was too quiet or too short for basic timing analysis.",
-      needsPractice:
-        "Your answer included several long pauses. Audio was clear enough for basic timing analysis.",
-      clearEnough:
-        "Audio was clear enough for basic timing analysis. These are timing signals, not a Japanese proficiency score.",
+      unableToAssess:
+        "Reliable word timing was not available for pause coaching.",
+      noIssue: "No clear mid-answer pause was detected from word timing.",
+      review:
+        "Each tip pairs measured timing evidence with a short practice suggestion.",
     },
   },
   fullSessionRequest: {
@@ -418,7 +420,10 @@ const my: UiCopy = {
     evidence: "အထောက်အထား",
     missingElement: "ပျောက်နေသော အချက်",
     questionLabel: "မေးခွန်း",
-    deliveryTitle: "အသံ ပေးပို့မှု အချက်များ",
+    deliveryTitle: "အသံ ပေးပို့မှု",
+    tryNextLabel: "နောက်တစ်ကြိမ် လေ့ကျင့်ရန်",
+    deliveryReviewOne: "၁ ချက် ပြန်လည်ကြည့်ရန်",
+    deliveryReviewMany: "{n} ချက် ပြန်လည်ကြည့်ရန်",
     noAnswerTranscript: "ဤမေးခွန်းအတွက် အဖြေ မရရှိပါ။",
     noAnswerNextHeading: "နောက်လေ့ကျင့်မှုတွင် ဤမေးခွန်းကို ထပ်ကြိုးစားပါ",
     noAnswerNextStep:
@@ -467,18 +472,18 @@ const my: UiCopy = {
       lifeInJapan: "ဂျပန်တွင် နေထိုင်ရေး",
     },
     deliveryHeadline: {
-      unavailable: "မသုံးသပ်နိုင်",
-      notAssessed: "မသုံးသပ်နိုင်",
-      needsPractice: "လေ့ကျင့်ရန်လို",
-      clearEnough: "ရှင်းလင်းသည်",
+      unavailable: "သုံးသပ်၍ မရပါ",
+      unableToAssess: "သုံးသပ်၍ မရပါ",
+      noIssue: "ထူးခြားသော ပြဿနာ မတွေ့ပါ",
+      review: "ပြန်လည်ကြည့်ရန် အချက်များ",
     },
     deliveryNote: {
       unavailable: "သုံးသပ်ရန် ပြောထားသော အဖြေ မရရှိပါ။",
-      notAssessed: "အသံ တိတ်လွန်း သို့မဟုတ် တိုလွန်းသဖြင့် အချိန် သုံးသပ်မှု မလုပ်နိုင်ပါ။",
-      needsPractice:
-        "သင့်အဖြေတွင် ကြာရှည် ခဏရပ်မှုများ ပါသည်။ အခြေခံ အချိန် သုံးသပ်မှုအတွက် အသံ ရှင်းပါသည်။",
-      clearEnough:
-        "အခြေခံ အချိန် သုံးသပ်မှုအတွက် အသံ ရှင်းပါသည်။ ဂျပန်စာ အဆင့် အမှတ် မဟုတ်ပါ။",
+      unableToAssess:
+        "ယုံကြည်ရသော စကားလုံး အချိန် မရသဖြင့် ခဏရပ်မှု အကြံ မပေးနိုင်ပါ။",
+      noIssue: "စကားလုံး အချိန်အရ ရှင်းလင်းသော အလယ်ပိုင်း ခဏရပ်မှု မတွေ့ပါ။",
+      review:
+        "အောက်ပါ အကြံများသည် တိုင်းတာထားသော အချိန်နှင့် လေ့ကျင့်ရန် အကြံပြုချက် ဖြစ်သည်။",
     },
   },
   fullSessionRequest: {

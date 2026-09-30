@@ -1,14 +1,9 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { renderHook } from "@testing-library/react";
 import { useDeliverySignals } from "./useDeliverySignals";
 import type { StoredAnswer } from "./useQuestionFlow";
-import { notAssessedClip } from "@/lib/content/deliverySignals";
 
 describe("useDeliverySignals", () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   it("is ready immediately after done when every Question was skipped", () => {
     const answers: StoredAnswer[] = [{ questionIndex: 0, status: "skipped" }];
 
@@ -22,8 +17,7 @@ describe("useDeliverySignals", () => {
     }
   });
 
-  it("marks an empty clip as not assessed without decoding", async () => {
-    const analyzeClip = vi.fn();
+  it("marks an empty clip with no timestamps as unable to assess", () => {
     const answers: StoredAnswer[] = [
       {
         questionIndex: 0,
@@ -35,81 +29,72 @@ describe("useDeliverySignals", () => {
     ];
 
     const { result } = renderHook(() =>
-      useDeliverySignals({ answers, phase: "done", analyzeClip }),
+      useDeliverySignals({ answers, phase: "done" }),
     );
 
-    await waitFor(() => {
-      expect(result.current.status).toBe("ready");
-    });
-    expect(analyzeClip).not.toHaveBeenCalled();
-    if (result.current.status === "ready") {
-      expect(result.current.delivery.status).toBe("notAssessed");
-      expect(result.current.delivery.answers[0]?.notAssessedReason).toBe("empty");
-    }
-  });
-
-  it("analyzes each spoken clip once", async () => {
-    const analyzeClip = vi.fn().mockResolvedValue({
-      recordingQuality: "pass",
-      durationSec: 2,
-      speechRateCps: 4,
-      longPauseCount: 0,
-      fillerCount: 0,
-      observations: ["Answer lasted 2 seconds."],
-    });
-    const clip = new Blob([new Uint8Array([1, 2, 3])], { type: "audio/webm" });
-    const answers: StoredAnswer[] = [
-      {
-        questionIndex: 0,
-        status: "answered",
-        transcript: "はじめまして",
-        audioClip: clip,
-        pushbackCount: 0,
-      },
-    ];
-
-    const { result } = renderHook(() =>
-      useDeliverySignals({ answers, phase: "done", analyzeClip }),
-    );
-
-    await waitFor(() => {
-      expect(result.current.status).toBe("ready");
-    });
-    expect(analyzeClip).toHaveBeenCalledTimes(1);
-    if (result.current.status === "ready") {
-      expect(result.current.delivery.status).toBe("clearEnough");
-    }
-  });
-
-  it("fail-opens to not assessed after the finish wait", async () => {
-    vi.useFakeTimers();
-    const analyzeClip = vi.fn().mockReturnValue(new Promise(() => {}));
-    const answers: StoredAnswer[] = [
-      {
-        questionIndex: 0,
-        status: "answered",
-        transcript: "はい",
-        audioClip: new Blob([new Uint8Array([1])], { type: "audio/webm" }),
-        pushbackCount: 0,
-      },
-    ];
-
-    const { result } = renderHook(() =>
-      useDeliverySignals({
-        answers,
-        phase: "done",
-        analyzeClip,
-        finishWaitMs: 3_000,
-      }),
-    );
-
-    expect(result.current.status).toBe("collecting");
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(3_000);
-    });
     expect(result.current.status).toBe("ready");
     if (result.current.status === "ready") {
-      expect(result.current.delivery.answers[0]).toMatchObject(notAssessedClip());
+      expect(result.current.delivery.status).toBe("unableToAssess");
+      expect(result.current.delivery.answers[0]?.unableReason).toBe("empty");
+    }
+  });
+
+  it("builds a review tip from word timings without PCM analysis", () => {
+    const answers: StoredAnswer[] = [
+      {
+        questionIndex: 1,
+        questionId: 2,
+        status: "answered",
+        transcript: "日本で勉強したいです",
+        audioClip: new Blob([new Uint8Array([1, 2, 3])], { type: "audio/wav" }),
+        pushbackCount: 0,
+        wordTimings: [
+          { word: "日本", start: 0, end: 0.3 },
+          { word: "で", start: 3.1, end: 3.2 },
+          { word: "勉強", start: 3.3, end: 3.6 },
+        ],
+      },
+    ];
+
+    const { result } = renderHook(() =>
+      useDeliverySignals({ answers, phase: "done" }),
+    );
+
+    expect(result.current.status).toBe("ready");
+    if (result.current.status === "ready") {
+      expect(result.current.delivery.status).toBe("review");
+      expect(result.current.delivery.tips[0]?.questionLabel).toBe(
+        "Q2 · Motivation",
+      );
+      expect(result.current.delivery.tips[0]?.evidence).toMatch(
+        /2\.8-second pause/i,
+      );
+    }
+  });
+
+  it("returns noIssue when word timings have no long mid-answer gap", () => {
+    const answers: StoredAnswer[] = [
+      {
+        questionIndex: 0,
+        questionId: 1,
+        status: "answered",
+        transcript: "はじめまして",
+        audioClip: new Blob([new Uint8Array([1])], { type: "audio/wav" }),
+        pushbackCount: 0,
+        wordTimings: [
+          { word: "はじめ", start: 0, end: 0.3 },
+          { word: "まして", start: 0.4, end: 0.7 },
+        ],
+      },
+    ];
+
+    const { result } = renderHook(() =>
+      useDeliverySignals({ answers, phase: "done" }),
+    );
+
+    expect(result.current.status).toBe("ready");
+    if (result.current.status === "ready") {
+      expect(result.current.delivery.status).toBe("noIssue");
     }
   });
 });

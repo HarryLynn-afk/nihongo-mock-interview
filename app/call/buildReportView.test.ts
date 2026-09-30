@@ -41,14 +41,11 @@ const voiceAnswers = [
 const clearDelivery = summarizeDelivery([
   {
     questionIndex: 0,
-    signal: {
-      recordingQuality: "pass",
-      durationSec: 2,
-      speechRateCps: 4,
-      longPauseCount: 0,
-      fillerCount: 0,
-      observations: ["Answer lasted 2 seconds."],
-    },
+    questionId: 1,
+    words: [
+      { word: "はじめ", start: 0, end: 0.3 },
+      { word: "まして", start: 0.4, end: 0.7 },
+    ],
   },
 ]);
 
@@ -85,8 +82,9 @@ describe("buildReportView", () => {
       "studyPlan",
       "consistency",
     ]);
-    expect(view.delivery?.status).toBe("clearEnough");
-    expect(view.deliveryTitle).toBe("Speech Delivery Signals");
+    expect(view.delivery?.status).toBe("noIssue");
+    expect(view.deliveryTitle).toBe("Speech Delivery");
+    expect(view.delivery?.headline).toBe("No notable issue detected");
     expect(view.voiceNote).toBeNull();
   });
 
