@@ -50,17 +50,17 @@ export function SpeakAnswerButton({
           className="relative flex size-full items-center justify-center overflow-clip rounded-full bg-[#d97706]"
         >
           <span className="flex gap-1">
-            <span className="h-5 w-1.5 rounded-full bg-paper" />
-            <span className="h-5 w-1.5 rounded-full bg-paper" />
+            <span className="h-5 w-1.5 rounded-full bg-white" />
+            <span className="h-5 w-1.5 rounded-full bg-white" />
           </span>
         </span>
       ) : (
         <>
           <span
             aria-hidden="true"
-            className="absolute inset-[-8px] rounded-full bg-indigo/25 opacity-80"
+            className="absolute inset-[-8px] rounded-full bg-feather/25 opacity-80"
           />
-          <span className="relative z-10 flex size-full items-center justify-center overflow-clip rounded-full bg-[#1a1b4f]">
+          <span className="relative z-10 flex size-full items-center justify-center overflow-clip rounded-full bg-feather">
             <span className="flex h-7 w-5 overflow-clip">
               <Image
                 data-testid="speak-answer-mic"

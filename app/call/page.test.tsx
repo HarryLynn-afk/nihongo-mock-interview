@@ -311,7 +311,7 @@ describe("Call screen", () => {
   it("after sensei audio ends, the waveform switches to the student and the Question subtitle stays", async () => {
     await startStudentTurn();
 
-    expect(screen.getByTestId("waveform")).toHaveClass("bg-indigo");
+    expect(screen.getByTestId("waveform")).toHaveClass("bg-feather");
     expect(hud().getByText(questions[0].japanese)).toBeInTheDocument();
     expect(
       hud().getByText(questions[0].englishTranslation),

@@ -33,7 +33,7 @@ export function InterviewSidebar({
   return (
     <aside
       data-testid="interview-sidebar"
-      className="flex max-h-40 w-full max-w-xs min-h-0 shrink-0 flex-col gap-3 overflow-hidden rounded-2xl border border-paper/10 bg-ink/80 p-4 text-paper md:h-full md:max-h-none md:max-w-52"
+      className="flex max-h-40 w-full max-w-xs min-h-0 shrink-0 flex-col gap-3 overflow-hidden rounded-2xl border border-eel/10 bg-white/80 p-4 text-eel md:h-full md:max-h-none md:max-w-52"
     >
       <p className="font-medium">
         {fillTemplate(copy.call.questionOf, {
@@ -41,11 +41,11 @@ export function InterviewSidebar({
           total: view.questionCount,
         })}
       </p>
-      <p className="text-sm text-paper/70">{statusLabel}</p>
-      <ol className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1 text-xs leading-relaxed text-paper/80">
+      <p className="text-sm text-eel/70">{statusLabel}</p>
+      <ol className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1 text-xs leading-relaxed text-eel/80">
         {view.entries.map((entry, index) => (
           <li key={`${entry.speaker}-${index}`}>
-            <p className="text-[10px] font-medium tracking-wide text-paper/50">
+            <p className="text-[10px] font-medium tracking-wide text-eel/50">
               {entry.speaker === "sensei" ? "Tanaka-sensei" : copy.call.you}
             </p>
             <p>{entry.text}</p>

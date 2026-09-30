@@ -20,15 +20,15 @@ export function LanguageHud({
   hearAgainPlaying = false,
 }: LanguageHudProps) {
   const { copy } = useCopy();
-  const waveformClass = speaker === "student" ? "bg-indigo" : "bg-paper/60";
+  const waveformClass = speaker === "student" ? "bg-feather" : "bg-eel/40";
 
   return (
     <div
       data-testid="language-hud"
       data-speaker={speaker}
-      className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-1 bg-gradient-to-t from-ink via-ink/85 to-transparent px-4 pb-4 pt-12 text-paper"
+      className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-1 bg-gradient-to-t from-[#e8f8d4] via-[#e8f8d4]/85 to-transparent px-4 pb-4 pt-12 text-eel"
     >
-      <p className="text-xs font-medium tracking-[0.18em] text-paper/60">
+      <p className="text-xs font-medium tracking-[0.18em] text-eel/60">
         {copy.call.question}
       </p>
       <div
@@ -42,10 +42,10 @@ export function LanguageHud({
             type="button"
             onClick={onHearAgain}
             aria-label={hearAgainPlaying ? copy.call.stopHearing : copy.call.hearAgain}
-            className="absolute -left-1 top-0 flex size-9 items-center justify-center rounded-full text-paper/80 transition-colors hover:bg-paper/10 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper md:-left-10"
+            className="absolute -left-1 top-0 flex size-9 items-center justify-center rounded-full text-eel/80 transition-colors hover:bg-eel/10 hover:text-eel focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-eel md:-left-10"
           >
             {hearAgainPlaying ? (
-              <span className="size-2.5 rounded-sm bg-paper" />
+              <span className="size-2.5 rounded-sm bg-eel" />
             ) : (
               <svg
                 viewBox="0 0 24 24"
@@ -65,19 +65,19 @@ export function LanguageHud({
           </button>
         ) : null}
         {caption ? (
-          <p className="text-center text-xl font-medium leading-snug text-paper md:text-2xl">
+          <p className="text-center text-xl font-medium leading-snug text-eel md:text-2xl">
             {caption}
           </p>
         ) : null}
         {english ? (
-          <p className="mt-1 text-center text-sm text-paper/80">{english}</p>
+          <p className="mt-1 text-center text-sm text-eel/80">{english}</p>
         ) : null}
         {burmese ? (
-          <p className="mt-1 text-center text-sm text-paper/80">{burmese}</p>
+          <p className="mt-1 text-center text-sm text-eel/80">{burmese}</p>
         ) : null}
       </div>
       {liveCaption ? (
-        <p className="text-center text-base font-medium leading-snug text-paper/90">
+        <p className="text-center text-base font-medium leading-snug text-eel/90">
           {liveCaption}
         </p>
       ) : null}

@@ -17,16 +17,16 @@ describe("LanguageHud", () => {
     ).toBeInTheDocument();
   });
 
-  it("waveform is Indigo when the student is speaking and Paper at 60% when sensei is speaking", () => {
+  it("waveform is Feather when the student is speaking and Eel at 40% when sensei is speaking", () => {
     const { rerender } = render(
       <LanguageHud speaker="sensei" caption="はじめに、簡単に自己紹介をお願いします。" />,
     );
 
-    expect(screen.getByTestId("waveform")).toHaveClass("bg-paper/60");
+    expect(screen.getByTestId("waveform")).toHaveClass("bg-eel/40");
 
     rerender(<LanguageHud speaker="student" caption={null} />);
 
-    expect(screen.getByTestId("waveform")).toHaveClass("bg-indigo");
+    expect(screen.getByTestId("waveform")).toHaveClass("bg-feather");
   });
 
   it("renders the Japanese caption at a compact display size", () => {
