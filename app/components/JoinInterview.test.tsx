@@ -32,16 +32,16 @@ describe("JoinInterview", () => {
     const user = userEvent.setup();
     render(<JoinInterview />);
 
-    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    await user.click(screen.getByRole("button", { name: "Join research session" }));
     expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Close" }));
 
     expect(screen.queryByRole("dialog", { name: /ready to join/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Join interview" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Join research session" })).toBeInTheDocument();
     expect(pushMock).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    await user.click(screen.getByRole("button", { name: "Join research session" }));
     expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
   });
 
@@ -54,7 +54,7 @@ describe("JoinInterview", () => {
     const user = userEvent.setup();
     render(<JoinInterview consentRequired />);
 
-    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    await user.click(screen.getByRole("button", { name: "Join research session" }));
 
     expect(screen.getByRole("dialog", { name: "Study consent" })).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: /ready to join/i })).not.toBeInTheDocument();
@@ -84,14 +84,14 @@ describe("JoinInterview", () => {
     const user = userEvent.setup();
     render(<JoinInterview />);
 
-    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    await user.click(screen.getByRole("button", { name: "Join research session" }));
     await user.click(screen.getByRole("button", { name: "Camera" }));
     await waitFor(() => expect(getUserMedia).toHaveBeenCalled());
 
     await user.click(screen.getByRole("button", { name: "Close" }));
     await waitFor(() => expect(stop).toHaveBeenCalled());
 
-    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    await user.click(screen.getByRole("button", { name: "Join research session" }));
     expect(screen.getByRole("button", { name: "Camera" })).toHaveAttribute("aria-pressed", "false");
     expect(pushMock).not.toHaveBeenCalled();
   });
@@ -100,7 +100,7 @@ describe("JoinInterview", () => {
     const user = userEvent.setup();
     render(<JoinInterview />);
 
-    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    await user.click(screen.getByRole("button", { name: "Join research session" }));
     await user.click(screen.getByRole("button", { name: /enter classroom/i }));
 
     expect(screen.getByRole("dialog", { name: /ready to join/i })).toBeInTheDocument();
@@ -130,7 +130,7 @@ describe("JoinInterview", () => {
     const user = userEvent.setup();
     render(<JoinInterview />);
 
-    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    await user.click(screen.getByRole("button", { name: "Join research session" }));
     await user.click(screen.getByRole("button", { name: /^camera$/i }));
     await waitFor(() => expect(getUserMedia).toHaveBeenCalled());
 
@@ -145,7 +145,7 @@ describe("JoinInterview", () => {
     const user = userEvent.setup();
     render(<JoinInterview />);
 
-    await user.click(screen.getByRole("button", { name: "Join interview" }));
+    await user.click(screen.getByRole("button", { name: "Join research session" }));
     await user.click(screen.getByRole("button", { name: /enter classroom/i }));
 
     expect(

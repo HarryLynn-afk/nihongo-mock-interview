@@ -16,7 +16,7 @@ describe("Login page", () => {
     const dialog = screen.getByRole("dialog", { name: "Sign in to NihonGo" });
     expect(dialog).toBeInTheDocument();
     expect(
-      within(dialog).queryByRole("button", { name: "Try as guest" }),
+      within(dialog).queryByRole("button", { name: "Try a short practice" }),
     ).not.toBeInTheDocument();
     expect(
       within(dialog).queryByText(
@@ -25,7 +25,7 @@ describe("Login page", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Practice your interview with Tanaka-sensei",
+        name: "Practice your Japanese language-school interview",
         hidden: true,
       }),
     ).toBeInTheDocument();

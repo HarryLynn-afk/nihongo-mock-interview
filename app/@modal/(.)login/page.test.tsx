@@ -20,7 +20,7 @@ describe("Login modal intercept", () => {
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", {
-        name: "Practice your interview with Tanaka-sensei",
+        name: "Practice your Japanese language-school interview",
       }),
     ).not.toBeInTheDocument();
 

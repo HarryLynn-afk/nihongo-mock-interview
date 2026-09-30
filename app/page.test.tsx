@@ -26,16 +26,16 @@ describe("Home (start screen)", () => {
     expect(screen.getByText("NihonGo")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Practice your interview with Tanaka-sensei",
+        name: "Practice your Japanese language-school interview",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Speak real interview questions in Japanese and get a coaching report back.",
+        "Answer mock interview questions in Japanese and receive structured AI-generated feedback on your responses.",
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Try as guest" }),
+      screen.getByRole("button", { name: "Try a short practice" }),
     ).toBeInTheDocument();
     expect(
       screen.getByText("Three questions. Guest practice isn't saved."),
@@ -56,7 +56,9 @@ describe("Home (start screen)", () => {
     expect(screen.queryByText("Speak in Japanese")).not.toBeInTheDocument();
     expect(screen.queryByText("Coaching report")).not.toBeInTheDocument();
     expect(screen.queryByText("10–15 min")).not.toBeInTheDocument();
-    expect(screen.getByText("Tanaka-sensei")).toBeInTheDocument();
+    expect(
+      screen.getByText("With Tanaka-sensei, your AI interview coach"),
+    ).toBeInTheDocument();
     expect(
       screen.queryByText("Tokyo Pathway Japanese School"),
     ).not.toBeInTheDocument();
@@ -72,7 +74,7 @@ describe("Home (start screen)", () => {
       screen.queryByRole("dialog", { name: /ready to join/i }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Language" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "ENG" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "English" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -89,8 +91,8 @@ describe("Home (start screen)", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Join interview" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Try as guest" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Join research session" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try a short practice" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Profile" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Participant login" })).not.toBeInTheDocument();
   });
@@ -98,7 +100,7 @@ describe("Home (start screen)", () => {
   it("keeps Login in the header only, with a single Try as guest CTA", () => {
     render(<Home />);
 
-    const guest = screen.getByRole("button", { name: "Try as guest" });
+    const guest = screen.getByRole("button", { name: "Try a short practice" });
     const login = screen.getByRole("link", { name: "Login" });
 
     expect(login).toHaveAttribute("href", "/login");
@@ -171,7 +173,7 @@ describe("Home (start screen)", () => {
     const user = userEvent.setup();
     render(<Home />);
 
-    await user.click(screen.getByRole("button", { name: "Try as guest" }));
+    await user.click(screen.getByRole("button", { name: "Try a short practice" }));
 
     expect(screen.getByText("NihonGo")).toBeInTheDocument();
     expect(
@@ -187,7 +189,7 @@ describe("Home (start screen)", () => {
   it("gates Join behind a desktop viewport and shows the open-on-a-computer message on narrow viewports, via a CSS breakpoint pair", () => {
     render(<Home />);
 
-    const joinButton = screen.getByRole("button", { name: "Try as guest" });
+    const joinButton = screen.getByRole("button", { name: "Try a short practice" });
     const joinContainer = joinButton.parentElement;
     const desktopOnlyMessage = screen.getByText(
       "Open on a computer to join the interview.",
@@ -202,19 +204,19 @@ describe("Home (start screen)", () => {
     const user = userEvent.setup();
     render(<Home />);
 
-    await user.click(screen.getByRole("button", { name: "MM" }));
+    await user.click(screen.getByRole("button", { name: "မြန်မာ" }));
 
-    expect(screen.getByRole("button", { name: "MM" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "မြန်မာ" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
     expect(
       screen.getByRole("heading", {
-        name: "Tanaka-sensei နှင့် အင်တာဗျူး လေ့ကျင့်ပါ",
+        name: "ဂျပန်ဘာသာစကားကျောင်း အင်တာဗျူးကို လေ့ကျင့်ပါ",
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "ဧည့်သည်အဖြစ် စမ်းကြည့်ရန်" }),
+      screen.getByRole("button", { name: "လေ့ကျင့်မှု တိုတိုကို စမ်းကြည့်ရန်" }),
     ).toBeInTheDocument();
     expect(
       screen.getAllByRole("link", { name: "ဝင်ရောက်ရန်" }).length,
@@ -229,7 +231,7 @@ describe("Home (start screen)", () => {
     expect(sessionStorage.getItem(UI_LOCALE_STORAGE_KEY)).toBe("my");
 
     await user.click(
-      screen.getByRole("button", { name: "ဧည့်သည်အဖြစ် စမ်းကြည့်ရန်" }),
+      screen.getByRole("button", { name: "လေ့ကျင့်မှု တိုတိုကို စမ်းကြည့်ရန်" }),
     );
     expect(
       screen.queryByRole("dialog", { name: "ဘယ်လို လေ့ကျင့်မလဲ။" }),
@@ -267,7 +269,7 @@ describe("Home (start screen)", () => {
 
     expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Try as guest" }),
+      screen.queryByRole("button", { name: "Try a short practice" }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "Participant login" }),
