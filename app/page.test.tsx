@@ -167,7 +167,7 @@ describe("Home (start screen)", () => {
     ).toBeTruthy();
   });
 
-  it("Try as guest leaves the landing for /guest, with no email dialog", async () => {
+  it("Try as guest opens the device popup on the landing, with no email dialog", async () => {
     const user = userEvent.setup();
     render(<Home />);
 
@@ -178,10 +178,10 @@ describe("Home (start screen)", () => {
       screen.queryByRole("dialog", { name: /how do you want to practice/i }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("dialog", { name: /ready to join/i }),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByTestId("classroom-preview")).not.toBeInTheDocument();
-    expect(pushMock).toHaveBeenCalledWith("/guest");
+      screen.getByRole("dialog", { name: /ready to join/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("classroom-preview")).toBeInTheDocument();
+    expect(pushMock).not.toHaveBeenCalled();
   });
 
   it("gates Join behind a desktop viewport and shows the open-on-a-computer message on narrow viewports, via a CSS breakpoint pair", () => {
@@ -235,9 +235,9 @@ describe("Home (start screen)", () => {
       screen.queryByRole("dialog", { name: "ဘယ်လို လေ့ကျင့်မလဲ။" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("dialog", { name: "ဝင်ရန် အဆင်သင့်" }),
-    ).not.toBeInTheDocument();
-    expect(pushMock).toHaveBeenCalledWith("/guest");
+      screen.getByRole("dialog", { name: "ဝင်ရန် အဆင်သင့်" }),
+    ).toBeInTheDocument();
+    expect(pushMock).not.toHaveBeenCalled();
   });
 
   it("never prints exam or verdict labels anywhere on the page", () => {

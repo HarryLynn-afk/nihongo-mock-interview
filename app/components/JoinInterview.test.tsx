@@ -141,17 +141,25 @@ describe("JoinInterview", () => {
     expect(stop).toHaveBeenCalled();
   });
 
-  it("opens /guest when a Guest clicks Try as guest, with no email dialog", async () => {
+  it("opens the device popup inline for a Guest, then Skip goes to /call?guest=1", async () => {
     const user = userEvent.setup();
     render(<JoinInterview guest label="Try as guest" />);
 
     await user.click(screen.getByRole("button", { name: /try as guest/i }));
 
-    expect(pushMock).toHaveBeenCalledWith("/guest");
+    expect(
+      screen.getByRole("dialog", { name: /ready to join/i }),
+    ).toBeInTheDocument();
+    expect(pushMock).not.toHaveBeenCalled();
     expect(
       screen.queryByRole("dialog", { name: /how do you want to practice/i }),
     ).not.toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: /email/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /enter classroom/i }));
+    await user.click(screen.getByRole("button", { name: /^skip$/i }));
+
+    expect(pushMock).toHaveBeenCalledWith("/call?guest=1");
   });
 
 });

@@ -22,8 +22,9 @@ type JoinInterviewProps = {
 };
 
 /**
- * Practice Join CTA. Guest (`guest`) opens `/guest`.
- * A consented Participant opens the device lobby on this page, then `/call`.
+ * Practice Join CTA. Both modes open the device lobby inline as a dialog.
+ * A consented Participant opens on this page, then `/call`; a Guest opens
+ * the same lobby, then `/call?guest=1`.
  */
 export function JoinInterview({
   label,
@@ -108,8 +109,7 @@ export function JoinInterview({
       <button
         type="button"
         onClick={() => {
-          if (guest) router.push("/guest");
-          else if (needsConsent) setConsentVisible(true);
+          if (needsConsent) setConsentVisible(true);
           else openDevices();
         }}
         className={`inline-flex items-center justify-center gap-2.5 rounded-full px-5 text-lg font-medium ${

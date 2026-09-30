@@ -23,7 +23,6 @@ describe("isRemovedPitchUrl", () => {
 describe("routeRole", () => {
   it("maps learner entry points", () => {
     expect(routeRole("/")).toBe("guestHome");
-    expect(routeRole("/guest")).toBe("guestJoin");
     expect(routeRole("/login")).toBe("participantEntry");
     expect(routeRole("/join")).toBe("participantEntry");
     expect(routeRole("/consent")).toBe("consent");
@@ -66,9 +65,8 @@ describe("mustSignIn", () => {
     expect(mustSignIn("/call", "?guest=1", undefined)).toBe(false);
   });
 
-  it("does not gate home, Guest join, login, or join-link", () => {
+  it("does not gate home, login, or join-link", () => {
     expect(mustSignIn("/", "", "ok")).toBe(false);
-    expect(mustSignIn("/guest", "", undefined)).toBe(false);
     expect(mustSignIn("/login", "", undefined)).toBe(false);
     expect(mustSignIn("/join", "?from=rsu-k7m2", undefined)).toBe(false);
   });
