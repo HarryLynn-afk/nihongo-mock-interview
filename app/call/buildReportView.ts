@@ -32,9 +32,9 @@ const PITCH_NAV_TOPICS = [
 ] as const;
 
 const STAMP_COLOR_CLASS: Record<Headline, string> = {
-  Ready: "text-stamp-ready",
-  AlmostReady: "text-stamp-almost-ready",
-  KeepPracticing: "text-stamp-keep-practicing",
+  Ready: "text-feather",
+  AlmostReady: "text-bee",
+  KeepPracticing: "text-red-500",
 };
 
 export type ReportScoreRow = {

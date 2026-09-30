@@ -145,7 +145,8 @@ describe("InterviewReportScreen", () => {
       screen.queryByText(/Based on the confirmed response transcript/i),
     ).not.toBeInTheDocument();
     const stamp = screen.getByText(/準備OK/);
-    expect(stamp).toHaveClass("text-stamp-ready");
+    expect(stamp).toHaveClass("text-feather");
+    expect(screen.getByTestId("interview-report")).toHaveClass("bg-white");
     expect(screen.getByText("90/100")).toBeInTheDocument();
     expect(screen.getAllByText("12/15").length).toBeGreaterThan(0);
     expect(screen.getAllByText("20/20").length).toBeGreaterThan(0);

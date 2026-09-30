@@ -74,7 +74,7 @@ describe("buildReportView", () => {
     expect(view).not.toHaveProperty("answerQualityNote");
     expect(view.headlineLabel).toBe("Strong");
     expect(view.stamp).toBe("準備OK");
-    expect(view.stampColorClass).toBe("text-stamp-ready");
+    expect(view.stampColorClass).toBe("text-feather");
     expect(view.total).toBe(90);
     expect(view.banner).toBeNull();
     expect(view.disclaimer).toMatch(/not an official language-proficiency/i);
