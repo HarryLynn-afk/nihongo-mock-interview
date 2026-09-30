@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { JOIN_FROM_COOKIE } from "@/lib/content/joinLink";
 import { consentGateCookie, startLoginGoogle } from "@/lib/content/studyAuth";
+import { withApiGuard } from "@/lib/server/security/guard";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
 
 function clearJoinCookie(response: NextResponse) {
@@ -18,7 +19,7 @@ function clearConsentGate(response: NextResponse) {
   response.cookies.set(gate.name, gate.value, gate.options);
 }
 
-export async function POST(request: Request) {
+export const POST = withApiGuard(async (request) => {
   const origin = new URL(request.url).origin;
   // Start OAuth from the same cookie-bound client that /auth/callback later
   // uses to exchange the code, so the PKCE code_verifier survives as a
@@ -52,4 +53,4 @@ export async function POST(request: Request) {
   clearJoinCookie(response);
   clearConsentGate(response);
   return response;
-}
+}, "auth");

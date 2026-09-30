@@ -5,12 +5,13 @@ import {
   startJoinGoogle,
 } from "@/lib/content/joinLink";
 import { isSupabaseConfigured } from "@/lib/server/env/supabase";
+import { withApiGuard } from "@/lib/server/security/guard";
 import { lookupJoinLink } from "@/lib/server/study/lookupJoinLink";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
 
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 12;
 
-export async function POST(request: Request) {
+export const POST = withApiGuard(async (request) => {
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ url: null });
   }
@@ -64,4 +65,4 @@ export async function POST(request: Request) {
     });
   }
   return response;
-}
+}, "auth");

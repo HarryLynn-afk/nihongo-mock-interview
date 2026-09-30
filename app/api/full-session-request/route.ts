@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createStudyAdminClient } from "@/lib/server/study/adminClients";
+import { withApiGuard } from "@/lib/server/security/guard";
 import { saveFullSessionRequest } from "./saveFullSessionRequest";
 
-export async function POST(request: Request) {
+export const POST = withApiGuard(async (request) => {
   const admin = createStudyAdminClient();
   if (!admin) {
     return NextResponse.json({ error: "unavailable" }, { status: 503 });
@@ -33,4 +34,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unavailable" }, { status: 503 });
   }
   return NextResponse.json({ ok: true });
-}
+}, "write");

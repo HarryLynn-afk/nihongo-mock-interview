@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { getGroqGradeKey } from "@/lib/server/env/groqGrade";
+import { withApiGuard } from "@/lib/server/security/guard";
 import { runGroqGrade } from "./runGroqGrade";
 import { parseAnswers } from "./parseAnswers";
 
-export async function POST(request: Request) {
+export const POST = withApiGuard(async (request) => {
   let body: unknown;
   try {
     body = await request.json();
@@ -27,4 +28,4 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({ report });
-}
+}, "expensive");

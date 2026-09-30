@@ -70,6 +70,22 @@ describe("POST /api/score", () => {
     expect(res.status).toBe(400);
   });
 
+  it("rejects a cross-origin POST before spending a grade call", async () => {
+    const { POST } = await import("./route");
+    const res = await POST(
+      new Request("http://localhost/api/score", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          origin: "http://evil.example",
+        },
+        body: JSON.stringify({ answers: [] }),
+      }),
+    );
+
+    expect(res.status).toBe(403);
+  });
+
   it("returns { report } from Groq and does not call n8n", async () => {
     const fetchMock = groqFetchMock();
     vi.stubGlobal("fetch", fetchMock);

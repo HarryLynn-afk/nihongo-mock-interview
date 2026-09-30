@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getResearchFormUrl } from "@/lib/server/env/researchForm";
+import { withApiGuard } from "@/lib/server/security/guard";
 import type { SurveyPayload } from "@/lib/content/survey";
 import { postSurvey } from "./postSurvey";
 
@@ -7,7 +8,7 @@ export function GET() {
   return NextResponse.json({ enabled: Boolean(getResearchFormUrl()) });
 }
 
-export async function POST(request: Request) {
+export const POST = withApiGuard(async (request) => {
   const url = getResearchFormUrl();
   if (!url) {
     return new Response(null, { status: 204 });
@@ -26,4 +27,4 @@ export async function POST(request: Request) {
     fetchImpl: fetch,
   });
   return new Response(null, { status: 202 });
-}
+}, "write");
