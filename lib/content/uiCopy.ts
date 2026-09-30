@@ -2,13 +2,10 @@ import type { UiLocale } from "./locale";
 
 const en = {
   start: {
-    headline: "Practice your Japanese language-school interview",
-    coachLabel: "With Tanaka-sensei, your AI interview coach",
+    headline: "Practice your interview with Tanaka-sensei",
     subhead:
-      "Answer mock interview questions in Japanese and receive structured AI-generated feedback on your responses.",
-    tryAsGuest: "Try a short practice",
-    practiceOnly:
-      "Practice and coaching only—not an admission, visa, or COE assessment.",
+      "Speak real interview questions in Japanese and get a coaching report back.",
+    tryAsGuest: "Try as guest",
     participantLogin: "Participant login",
     guestCaption: "Three questions. Guest practice isn't saved.",
     computerOnly: "Open on a computer to join the interview.",
@@ -16,16 +13,16 @@ const en = {
       title: "How it works",
       steps: {
         join: {
-          title: "Set up your practice",
-          body: "Camera is optional. A microphone is required.",
+          title: "Join the classroom",
+          body: "Video is optional. You can continue with voice.",
         },
         speak: {
-          title: "Answer in Japanese",
-          body: "Respond aloud to Japanese language-school interview questions.",
+          title: "Answer out loud",
+          body: "Answer Tanaka-sensei's Questions out loud in Japanese.",
         },
         report: {
-          title: "Review your coaching report",
-          body: "Receive feedback on relevance, grammar and politeness, motivation, study plan, and consistency.",
+          title: "Read the report",
+          body: "After the Interview, read a coaching report on this screen.",
         },
       },
     },
@@ -75,7 +72,7 @@ const en = {
     participantLogin: "Participant login",
   },
   join: {
-    joinInterview: "Join research session",
+    joinInterview: "Join interview",
   },
   joinLink: {
     explanation: "Sign in with Google for the full interview. Guest practice is shorter and isn't saved.",
@@ -268,13 +265,10 @@ export type UiCopy = WidenStrings<typeof en>;
 
 const my: UiCopy = {
   start: {
-    headline: "ဂျပန်ဘာသာစကားကျောင်း အင်တာဗျူးကို လေ့ကျင့်ပါ",
-    coachLabel: "Tanaka-sensei နှင့်အတူ — သင့် AI အင်တာဗျူး နည်းပြ",
+    headline: "Tanaka-sensei နှင့် အင်တာဗျူး လေ့ကျင့်ပါ",
     subhead:
-      "ဂျပန်လို အတုအယောင် အင်တာဗျူးမေးခွန်းများကို ဖြေဆိုပြီး သင့်အဖြေများအတွက် စနစ်တကျ AI ဖန်တီးထားသော အကြံပြုချက်ကို ရယူပါ။",
-    tryAsGuest: "လေ့ကျင့်မှု တိုတိုကို စမ်းကြည့်ရန်",
-    practiceOnly:
-      "လေ့ကျင့်မှုနှင့် coaching အတွက်သာဖြစ်သည် — ဝင်ခွင့်၊ ဗီဇာ သို့မဟုတ် COE ဆုံးဖြတ်ချက် မဟုတ်ပါ။",
+      "ဂျပန်လို အင်တာဗျူးမေးခွန်းများကို ဖြေဆိုပြီး coaching report ရယူပါ။",
+    tryAsGuest: "ဧည့်သည်အဖြစ် စမ်းကြည့်ရန်",
     participantLogin: "ပါဝင်သူ ဝင်ရောက်ရန်",
     guestCaption: "မေးခွန်း ၃ ခု။ ဧည့်သည် လေ့ကျင့်မှုကို သိမ်းမထားပါ။",
     computerOnly: "အင်တာဗျူးတက်ရန် ကွန်ပျူတာပေါ်တွင် ဖွင့်ပါ။",
@@ -282,16 +276,16 @@ const my: UiCopy = {
       title: "အလုပ်လုပ်ပုံ",
       steps: {
         join: {
-          title: "သင့်လေ့ကျင့်မှုကို ပြင်ဆင်ပါ",
-          body: "ကင်မရာ မလိုအပ်ပါ။ မိုက်ခရိုဖုန်း လိုအပ်ပါသည်။",
+          title: "စာသင်ခန်းထဲ ဝင်ရန်",
+          body: "ဗီဒီယို မလိုအပ်ပါ။ အသံဖြင့် ဆက်လက် လေ့ကျင့်နိုင်ပါသည်။",
         },
         speak: {
-          title: "ဂျပန်လို ဖြေဆိုပါ",
-          body: "ဂျပန်ဘာသာစကားကျောင်း အင်တာဗျူးမေးခွန်းများကို ကျယ်ကျယ် ဖြေပါ။",
+          title: "ကျယ်ကျယ် ဖြေရန်",
+          body: "Tanaka-sensei ၏ မေးခွန်းများကို ဂျပန်လို ကျယ်ကျယ် ဖြေပါ။",
         },
         report: {
-          title: "သင့် coaching report ကို ပြန်ကြည့်ပါ",
-          body: "ကိုက်ညီမှု၊ သဒ္ဒါနှင့် ယဉ်ကျေးမှု၊ စိတ်အား၊ လေ့လာရေး အစီအစဉ်နှင့် တစ်သမတ်တည်းဖြစ်မှုတို့အတွက် အကြံပြုချက် ရယူပါ။",
+          title: "report ကို ဖတ်ရန်",
+          body: "အင်တာဗျူးအပြီးတွင် ဤစာမျက်နှာပေါ်တွင် coaching report ကို ဖတ်ပါ။",
         },
       },
     },
@@ -340,7 +334,7 @@ const my: UiCopy = {
     participantLogin: "ပါဝင်သူ ဝင်ရောက်ရန်",
   },
   join: {
-    joinInterview: "သုတေသန စက်ရှင်တွင် ပါဝင်ရန်",
+    joinInterview: "အင်တာဗျူးတက်ရန်",
   },
   joinLink: {
     explanation: "အင်တာဗျူးအပြည့်အစုံအတွက် Google ဖြင့် ဝင်ရောက်ပါ။ ဧည့်သည် လေ့ကျင့်မှုမှာ ပိုတိုပြီး သိမ်းဆည်းမည် မဟုတ်ပါ။",

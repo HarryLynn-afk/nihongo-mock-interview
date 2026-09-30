@@ -20,21 +20,19 @@ export function LanguageToggle({
     >
       <button
         type="button"
-        lang="en"
         aria-pressed={locale === "en"}
         onClick={() => onChange("en")}
         className={`rounded-full px-2.5 py-1 ${locale === "en" ? active : idle}`}
       >
-        English
+        ENG
       </button>
       <button
         type="button"
-        lang="my"
         aria-pressed={locale === "my"}
         onClick={() => onChange("my")}
         className={`rounded-full px-2.5 py-1 ${locale === "my" ? active : idle}`}
       >
-        မြန်မာ
+        MM
       </button>
     </div>
   );
