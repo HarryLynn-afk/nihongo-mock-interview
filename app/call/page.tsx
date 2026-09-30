@@ -401,6 +401,9 @@ export default function CallPage() {
                     }
                   : undefined
               }
+              onPracticeAgain={
+                previewing ? undefined : () => window.location.reload()
+              }
               locale={locale}
             />
           ) : (

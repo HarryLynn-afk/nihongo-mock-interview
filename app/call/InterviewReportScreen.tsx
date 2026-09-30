@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { UiLocale } from "@/lib/content/locale";
 import { uiCopy } from "@/lib/content/uiCopy";
@@ -190,6 +191,7 @@ export function InterviewReportScreen({
   onRevealComplete,
   onHelpStudy,
   onRequestFullSession,
+  onPracticeAgain,
 }: {
   view: ReportView;
   sessionId?: string;
@@ -197,6 +199,7 @@ export function InterviewReportScreen({
   onRevealComplete?: () => void;
   onHelpStudy?: () => void;
   onRequestFullSession?: () => void;
+  onPracticeAgain?: () => void;
 }) {
   const copy = uiCopy(locale);
   const [stage, setStage] = useState(0);
@@ -448,6 +451,24 @@ export function InterviewReportScreen({
             ) : null}
           </div>
         </div>
+
+        {onPracticeAgain ? (
+          <div className="flex flex-wrap items-center justify-center gap-3 border-t border-eel/10 pt-4">
+            <button
+              type="button"
+              onClick={onPracticeAgain}
+              className="rounded-full bg-feather px-6 py-3 font-medium text-white transition-colors hover:bg-feather-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
+            >
+              {copy.report.practiceAgain}
+            </button>
+            <Link
+              href="/"
+              className="rounded-full border border-eel/20 px-5 py-2.5 text-sm font-medium text-eel transition-colors hover:bg-eel/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
+            >
+              {copy.report.backToHome}
+            </Link>
+          </div>
+        ) : null}
       </div>
     </section>
   );

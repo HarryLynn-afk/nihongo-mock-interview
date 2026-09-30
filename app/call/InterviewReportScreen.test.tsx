@@ -379,4 +379,31 @@ describe("InterviewReportScreen", () => {
 
     vi.useRealTimers();
   });
+
+  it("offers Practice again and Back to home when onPracticeAgain is provided", async () => {
+    const onPracticeAgain = vi.fn();
+    render(
+      <InterviewReportScreen view={voiceView} onPracticeAgain={onPracticeAgain} />,
+    );
+
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: /practice again/i }));
+
+    expect(onPracticeAgain).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByRole("link", { name: /back to home/i }),
+    ).toHaveAttribute("href", "/");
+  });
+
+  it("hides the practice actions when onPracticeAgain is omitted", () => {
+    render(<InterviewReportScreen view={voiceView} />);
+
+    expect(
+      screen.queryByRole("button", { name: /practice again/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /back to home/i }),
+    ).not.toBeInTheDocument();
+  });
 });
