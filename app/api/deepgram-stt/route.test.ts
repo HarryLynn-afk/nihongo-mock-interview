@@ -40,4 +40,21 @@ describe("POST /api/deepgram-stt", () => {
     expect(body.accessToken).toBe("dg-live");
     expect(JSON.stringify(body)).not.toContain("dg-server-only");
   });
+
+  it("returns 503 when Deepgram rejects the grant request", async () => {
+    process.env.DEEPGRAM_STT_API_KEY = "dg-server-only";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: async () => ({ err_msg: "Invalid credentials" }),
+      }),
+    );
+    const { POST } = await import("./route");
+    const res = await POST(
+      new Request("http://localhost/api/deepgram-stt", { method: "POST" }),
+    );
+    expect(res.status).toBe(503);
+  });
 });
