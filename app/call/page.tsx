@@ -346,7 +346,7 @@ export default function CallPage() {
             <button
               type="button"
               onClick={() => setEndConfirmOpen(true)}
-              className="text-xs font-medium text-red-600 underline-offset-2 hover:text-red-700 hover:underline"
+              className="inline-flex min-h-11 items-center rounded-full bg-red-500 px-4 text-sm font-medium text-white shadow-[0_4px_7px_rgba(0,0,0,0.05)] transition-colors hover:bg-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
             >
               {copy.call.endInterview}
             </button>
