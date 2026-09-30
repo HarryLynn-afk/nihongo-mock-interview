@@ -143,6 +143,14 @@ describe("Call screen", () => {
 
   function mockLiveGradeAndSurvey(participantId?: string) {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      if (String(input).includes("/api/study/auth")) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ signedIn: Boolean(participantId) }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
       if (participantId && String(input).includes("/api/study/me")) {
         return Promise.resolve(
           new Response(JSON.stringify({ participantId }), {
@@ -1208,7 +1216,7 @@ describe("Call screen", () => {
   });
 
   it("shows Help the study and the session id after the report without opening the dialog immediately", async () => {
-    mockLiveGradeAndSurvey();
+    mockLiveGradeAndSurvey("P001");
 
     const user = userEvent.setup();
     render(<CallPage />);
@@ -1224,7 +1232,7 @@ describe("Call screen", () => {
     });
     expect(screen.queryByTestId("usefulness-step")).not.toBeInTheDocument();
     expect(screen.getByTestId("session-id").textContent).toMatch(
-      /^G-[A-HJ-NP-Z2-9]{4}$/,
+      /^P-[A-HJ-NP-Z2-9]{4}$/,
     );
   });
 
@@ -1303,6 +1311,25 @@ describe("Call screen", () => {
       screen.getByRole("button", { name: /request the full interview/i }),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("full-session-request")).not.toBeInTheDocument();
+  });
+
+  it("shows Help the study and no email ask to a signed-in guest", async () => {
+    mockLiveGradeAndSurvey("P001");
+    window.history.pushState({}, "", "/call?guest=1");
+
+    const user = userEvent.setup();
+    render(<CallPage />);
+    await completeLockedInterview(user);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /help the study/i }),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByRole("button", { name: /request the full interview/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("session-id").textContent).toMatch(/^G-/);
   });
 
   it("asks for an email from the Guest report and stays quiet after a send this visit", async () => {
@@ -1385,7 +1412,7 @@ describe("Call screen", () => {
   });
 
   it("lets Help the study open and reopen the Usefulness dialog after Close", async () => {
-    mockLiveGradeAndSurvey();
+    mockLiveGradeAndSurvey("P001");
 
     const user = userEvent.setup();
     render(<CallPage />);
@@ -1417,7 +1444,7 @@ describe("Call screen", () => {
   });
 
   it("hides Help the study after Usefulness Submit", async () => {
-    mockLiveGradeAndSurvey();
+    mockLiveGradeAndSurvey("P001");
 
     const user = userEvent.setup();
     render(<CallPage />);
@@ -1443,7 +1470,7 @@ describe("Call screen", () => {
   });
 
   it("keeps Help the study on a Skip interview sample report after Close", async () => {
-    mockLiveGradeAndSurvey();
+    mockLiveGradeAndSurvey("P001");
 
     const user = userEvent.setup();
     render(<CallPage />);

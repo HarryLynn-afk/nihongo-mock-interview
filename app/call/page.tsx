@@ -13,6 +13,7 @@ import { StudentTile } from "./StudentTile";
 import { UsefulnessStep } from "./UsefulnessStep";
 import { FullSessionRequestDialog } from "../components/FullSessionRequestDialog";
 import { buildReportView } from "./buildReportView";
+import { reportTopAction } from "./reportTopAction";
 import { playQuestionAudio } from "./playQuestionAudio";
 import { useAnswerCapture } from "./useAnswerCapture";
 import { useGradeAnswers } from "./useGradeAnswers";
@@ -76,6 +77,7 @@ export default function CallPage() {
   >(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [formEnabled, setFormEnabled] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
   const [revealDone, setRevealDone] = useState(false);
   const [usefulnessSubmitted, setUsefulnessSubmitted] = useState(false);
   const [fullSessionSent, setFullSessionSent] = useState(false);
@@ -130,6 +132,17 @@ export default function CallPage() {
       });
   }, []);
 
+  useEffect(() => {
+    // Both modes ask whether this browser has a Google session. Guests keep
+    // their G- code and banner because this never reads participant data.
+    void fetch("/api/study/auth")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { signedIn?: boolean } | null) => {
+        setSignedIn(Boolean(data?.signedIn));
+      })
+      .catch(() => {});
+  }, []);
+
   const { cameraState, toggleCamera, videoRef } = useCameraStream({
     startOn: devicePrefs.cameraOn,
   });
@@ -156,7 +169,7 @@ export default function CallPage() {
   }
 
   useEffect(() => {
-    if (!report || previewing || sessionKind === "guest") return;
+    if (!report || previewing || !signedIn) return;
     fetch("/api/survey")
       .then((res) => res.json())
       .then((data: { enabled?: boolean }) => {
@@ -165,7 +178,7 @@ export default function CallPage() {
       .catch(() => {
         setFormEnabled(false);
       });
-  }, [report, previewing, sessionKind]);
+  }, [report, previewing, signedIn]);
 
   useEffect(() => {
     if (!report || !participantId || savedStudyRef.current || previewing) return;
@@ -285,17 +298,20 @@ export default function CallPage() {
     displayPhase === "done" &&
     displayAnswers.length > 0 &&
     displayAnswers.every((answer) => answer.status === "skipped");
+  const topAction = reportTopAction({
+    signedIn,
+    sessionKind,
+    hasSessionId: sessionId !== null,
+    formEnabled,
+  });
   const usefulnessView =
-    sessionKind === "guest" || sessionId === null
-      ? null
-      : buildUsefulnessView({
-          formEnabled,
-          sessionId,
-        });
+    topAction === "help" && sessionId !== null
+      ? buildUsefulnessView({ formEnabled, sessionId })
+      : null;
   const { open: usefulnessOpen, openNow: openUsefulness, close: closeUsefulness } =
     useUsefulnessNudge(Boolean(usefulnessView && revealDone));
   const askForFullSession =
-    sessionKind === "guest" &&
+    topAction === "request" &&
     fullSessionChecked &&
     !fullSessionSent &&
     displayPhase === "done" &&
