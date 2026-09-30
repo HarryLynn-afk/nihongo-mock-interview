@@ -198,7 +198,7 @@ describe("Call screen", () => {
     });
   }
 
-  it("renders both the student tile and the sensei tile on an Ink background with Indigo accents", () => {
+  it("renders both the student tile and the sensei tile on the light brand background", () => {
     render(<CallPage />);
 
     expect(screen.getByText("You")).toBeInTheDocument();
@@ -207,7 +207,9 @@ describe("Call screen", () => {
     ).toBeInTheDocument();
 
     const root = screen.getByTestId("call-screen");
-    expect(root).toHaveClass("bg-ink");
+    expect(root).toHaveClass("text-eel");
+    expect(root.className).toMatch(/linear-gradient/);
+    expect(root).not.toHaveClass("bg-ink");
     expect(screen.getByRole("group", { name: "Language" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "ENG" })).toHaveAttribute(
       "aria-pressed",

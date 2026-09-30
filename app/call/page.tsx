@@ -316,8 +316,8 @@ export default function CallPage() {
       data-testid="call-screen"
       className={
         classroomLocked
-          ? "flex h-dvh flex-col overflow-hidden bg-ink p-3 md:p-4"
-          : "min-h-screen overflow-y-auto bg-ink p-4 md:p-6"
+          ? "flex h-dvh flex-col overflow-hidden bg-[radial-gradient(circle_at_10%_55%,rgba(255,255,255,0.7),transparent_45%),linear-gradient(180deg,#e8f8d4_0%,#f4fbef_55%,#ffffff_100%)] p-3 text-eel md:p-4"
+          : "min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_10%_55%,rgba(255,255,255,0.7),transparent_45%),linear-gradient(180deg,#e8f8d4_0%,#f4fbef_55%,#ffffff_100%)] p-4 text-eel md:p-6"
       }
     >
       <div
@@ -335,7 +335,7 @@ export default function CallPage() {
                 setPreviewReport(getSampleReport(null));
                 setFormEnabled(true);
               }}
-              className="text-xs text-paper/40 underline-offset-2 hover:text-paper/70 hover:underline"
+              className="text-xs text-eel/40 underline-offset-2 hover:text-eel/70 hover:underline"
             >
               {copy.call.skipInterview}
             </button>
@@ -343,11 +343,12 @@ export default function CallPage() {
           <LanguageToggle
             locale={locale}
             onChange={setLocale}
-            variant="dark"
+            variant="light"
+            tone="feather"
           />
         </div>
         {participantId ? (
-          <p className="w-full text-center text-sm text-paper/70">
+          <p className="w-full text-center text-sm text-eel/70">
             {copy.call.participant} {participantId}
           </p>
         ) : null}
@@ -496,17 +497,17 @@ export default function CallPage() {
         {displayPhase === "done" || studentTurn === "none" ? null : (
           <div
             data-testid="answer-dock"
-            className="flex w-full max-w-xl shrink-0 flex-col items-center gap-3 rounded-2xl border border-paper/10 bg-ink/90 px-5 py-3"
+            className="flex w-full max-w-xl shrink-0 flex-col items-center gap-3 rounded-2xl border border-eel/10 bg-white/90 px-5 py-3"
           >
           {studentTurn === "speak" ? (
             <div
               data-testid="live-transcript"
-              className="w-full rounded-2xl border border-paper/10 bg-paper/5 px-4 py-3 text-center"
+              className="w-full rounded-2xl border border-eel/10 bg-eel/5 px-4 py-3 text-center"
             >
-              <p className="text-xs font-medium tracking-wide text-paper/60">
+              <p className="text-xs font-medium tracking-wide text-eel/60">
                 {copy.call.liveTranscript}
               </p>
-              <p className="mt-1.5 text-base leading-relaxed text-paper">
+              <p className="mt-1.5 text-base leading-relaxed text-eel">
                 {liveCaption ??
                   (speakPaused ? copy.call.paused : copy.call.listening)}
               </p>
@@ -520,7 +521,7 @@ export default function CallPage() {
                     type="button"
                     onClick={handleAnswerAgain}
                     aria-label={copy.call.answerAgain}
-                    className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-paper/70 transition-colors hover:bg-paper/10 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper"
+                    className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-eel/70 transition-colors hover:bg-eel/10 hover:text-eel focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-eel"
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -559,7 +560,7 @@ export default function CallPage() {
                 type="button"
                 onClick={onSubmitClick}
                 disabled={submitPending}
-                className="rounded-full bg-indigo px-6 py-3 font-medium text-paper transition-colors hover:bg-indigo/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-full bg-feather px-6 py-3 font-medium text-white transition-colors hover:bg-feather-dark disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {copy.call.submitAnswer}
               </button>
