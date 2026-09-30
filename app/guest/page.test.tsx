@@ -106,4 +106,31 @@ describe("/guest", () => {
     ).toBeInTheDocument();
     expect(pushMock).toHaveBeenCalledWith("/call?guest=1");
   });
+
+  it("offers a Home button back to the landing", () => {
+    render(<GuestJoin />);
+
+    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute(
+      "href",
+      "/",
+    );
+  });
+
+  it("cancels the 15s wait back to the preview without entering", async () => {
+    const user = userEvent.setup();
+    render(<GuestJoin />);
+
+    await user.click(screen.getByRole("button", { name: /enter classroom/i }));
+    expect(
+      screen.getByRole("dialog", { name: /interview will start soon/i }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(
+      screen.queryByRole("dialog", { name: /interview will start soon/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("classroom-preview")).toBeInTheDocument();
+    expect(pushMock).not.toHaveBeenCalled();
+  });
 });

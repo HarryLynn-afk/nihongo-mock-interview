@@ -17,7 +17,7 @@ import { useCopy } from "../components/useUiLocale";
  */
 export default function GuestJoinPage() {
   const router = useRouter();
-  const { locale, setLocale } = useCopy();
+  const { locale, setLocale, copy } = useCopy();
   const {
     devicesVisible,
     reminderVisible,
@@ -25,6 +25,7 @@ export default function GuestJoinPage() {
     secondsLeft,
     continueFromDevices,
     skipReminder,
+    cancelReminder,
   } = useInterviewLobby({ skipLobby: false });
 
   const {
@@ -62,13 +63,19 @@ export default function GuestJoinPage() {
             ✦
           </span>
         </Link>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-4">
           <LanguageToggle
             locale={locale}
             onChange={setLocale}
             variant="light"
             tone="feather"
           />
+          <Link
+            href="/"
+            className="inline-flex min-h-11 items-center rounded-full bg-feather px-5 text-sm font-medium text-white transition-colors hover:bg-feather-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
+          >
+            {copy.account.home}
+          </Link>
         </div>
       </header>
       <main className="flex min-h-[calc(100dvh-5.5rem)] items-center justify-center px-5 pb-10">
@@ -91,6 +98,7 @@ export default function GuestJoinPage() {
         <InterviewStartReminder
           secondsLeft={secondsLeft}
           onSkip={skipReminder}
+          onCancel={cancelReminder}
         />
       ) : null}
     </div>

@@ -47,6 +47,10 @@ export function useInterviewLobby({
     setSecondsLeft(0);
   }, []);
 
+  const cancelReminder = useCallback(() => {
+    setStep("devices");
+  }, []);
+
   return {
     devicesVisible: step === "devices" || step === "reminder",
     reminderVisible: step === "reminder",
@@ -56,5 +60,6 @@ export function useInterviewLobby({
     closeDevices,
     continueFromDevices,
     skipReminder,
+    cancelReminder,
   };
 }

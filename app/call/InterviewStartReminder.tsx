@@ -3,11 +3,13 @@ import { useCopy } from "../components/useUiLocale";
 type InterviewStartReminderProps = {
   secondsLeft: number;
   onSkip: () => void;
+  onCancel?: () => void;
 };
 
 export function InterviewStartReminder({
   secondsLeft,
   onSkip,
+  onCancel,
 }: InterviewStartReminderProps) {
   const { copy } = useCopy();
 
@@ -19,8 +21,20 @@ export function InterviewStartReminder({
       <div
         role="dialog"
         aria-label={copy.reminder.aria}
-        className="flex w-full max-w-md flex-col items-center rounded-2xl border border-feather/15 bg-white p-8 text-center text-eel shadow-[0_24px_64px_-20px_rgba(88,204,2,0.28)]"
+        className="relative flex w-full max-w-md flex-col items-center rounded-2xl border border-feather/15 bg-white p-8 text-center text-eel shadow-[0_24px_64px_-20px_rgba(88,204,2,0.28)]"
       >
+        {onCancel ? (
+          <button
+            type="button"
+            aria-label={copy.lobby.close}
+            onClick={onCancel}
+            className="absolute right-4 top-4 flex size-8 items-center justify-center rounded-full text-wolf hover:bg-eel/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
+          >
+            <span aria-hidden="true" className="text-xl leading-none">
+              ×
+            </span>
+          </button>
+        ) : null}
         <p className="text-sm tracking-wide text-wolf">
           {copy.reminder.eyebrow}
         </p>
