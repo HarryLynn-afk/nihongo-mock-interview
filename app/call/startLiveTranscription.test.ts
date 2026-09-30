@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { startLiveTranscriptionSession } from "./startLiveTranscription";
+import { startLiveTranscriptionSession, KEEPALIVE_MS } from "./startLiveTranscription";
 
 function tokenFetch(ok: boolean, accessToken = "dg-jwt") {
   return vi.fn().mockResolvedValue({
@@ -91,6 +91,39 @@ function FakeListenSocket({
     }
     send() {}
     close = close;
+  } as unknown as typeof WebSocket;
+}
+
+function ControllableListenSocket({
+  onSend,
+  onClose,
+  onConstruct,
+}: {
+  onSend?: (data: ArrayBuffer | string) => void;
+  onClose?: () => void;
+  onConstruct?: (socket: { open: () => void }) => void;
+}) {
+  return class {
+    static OPEN = 1;
+    readyState = 0;
+    binaryType = "";
+    listeners: Record<string, Array<() => void>> = {};
+    constructor() {
+      onConstruct?.(this);
+    }
+    addEventListener(type: string, listener: () => void) {
+      (this.listeners[type] ??= []).push(listener);
+    }
+    send(data: ArrayBuffer | string) {
+      onSend?.(data);
+    }
+    close() {
+      onClose?.();
+    }
+    open() {
+      this.readyState = 1;
+      (this.listeners.open ?? []).forEach((listener) => listener());
+    }
   } as unknown as typeof WebSocket;
 }
 
@@ -201,5 +234,190 @@ describe("startLiveTranscriptionSession", () => {
     expect(Array.from(pcm.samples)).toEqual(Array.from(tone));
     expect(pcm.sampleRate).toBe(16000);
     expect(session!.getWords()).toEqual([]);
+  });
+
+  it("sends audio captured before the listen socket opens, in order", async () => {
+    const sent: Array<ArrayBuffer | string> = [];
+    let socket: { open: () => void } | null = null;
+    const created: Array<{
+      processor: FakeProcessor;
+      gain: FakeGain;
+      destination: object;
+    }> = [];
+
+    const sessionPromise = startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      fetchImpl: tokenFetch(true),
+      getUserMedia: emptyMic,
+      WebSocketImpl: ControllableListenSocket({
+        onSend: (data) => sent.push(data),
+        onConstruct: (instance) => {
+          socket = instance;
+        },
+      }),
+      AudioContextImpl: FakeAudioContext(undefined, created),
+    });
+
+    // Token fetched and capture started while the socket is still CONNECTING.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(created[0]).toBeDefined();
+
+    const tone = new Float32Array([0.5, -0.5]);
+    created[0]?.processor.onaudioprocess?.({
+      inputBuffer: { getChannelData: () => tone },
+    });
+    expect(sent).toHaveLength(0);
+
+    socket?.open();
+    const session = await sessionPromise;
+
+    expect(session).not.toBeNull();
+    expect(sent).toHaveLength(1);
+    const view = new DataView(sent[0] as ArrayBuffer);
+    expect(view.getInt16(0, true)).toBe(16383);
+    expect(view.getInt16(2, true)).toBe(-16384);
+  });
+
+  it("keeps the socket open on pause and sends KeepAlive", async () => {
+    vi.useFakeTimers();
+    const sent: Array<ArrayBuffer | string> = [];
+    let closes = 0;
+    let socket: { open: () => void } | null = null;
+
+    const sessionPromise = startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      fetchImpl: tokenFetch(true),
+      getUserMedia: emptyMic,
+      WebSocketImpl: ControllableListenSocket({
+        onSend: (data) => sent.push(data),
+        onClose: () => {
+          closes += 1;
+        },
+        onConstruct: (instance) => {
+          socket = instance;
+        },
+      }),
+      AudioContextImpl: FakeAudioContext(),
+    });
+
+    await vi.advanceTimersByTimeAsync(0);
+    socket?.open();
+    const session = await sessionPromise;
+    expect(session).not.toBeNull();
+
+    session!.setPaused(true);
+    expect(closes).toBe(0);
+    expect(sent).toHaveLength(0);
+
+    await vi.advanceTimersByTimeAsync(KEEPALIVE_MS);
+    expect(sent).toContain(JSON.stringify({ type: "KeepAlive" }));
+    expect(closes).toBe(0);
+
+    session!.stop();
+    vi.useRealTimers();
+  });
+
+  it("resumes audio on the same socket after unpause", async () => {
+    vi.useFakeTimers();
+    const sent: Array<ArrayBuffer | string> = [];
+    let closes = 0;
+    let constructed = 0;
+    let socket: { open: () => void } | null = null;
+    const created: Array<{
+      processor: FakeProcessor;
+      gain: FakeGain;
+      destination: object;
+    }> = [];
+
+    const sessionPromise = startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      fetchImpl: tokenFetch(true),
+      getUserMedia: emptyMic,
+      WebSocketImpl: ControllableListenSocket({
+        onSend: (data) => sent.push(data),
+        onClose: () => {
+          closes += 1;
+        },
+        onConstruct: (instance) => {
+          socket = instance;
+          constructed += 1;
+        },
+      }),
+      AudioContextImpl: FakeAudioContext(undefined, created),
+    });
+
+    await vi.advanceTimersByTimeAsync(0);
+    socket?.open();
+    const session = await sessionPromise;
+    expect(session).not.toBeNull();
+
+    session!.setPaused(true);
+    session!.setPaused(false);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(created).toHaveLength(2);
+    const tone = new Float32Array([0.25]);
+    created[1]?.processor.onaudioprocess?.({
+      inputBuffer: { getChannelData: () => tone },
+    });
+
+    expect(constructed).toBe(1);
+    expect(closes).toBe(0);
+    const binary = sent.filter(
+      (item): item is ArrayBuffer => typeof item !== "string",
+    );
+    expect(binary).toHaveLength(1);
+    expect(new DataView(binary[0]!).getInt16(0, true)).toBe(8191);
+
+    session!.stop();
+    vi.useRealTimers();
+  });
+
+  it("keeps the delivery PCM captured before a pause", async () => {
+    vi.useFakeTimers();
+    let socket: { open: () => void } | null = null;
+    const created: Array<{
+      processor: FakeProcessor;
+      gain: FakeGain;
+      destination: object;
+    }> = [];
+
+    const sessionPromise = startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      fetchImpl: tokenFetch(true),
+      getUserMedia: emptyMic,
+      WebSocketImpl: ControllableListenSocket({
+        onConstruct: (instance) => {
+          socket = instance;
+        },
+      }),
+      AudioContextImpl: FakeAudioContext(undefined, created),
+    });
+
+    await vi.advanceTimersByTimeAsync(0);
+    socket?.open();
+    const session = await sessionPromise;
+    expect(session).not.toBeNull();
+
+    const before = new Float32Array([0.5]);
+    created[0]?.processor.onaudioprocess?.({
+      inputBuffer: { getChannelData: () => before },
+    });
+
+    session!.setPaused(true);
+    session!.setPaused(false);
+    await vi.advanceTimersByTimeAsync(0);
+
+    const after = new Float32Array([1]);
+    created[1]?.processor.onaudioprocess?.({
+      inputBuffer: { getChannelData: () => after },
+    });
+
+    const pcm = session!.getPcm();
+    expect(Array.from(pcm.samples)).toEqual([0.5, 1]);
+    expect(pcm.sampleRate).toBe(16000);
+
+    session!.stop();
+    vi.useRealTimers();
   });
 });

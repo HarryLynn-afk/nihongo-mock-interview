@@ -1,10 +1,11 @@
-import { downsampleTo16k, floatToLinear16 } from "./pcmAudio";
+import { concatFloat32, downsampleTo16k, floatToLinear16 } from "./pcmAudio";
 import { startPcmCapture, type PcmAudioContext, type PcmCapture } from "./pcmCapture";
 import type { WordTiming } from "@/lib/content/deliveryCoaching";
 import {
   closeStreamMessage,
   deepgramListenUrl,
   joinJapanese,
+  keepAliveMessage,
   parseDeepgramMessage,
   type ParsedTranscriptionEvent,
 } from "./transcriptionEvents";
@@ -16,6 +17,7 @@ export type LivePcmCapture = {
 
 export type LiveTranscriptionSession = {
   stop: () => void;
+  setPaused: (paused: boolean) => void;
   commit: () => void;
   getTranscript: () => string;
   getPcm: () => LivePcmCapture;
@@ -24,6 +26,8 @@ export type LiveTranscriptionSession = {
 
 const MAX_LISTEN_MS = 20 * 60 * 1000;
 const OPEN_WAIT_MS = 3000;
+/** Deepgram closes a silent stream after ~10s; KeepAlive resets that. */
+export const KEEPALIVE_MS = 8_000;
 
 function waitForListenOpen(
   socket: WebSocket,
@@ -82,6 +86,11 @@ export async function startLiveTranscriptionSession({
   let capture: PcmCapture | null = null;
   let socket: WebSocket | null = null;
   let maxTimer: ReturnType<typeof setTimeout> | undefined;
+  const pendingAudio: ArrayBuffer[] = [];
+  let paused = false;
+  let stopped = false;
+  let keepAliveTimer: ReturnType<typeof setInterval> | undefined;
+  let savedPcm: LivePcmCapture | null = null;
 
   function getTranscript(): string {
     return joinJapanese(finalized, interim);
@@ -89,6 +98,9 @@ export async function startLiveTranscriptionSession({
 
   function stopSession() {
     if (maxTimer) clearTimeout(maxTimer);
+    if (keepAliveTimer) clearInterval(keepAliveTimer);
+    keepAliveTimer = undefined;
+    stopped = true;
     capture?.stop();
     capture = null;
     if (socket) {
@@ -97,24 +109,71 @@ export async function startLiveTranscriptionSession({
     socket = null;
   }
 
+  function startCapture(): Promise<PcmCapture | null> {
+    return startPcmCapture({
+      getUserMedia,
+      AudioContextImpl,
+      onChunk: (samples, sampleRate) => {
+        const pcm = floatToLinear16(downsampleTo16k(samples, sampleRate));
+        if (!socket || socket.readyState !== WebSocketImpl.OPEN) {
+          pendingAudio.push(pcm);
+          return;
+        }
+        socket.send(pcm);
+      },
+    });
+  }
+
+  /** Keep the pre-pause PCM so a paused answer still has a delivery clip. */
+  function snapshotCapturePcm() {
+    if (!capture) return;
+    const samples = capture.getSamples();
+    const sampleRate = capture.sampleRate;
+    capture.stop();
+    capture = null;
+    if (samples.length === 0) return;
+    savedPcm = savedPcm
+      ? {
+          samples: concatFloat32([savedPcm.samples, samples]),
+          sampleRate: savedPcm.sampleRate,
+        }
+      : { samples, sampleRate };
+  }
+
+  function setPaused(next: boolean) {
+    if (next === paused) return;
+    paused = next;
+    if (paused) {
+      snapshotCapturePcm();
+      keepAliveTimer = setInterval(() => {
+        if (socket && socket.readyState === WebSocketImpl.OPEN) {
+          socket.send(keepAliveMessage());
+        }
+      }, KEEPALIVE_MS);
+      return;
+    }
+    if (keepAliveTimer) {
+      clearInterval(keepAliveTimer);
+      keepAliveTimer = undefined;
+    }
+    void startCapture().then((resumed) => {
+      if (stopped) {
+        resumed?.stop();
+        return;
+      }
+      capture = resumed;
+    });
+  }
+
   try {
     // Two protocols: a space in one string is an invalid Sec-WebSocket-Protocol.
     socket = new WebSocketImpl(deepgramListenUrl(), ["bearer", accessToken]);
     socket.binaryType = "arraybuffer";
+    // Start the mic now: speech during the handshake must not be lost.
+    const capturePromise = startCapture();
     const opened = await waitForListenOpen(socket, WebSocketImpl);
     if (!opened) {
-      stopSession();
-      return null;
-    }
-    capture = await startPcmCapture({
-      getUserMedia,
-      AudioContextImpl,
-      onChunk: (samples, sampleRate) => {
-        if (!socket || socket.readyState !== WebSocketImpl.OPEN) return;
-        socket.send(floatToLinear16(downsampleTo16k(samples, sampleRate)));
-      },
-    });
-    if (!capture) {
+      void capturePromise.then((pending) => pending?.stop());
       stopSession();
       return null;
     }
@@ -139,6 +198,17 @@ export async function startLiveTranscriptionSession({
       onEvent(parsed);
     });
 
+    capture = await capturePromise;
+    if (!capture) {
+      stopSession();
+      return null;
+    }
+    // Flush speech captured during the handshake, in order.
+    for (const pcm of pendingAudio) {
+      socket.send(pcm);
+    }
+    pendingAudio.length = 0;
+
     maxTimer = setTimeout(() => {
       stopSession();
     }, MAX_LISTEN_MS);
@@ -149,16 +219,26 @@ export async function startLiveTranscriptionSession({
 
   return {
     stop: stopSession,
+    setPaused,
     commit: () => {
       if (socket && socket.readyState === WebSocketImpl.OPEN) {
         socket.send(closeStreamMessage());
       }
     },
     getTranscript,
-    getPcm: () =>
-      capture
+    getPcm: () => {
+      const current = capture
         ? { samples: capture.getSamples(), sampleRate: capture.sampleRate }
-        : { samples: new Float32Array(0), sampleRate: 16000 },
+        : null;
+      if (!savedPcm) {
+        return current ?? { samples: new Float32Array(0), sampleRate: 16000 };
+      }
+      if (!current || current.samples.length === 0) return savedPcm;
+      return {
+        samples: concatFloat32([savedPcm.samples, current.samples]),
+        sampleRate: savedPcm.sampleRate,
+      };
+    },
     getWords: () => words.slice(),
   };
 }

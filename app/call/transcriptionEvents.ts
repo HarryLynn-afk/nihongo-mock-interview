@@ -86,6 +86,10 @@ export function closeStreamMessage(): string {
   return JSON.stringify({ type: "CloseStream" });
 }
 
+export function keepAliveMessage(): string {
+  return JSON.stringify({ type: "KeepAlive" });
+}
+
 export function joinJapanese(base: string, next: string): string {
   if (!base) return next;
   if (!next) return base;
