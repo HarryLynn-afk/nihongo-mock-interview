@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { InterviewSidebar } from "./InterviewSidebar";
 import { InterviewReportScreen } from "./InterviewReportScreen";
 import { LanguageHud } from "./LanguageHud";
@@ -87,6 +88,7 @@ export default function CallPage() {
   const [previewReport, setPreviewReport] = useState<InterviewReport | null>(
     null,
   );
+  const [endConfirmOpen, setEndConfirmOpen] = useState(false);
   const savedStudyRef = useRef(false);
   const { locale, setLocale, copy } = useCopy();
 
@@ -340,6 +342,15 @@ export default function CallPage() {
               {copy.call.skipInterview}
             </button>
           ) : null}
+          {displayPhase !== "done" ? (
+            <button
+              type="button"
+              onClick={() => setEndConfirmOpen(true)}
+              className="text-xs text-eel/70 underline-offset-2 hover:text-eel/85 hover:underline"
+            >
+              {copy.call.endInterview}
+            </button>
+          ) : null}
           <LanguageToggle locale={locale} onChange={setLocale} />
         </div>
         {participantId ? (
@@ -488,6 +499,35 @@ export default function CallPage() {
               if (outcome === "submitted") setUsefulnessSubmitted(true);
             }}
           />
+        ) : null}
+
+        {endConfirmOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-eel/40 p-6">
+            <div
+              role="dialog"
+              aria-label={copy.call.endInterview}
+              className="w-full max-w-md rounded-2xl bg-white p-6 text-eel shadow-[0_24px_64px_-20px_rgba(28,71,46,0.35)]"
+            >
+              <p className="text-base leading-relaxed">
+                {copy.call.endConfirmBody}
+              </p>
+              <div className="mt-6 flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEndConfirmOpen(false)}
+                  className="rounded-full border border-eel/20 px-5 py-2.5 text-sm font-medium text-eel transition-colors hover:bg-eel/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
+                >
+                  {copy.call.keepGoing}
+                </button>
+                <Link
+                  href="/"
+                  className="rounded-full bg-feather px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-feather-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
+                >
+                  {copy.call.endInterview}
+                </Link>
+              </div>
+            </div>
+          </div>
         ) : null}
 
         {displayPhase === "done" || studentTurn === "none" ? null : (

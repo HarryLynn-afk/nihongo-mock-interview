@@ -110,6 +110,10 @@ const en = {
   call: {
     participant: "Participant",
     skipInterview: "Skip interview",
+    endInterview: "End interview",
+    endConfirmBody:
+      "End this interview? This session won't be saved and you won't get a report.",
+    keepGoing: "Keep going",
     questionOf: "Question {n} of {total}",
     senseiSpeaking: "Sensei speaking",
     studentAnswering: "Student answering",
@@ -368,6 +372,10 @@ const my: UiCopy = {
   call: {
     participant: "ပါဝင်သူ",
     skipInterview: "အင်တာဗျူး ကျော်ရန်",
+    endInterview: "အင်တာဗျူး ပြီးဆုံးရန်",
+    endConfirmBody:
+      "ဤအင်တာဗျူးကို ပြီးဆုံးမလား။ ဤစက်ရှင်ကို သိမ်းမည် မဟုတ်ပါ၊ အစီရင်ခံစာ မရပါ။",
+    keepGoing: "ဆက်လုပ်ရန်",
     questionOf: "မေးခွန်း {n} / {total}",
     senseiSpeaking: "ဆရာမ ပြောနေသည်",
     studentAnswering: "သင့်အလှည့်",

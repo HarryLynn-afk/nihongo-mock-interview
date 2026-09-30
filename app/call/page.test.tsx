@@ -217,6 +217,25 @@ describe("Call screen", () => {
     );
   });
 
+  it("confirms before ending the interview, then leaves for home", async () => {
+    const user = userEvent.setup();
+    render(<CallPage />);
+
+    await user.click(screen.getByRole("button", { name: "End interview" }));
+
+    const dialog = screen.getByRole("dialog", { name: "End interview" });
+    expect(
+      within(dialog).getByRole("link", { name: "End interview" }),
+    ).toHaveAttribute("href", "/");
+
+    await user.click(
+      within(dialog).getByRole("button", { name: "Keep going" }),
+    );
+    expect(
+      screen.queryByRole("dialog", { name: "End interview" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("places Tanaka-sensei and the student as separate classroom tiles", () => {
     render(<CallPage />);
 
