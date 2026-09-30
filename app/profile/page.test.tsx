@@ -34,6 +34,28 @@ describe("Profile page", () => {
     );
   });
 
+  it("styles the Back to interview link as the Join interview pill", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ state: "ready", account: { displayName: "May", email: "may@gmail.com" } }),
+    }));
+
+    render(<ProfilePage />);
+
+    const back = await screen.findByRole("link", { name: /Back to interview/ });
+    for (const pillClass of [
+      "inline-flex",
+      "min-h-[60px]",
+      "rounded-full",
+      "bg-feather",
+      "px-8",
+      "text-lg",
+      "text-white",
+    ]) {
+      expect(back).toHaveClass(pillClass);
+    }
+  });
+
   it("shows the Google identity and assigned participant ID", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,

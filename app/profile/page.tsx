@@ -58,7 +58,7 @@ function ProfileContent() {
         <div className="ml-auto"><LanguageToggle locale={locale} onChange={setLocale} variant="light" tone="feather" /></div>
       </header>
       <main className="mx-auto w-full max-w-[680px] px-5 pb-20 pt-10 md:pt-20">
-        <Link href={returnTo} className="text-sm font-medium text-feather-dark hover:underline">← {copy.account.back}</Link>
+        <Link href={returnTo} className="inline-flex min-h-[60px] items-center justify-center gap-2.5 rounded-full bg-feather px-8 py-3 text-lg font-medium text-white shadow-[0_14px_30px_-10px_rgba(88,204,2,0.55)] transition-[transform,box-shadow,background-color] hover:-translate-y-0.5 hover:bg-feather-dark hover:shadow-[0_18px_34px_-10px_rgba(88,204,2,0.65)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather">← {copy.account.back}</Link>
         <h1 className="mt-7 font-display text-4xl font-bold tracking-tight">{copy.account.profile}</h1>
         {profile?.account ? (
           <section className="mt-8 rounded-[24px] border border-eel/10 bg-white p-6 shadow-[0_16px_45px_-25px_rgba(28,71,46,0.25)] sm:p-8" aria-label={copy.account.label}>
