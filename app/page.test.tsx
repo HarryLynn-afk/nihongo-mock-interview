@@ -106,6 +106,37 @@ describe("Home (start screen)", () => {
     expect(guest.parentElement).toHaveClass("justify-center");
   });
 
+  it("styles the Login pill the same as the signed-in Profile pill", () => {
+    const { unmount } = render(<Home />);
+    const login = screen.getByRole("link", { name: "Login" });
+    unmount();
+
+    render(
+      <Home
+        view={{
+          kind: "signedIn",
+          origin: "/join?from=T1",
+          consentedThisVisit: false,
+        }}
+      />,
+    );
+    const profile = screen.getByRole("link", { name: "Profile" });
+
+    for (const pillClass of [
+      "min-h-11",
+      "px-4",
+      "rounded-full",
+      "bg-[#d8f5b0]",
+      "text-feather-dark",
+      "focus-visible:outline-2",
+      "focus-visible:outline-offset-2",
+      "focus-visible:outline-feather",
+    ]) {
+      expect(login).toHaveClass(pillClass);
+      expect(profile).toHaveClass(pillClass);
+    }
+  });
+
   it("places Login to the right of the language control in the header", () => {
     render(<Home />);
 

@@ -120,7 +120,7 @@ export default function Home({
               <Link
                 href="/login"
                 scroll={false}
-                className="inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full bg-[#d8f5b0] px-6 text-sm font-medium text-feather-dark shadow-[0_4px_7px_rgba(88,204,2,0.12)] transition-colors hover:bg-[#c8ee96]"
+                className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full bg-[#d8f5b0] px-4 text-sm font-medium text-feather-dark shadow-[0_4px_7px_rgba(88,204,2,0.12)] transition-colors hover:bg-[#c8ee96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
               >
                 {copy.joinLink.login}
               </Link>
