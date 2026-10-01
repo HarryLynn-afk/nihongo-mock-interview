@@ -25,7 +25,7 @@ vi.mock("@/lib/content/questionBank", async (importOriginal) => {
 });
 
 vi.mock("@/lib/content/followUpCheck", () => ({
-  MAX_FOLLOW_UPS: 5,
+  MAX_FOLLOW_UPS: 3,
   shouldOfferFollowUp: () => false,
 }));
 
@@ -892,9 +892,30 @@ describe("Call screen", () => {
           method: "POST",
           body: JSON.stringify({
             answers: [
-              { questionIndex: 0, transcript: "答え1", pushbackCount: 0 },
-              { questionIndex: 1, transcript: "答え2", pushbackCount: 0 },
-              { questionIndex: 2, transcript: "答え3", pushbackCount: 0 },
+              {
+                questionIndex: 0,
+                questionId: 1,
+                topic: "selfIntroduction",
+                questionJapanese: questions[0].japanese,
+                transcript: "答え1",
+                pushbackCount: 0,
+              },
+              {
+                questionIndex: 1,
+                questionId: 2,
+                topic: "motivationJapan",
+                questionJapanese: questions[1].japanese,
+                transcript: "答え2",
+                pushbackCount: 0,
+              },
+              {
+                questionIndex: 2,
+                questionId: 3,
+                topic: "studyPlan",
+                questionJapanese: questions[2].japanese,
+                transcript: "答え3",
+                pushbackCount: 0,
+              },
             ],
           }),
         }),

@@ -23,6 +23,9 @@ const critiques = [
 const answers = [
   {
     questionIndex: 0,
+    questionId: 1,
+    topic: "selfIntroduction" as const,
+    questionJapanese: "はじめに、簡単に自己紹介をお願いします。",
     transcript: "はじめまして。アウンミンハントです。",
     pushbackCount: 0 as const,
   },
@@ -91,6 +94,9 @@ describe("runDeepseekGrade", () => {
       role: "system",
       content: getRubricPrompt(),
     });
+    const userText = body.messages?.[1]?.content ?? "";
+    expect(userText).toContain("はじめに、簡単に自己紹介をお願いします。");
+    expect(userText).toContain('"topic":"selfIntroduction"');
   });
 
   it("returns null without fetching when the grade key is missing", async () => {

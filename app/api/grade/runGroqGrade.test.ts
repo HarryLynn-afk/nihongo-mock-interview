@@ -24,6 +24,9 @@ const critiques = [
 const answers = [
   {
     questionIndex: 0,
+    questionId: 1,
+    topic: "selfIntroduction" as const,
+    questionJapanese: "はじめに、簡単に自己紹介をお願いします。",
     transcript: "はじめまして。アウンミンハントです。",
     pushbackCount: 0 as const,
   },
@@ -167,7 +170,7 @@ describe("runGroqGrade", () => {
     });
   });
 
-  it("sends answer transcripts in the user message and no locked student card", async () => {
+  it("sends answer transcripts, the Japanese question, and the topic in the user message", async () => {
     const groqFetch = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -199,6 +202,8 @@ describe("runGroqGrade", () => {
     expect(body.messages?.[1]?.role).toBe("user");
     expect(userText).not.toContain("Aung Min Khant");
     expect(userText).toContain("はじめまして。アウンミンハントです。");
+    expect(userText).toContain("はじめに、簡単に自己紹介をお願いします。");
+    expect(userText).toContain('"topic":"selfIntroduction"');
   });
 
   it("returns null on Groq 429 and skips the next Groq grade call", async () => {

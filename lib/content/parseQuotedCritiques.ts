@@ -8,7 +8,10 @@ const SILENT_QUOTE = "（無言）";
 export type CritiqueAnswer = {
   questionIndex: number;
   transcript: string;
+  topic?: string | null;
 };
+
+const FINANCIAL_ELIGIBILITY_CLAIM = /eligib|visa|\bcoe\b|admission/i;
 
 export type QuotedCritique = {
   questionIndex: number;
@@ -51,6 +54,12 @@ export function parseQuotedCritiques(
       return null;
     }
     if (row.rewrite === SILENT_QUOTE) return null;
+    if (
+      answer.topic === "financialSupport" &&
+      FINANCIAL_ELIGIBILITY_CLAIM.test(`${row.explanation} ${row.rewrite}`)
+    ) {
+      return null;
+    }
 
     critiques.push({
       questionIndex: row.questionIndex,

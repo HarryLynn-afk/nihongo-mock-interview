@@ -152,7 +152,7 @@ export function CallScreen({ homeHref = "/" }: { homeHref?: string }) {
       enableFollowUps:
         followUpsForCallSession(sessionKind) && sessionQuestions !== null,
     });
-  const gradeAnswers = useGradeAnswers({ answers, phase });
+  const gradeAnswers = useGradeAnswers({ answers, phase, sessionQuestions: flowQuestions });
   const { report: scoredReport, scoringFailed } =
     useInterviewScore(gradeAnswers);
   const previewing = previewReport !== null;

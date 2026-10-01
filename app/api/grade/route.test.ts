@@ -77,6 +77,9 @@ describe("POST /api/grade", () => {
           answers: [
             {
               questionIndex: 0,
+              questionId: 1,
+              topic: "selfIntroduction",
+              questionJapanese: "はじめに、簡単に自己紹介をお願いします。",
               transcript: "はじめまして。",
               pushbackCount: 0,
             },

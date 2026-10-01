@@ -184,4 +184,90 @@ describe("parseQuotedCritiques", () => {
       ),
     ).toHaveLength(2);
   });
+
+  it("rejects an eligibility claim on a financialSupport answer", () => {
+    expect(
+      parseQuotedCritiques(
+        [
+          {
+            questionIndex: 0,
+            quote: "アルバイト",
+            explanation: "You are eligible for a scholarship.",
+            rewrite: "アルバイトをします。",
+            category: "answerRelevance",
+          },
+        ],
+        [
+          {
+            questionIndex: 0,
+            transcript: "アルバイトをします",
+            topic: "financialSupport",
+          },
+        ],
+      ),
+    ).toBeNull();
+  });
+
+  it("rejects a visa or admission claim on a financialSupport answer", () => {
+    expect(
+      parseQuotedCritiques(
+        [
+          {
+            questionIndex: 0,
+            quote: "母",
+            explanation: "Your mother's income supports your visa.",
+            rewrite: "母が支援します。",
+            category: "contentCompleteness",
+          },
+        ],
+        [
+          {
+            questionIndex: 0,
+            transcript: "母が支援します",
+            topic: "financialSupport",
+          },
+        ],
+      ),
+    ).toBeNull();
+  });
+
+  it("keeps the financial guard scoped to financialSupport topics", () => {
+    const critique = {
+      questionIndex: 0,
+      quote: "専門学校",
+      explanation: "Your visa plan is clear.",
+      rewrite: "専門学校でウェブを勉強します。",
+      category: "contentCompleteness" as const,
+    };
+
+    expect(
+      parseQuotedCritiques(
+        [critique],
+        [{ questionIndex: 0, transcript: "専門学校に行きます", topic: "studyPlan" }],
+      ),
+    ).toEqual([critique]);
+  });
+
+  it("accepts a financialSupport answer with no eligibility claim", () => {
+    const critique = {
+      questionIndex: 0,
+      quote: "アルバイト",
+      explanation: "You named a part-time job as your support.",
+      rewrite: "アルバイトをします。",
+      category: "contentCompleteness" as const,
+    };
+
+    expect(
+      parseQuotedCritiques(
+        [critique],
+        [
+          {
+            questionIndex: 0,
+            transcript: "アルバイトをします",
+            topic: "financialSupport",
+          },
+        ],
+      ),
+    ).toEqual([critique]);
+  });
 });

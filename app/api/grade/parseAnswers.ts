@@ -7,7 +7,16 @@ export function parseAnswers(value: unknown): GradeAnswer[] | null {
   for (const item of value) {
     if (typeof item !== "object" || item === null) return null;
     const row = item as Record<string, unknown>;
-    if (typeof row.questionIndex !== "number" || typeof row.transcript !== "string") {
+    if (
+      typeof row.questionIndex !== "number" ||
+      typeof row.questionId !== "number" ||
+      row.topic === undefined ||
+      (row.topic !== null &&
+        (typeof row.topic !== "string" || row.topic.trim() === "")) ||
+      typeof row.questionJapanese !== "string" ||
+      row.questionJapanese.trim() === "" ||
+      typeof row.transcript !== "string"
+    ) {
       return null;
     }
     if (row.pushbackCount !== 0 && row.pushbackCount !== 1 && row.pushbackCount !== 2) {
@@ -17,6 +26,9 @@ export function parseAnswers(value: unknown): GradeAnswer[] | null {
     seen.add(row.questionIndex);
     answers.push({
       questionIndex: row.questionIndex,
+      questionId: row.questionId,
+      topic: row.topic as GradeAnswer["topic"],
+      questionJapanese: row.questionJapanese,
       transcript: row.transcript,
       pushbackCount: row.pushbackCount,
     });

@@ -25,12 +25,58 @@ describe("getRubricPrompt", () => {
     expect(prompt).toMatch(/Strong practice response/);
   });
 
+  it("grades answer relevance against the actual Japanese question", () => {
+    const prompt = getRubricPrompt();
+
+    expect(prompt).toMatch(/questionJapanese/);
+    expect(prompt).toMatch(/compare the transcript with that question/i);
+    expect(prompt).toMatch(/never guess the question/i);
+  });
+
+  it("grades content completeness with the question and topic", () => {
+    const prompt = getRubricPrompt();
+
+    expect(prompt).toMatch(/specific question and topic/i);
+  });
+
   it("never asks for separate motivation, study-plan, speaking, or listening scores", () => {
     const prompt = getRubricPrompt();
 
     expect(prompt).toMatch(/never return separate motivation or study-plan scores/i);
-    expect(prompt).toMatch(/coach it question by question inside contentCompleteness/i);
+    expect(prompt).toMatch(/coach them question by question inside contentCompleteness/i);
     expect(prompt).not.toMatch(/^-\s*(speaking|listening|motivation|studyPlan):/m);
+  });
+
+  it("limits motivation and study-plan guidance to questions that ask for them", () => {
+    const prompt = getRubricPrompt();
+
+    expect(prompt).toMatch(/only to questions that ask for them/i);
+    expect(prompt).toMatch(/never demand them on other topics/i);
+  });
+
+  it("allows only four criteria on financial-support answers", () => {
+    const prompt = getRubricPrompt();
+
+    expect(prompt).toMatch(
+      /financialSupport answers, evaluate answerRelevance, contentCompleteness, japaneseClarity, and consistency only/i,
+    );
+  });
+
+  it("never judges financial, admission, visa, or COE eligibility", () => {
+    const prompt = getRubricPrompt();
+
+    expect(prompt).toMatch(/never judge financial eligibility/i);
+    expect(prompt).toMatch(/admission eligibility/i);
+    expect(prompt).toMatch(/visa eligibility/i);
+    expect(prompt).toMatch(/COE eligibility/i);
+    expect(prompt).toMatch(/eligible or ineligible/i);
+  });
+
+  it("never infers facts that are absent from the transcript", () => {
+    const prompt = getRubricPrompt();
+
+    expect(prompt).toMatch(/never infer facts/i);
+    expect(prompt).toMatch(/absent from the transcript/i);
   });
 
   it("never contains forbidden exam or verdict terms", () => {

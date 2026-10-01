@@ -3,6 +3,25 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { useInterviewScore } from "./useInterviewScore";
 import type { GradeCollection } from "./useGradeAnswers";
 
+const FIRST_ANSWER = {
+  questionIndex: 0,
+  questionId: 1,
+  topic: "selfIntroduction",
+  questionJapanese: "はじめに、簡単に自己紹介をお願いします。",
+  transcript: "SUBMITTED_0",
+  pushbackCount: 0,
+};
+
+const SECOND_ANSWER = {
+  questionIndex: 1,
+  questionId: 2,
+  topic: "motivationJapan",
+  questionJapanese:
+    "どうして日本で日本語を勉強したいのですか。この学校を選んだ理由も教えてください。",
+  transcript: "はい。",
+  pushbackCount: 1,
+};
+
 describe("useInterviewScore", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -28,7 +47,7 @@ describe("useInterviewScore", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("POSTs /api/score once when answers become ready, with GradeAnswer fields only", async () => {
+  it("POSTs /api/score once when answers become ready, with the question context only", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ report: { total: 88, source: "grade" } }), {
         status: 200,
@@ -39,18 +58,7 @@ describe("useInterviewScore", () => {
 
     const collection: GradeCollection = {
       status: "ready",
-      answers: [
-        {
-          questionIndex: 0,
-          transcript: "SUBMITTED_0",
-          pushbackCount: 0,
-        },
-        {
-          questionIndex: 1,
-          transcript: "はい。",
-          pushbackCount: 1,
-        },
-      ],
+      answers: [FIRST_ANSWER, SECOND_ANSWER],
     };
 
     const { rerender } = renderHook(
@@ -69,18 +77,7 @@ describe("useInterviewScore", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          answers: [
-            {
-              questionIndex: 0,
-              transcript: "SUBMITTED_0",
-              pushbackCount: 0,
-            },
-            {
-              questionIndex: 1,
-              transcript: "はい。",
-              pushbackCount: 1,
-            },
-          ],
+          answers: [FIRST_ANSWER, SECOND_ANSWER],
         }),
       }),
     );
@@ -102,13 +99,7 @@ describe("useInterviewScore", () => {
 
     const collection: GradeCollection = {
       status: "ready",
-      answers: [
-        {
-          questionIndex: 0,
-          transcript: "はい。",
-          pushbackCount: 0,
-        },
-      ],
+      answers: [{ ...FIRST_ANSWER, transcript: "はい。" }],
     };
 
     const { result } = renderHook(() => useInterviewScore(collection));
@@ -126,13 +117,7 @@ describe("useInterviewScore", () => {
 
     const collection: GradeCollection = {
       status: "ready",
-      answers: [
-        {
-          questionIndex: 0,
-          transcript: "はい。",
-          pushbackCount: 0,
-        },
-      ],
+      answers: [{ ...FIRST_ANSWER, transcript: "はい。" }],
     };
 
     const { result } = renderHook(() => useInterviewScore(collection));
@@ -156,13 +141,7 @@ describe("useInterviewScore", () => {
 
     const collection: GradeCollection = {
       status: "ready",
-      answers: [
-        {
-          questionIndex: 0,
-          transcript: "はい。",
-          pushbackCount: 0,
-        },
-      ],
+      answers: [{ ...FIRST_ANSWER, transcript: "はい。" }],
     };
 
     const { result } = renderHook(() => useInterviewScore(collection));

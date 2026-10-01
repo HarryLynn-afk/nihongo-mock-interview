@@ -1,5 +1,6 @@
 import { getRubricPrompt, parseRawScores, scoreReport } from "@/lib/content/rubric";
 import { parseQuotedCritiques } from "@/lib/content/parseQuotedCritiques";
+import type { QuestionTopicKey } from "@/lib/content/questionBank";
 import type { InterviewReport } from "@/lib/content/sampleReport";
 import {
   isGroqCapacityLimit,
@@ -14,6 +15,9 @@ const GROQ_GRADE_MODEL = "qwen/qwen3.8-27b";
 
 export type GradeAnswer = {
   questionIndex: number;
+  questionId: number;
+  topic: QuestionTopicKey | null;
+  questionJapanese: string;
   transcript: string;
   pushbackCount: 0 | 1 | 2;
 };

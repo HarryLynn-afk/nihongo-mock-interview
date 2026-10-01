@@ -50,6 +50,15 @@ Worked examples:
 
 There is **no pass threshold, no automatic-failure rule, and no Ready / Almost Ready / Keep Practicing verdict**. Every level only moves the Practice progress percentage up or down. Cross-answer consistency is scored once across the whole session; the other criteria attach to per-answer feedback.
 
+## Question context
+
+Every graded answer carries its `questionIndex`, `questionId`, `topic`, the exact Japanese question (`questionJapanese`), the transcript, and `pushbackCount`.
+
+- **Answer relevance** compares the transcript with that actual question. The API rejects an answer with no question text, so relevance is never guessed.
+- **Content completeness** uses the question and its topic.
+- **Motivation and study-plan** coaching applies only to questions that ask for them; it is never demanded on unrelated topics.
+- **Financial-support** answers are judged on relevance, completeness, clarity, and consistency only. Eligibility language (financial, admission, visa, or COE) is rejected before a report is built.
+
 ## What is never graded
 
 Only the written transcript is judged. The grader is explicitly instructed never to score:
