@@ -232,6 +232,10 @@ const en = {
     title: "Scoring unavailable",
     body: "We couldn't build your coaching report this time. Your answers were saved for this session, but feedback is temporarily unavailable. Please try the interview again later.",
   },
+  grading: {
+    title: "Building your feedback",
+    body: "We're scoring your answers and writing your report. This can take a moment.",
+  },
   cameraMiss: {
     title: "Camera isn't available",
     steps: "You can continue with voice. This Interview does not need video.",
@@ -477,6 +481,10 @@ const my: UiCopy = {
   scoringUnavailable: {
     title: "အမှတ်ပေး၍ မရပါ",
     body: "ယခုအချိန်တွင် coaching report တည်ဆောက်၍ မရပါ။ ဤစက်ရှင်အတွက် အဖြေများ ရှိသော်လည်း အကြံပြုချက် ယာယီ မရနိုင်ပါ။ နောက်မှ အင်တာဗျူးကို ထပ်ကြိုးစားပါ။",
+  },
+  grading: {
+    title: "သင့်အကြံပြုချက် ပြင်ဆင်နေသည်",
+    body: "သင့်အဖြေများကို အမှတ်ပေးပြီး report ရေးနေသည်။ ခဏစောင့်ပါ။",
   },
   cameraMiss: {
     title: "ကင်မရာ မရနိုင်ပါ",

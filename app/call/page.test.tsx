@@ -946,6 +946,38 @@ describe("Call screen", () => {
     expect(screen.queryByText("準備OK")).not.toBeInTheDocument();
   });
 
+  it("shows the grading state while /api/score is still pending", async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      if (String(input).includes("/api/score")) {
+        return new Promise(() => {});
+      }
+      return Promise.resolve(new Response(null, { status: 202 }));
+    });
+
+    const user = userEvent.setup();
+    render(<CallPage />);
+    await completeLockedInterview(user);
+
+    expect(await screen.findByTestId("grading-screen")).toBeInTheDocument();
+    expect(screen.queryByTestId("interview-report")).not.toBeInTheDocument();
+  });
+
+  it("shows the same grading state for a guest run", async () => {
+    window.history.replaceState({}, "", "/call?guest=1");
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      if (String(input).includes("/api/score")) {
+        return new Promise(() => {});
+      }
+      return Promise.resolve(new Response(null, { status: 202 }));
+    });
+
+    const user = userEvent.setup();
+    render(<CallPage />);
+    await completeLockedInterview(user);
+
+    expect(await screen.findByTestId("grading-screen")).toBeInTheDocument();
+  });
+
   it("does not show the scoring-unavailable banner when /api/score returns a live report", async () => {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       if (String(input).includes("/api/score")) {

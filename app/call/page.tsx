@@ -7,6 +7,7 @@ import { InterviewReportScreen } from "./InterviewReportScreen";
 import { LanguageHud } from "./LanguageHud";
 import { MicTroubleScreen } from "./MicTroubleScreen";
 import { ScoringUnavailableScreen } from "./ScoringUnavailableScreen";
+import { GradingScreen } from "./GradingScreen";
 import { SpeakAnswerButton } from "./SpeakAnswerButton";
 import { SenseiTile } from "./SenseiTile";
 import { StudentTile } from "./StudentTile";
@@ -428,6 +429,8 @@ export default function CallPage() {
               onPracticeAgain={() => window.location.reload()}
               locale={locale}
             />
+          ) : displayPhase === "done" ? (
+            <GradingScreen />
           ) : (
             <>
               <InterviewSidebar
