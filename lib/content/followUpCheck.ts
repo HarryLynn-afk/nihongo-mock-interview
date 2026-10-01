@@ -1,7 +1,19 @@
 import { transcriptPassesPushbackCheck } from "./pushbackCheck";
 import type { QuestionTopicKey } from "./questionBank";
 
-export const MAX_FOLLOW_UPS = 5;
+export const MAX_FOLLOW_UPS = 3;
+
+function normalizeQuestionText(text: string): string {
+  return text.replace(/[\s。、？！?!.,]/g, "");
+}
+
+/** True when one question's text contains the other after punctuation is stripped. */
+export function isSubstantialRepeat(question: string, other: string): boolean {
+  const a = normalizeQuestionText(question);
+  const b = normalizeQuestionText(other);
+  if (a.length === 0 || b.length === 0) return false;
+  return a.includes(b) || b.includes(a);
+}
 
 const ANIME_OR_CULTURE_ONLY = /アニメ|anime|文化|culture/i;
 const CAREER_OR_STUDY =

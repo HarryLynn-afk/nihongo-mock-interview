@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { isSubstantialRepeat } from "./followUpCheck";
 import {
   CORE_SESSION_LENGTH,
   SESSION_TOPIC_ORDER,
@@ -81,6 +82,59 @@ describe("questionBank", () => {
       expect(followUp.japanese).not.toBe("もう少し詳しく教えてください。");
     }
     expect(followUpBank).toHaveLength(SESSION_TOPIC_ORDER.length);
+  });
+
+  it("asks how many years the student plans to study at the language school", () => {
+    expect(getBankQuestionById(161)?.japanese).toBe(
+      "日本語学校で、何年間勉強する予定ですか。",
+    );
+    expect(getBankQuestionById(161)?.englishTranslation).toBe(
+      "How many years do you plan to study at the language school?",
+    );
+  });
+
+  it("asks the specified motivation and future-plan follow-ups", () => {
+    expect(getBankQuestionById(241)?.japanese).toBe(
+      "日本語の勉強は、将来の勉強や仕事にどう役立つと思いますか。",
+    );
+    expect(getBankQuestionById(241)?.englishTranslation).toBe(
+      "How do you think studying Japanese will help your future education or work?",
+    );
+    expect(getBankQuestionById(271)?.japanese).toBe(
+      "日本語学校のあと、どのような進路を考えていますか。どうしてですか。",
+    );
+    expect(getBankQuestionById(271)?.englishTranslation).toBe(
+      "What path are you considering after language school, and why?",
+    );
+  });
+
+  it("offers a self-funding financial-support variant without a sponsor", () => {
+    const selfFunded = variantsForTopic("financialSupport").some((item) =>
+      /自分/.test(item.japanese),
+    );
+    expect(selfFunded).toBe(true);
+  });
+
+  it("keeps follow-up 211 distinct from question 114", () => {
+    const followUp = getBankQuestionById(211);
+    const core = getBankQuestionById(114);
+
+    expect(followUp?.isFollowUp).toBe(true);
+    expect(core?.japanese).toBeTruthy();
+    expect(
+      isSubstantialRepeat(core?.japanese ?? "", followUp?.japanese ?? ""),
+    ).toBe(false);
+  });
+
+  it("keeps every follow-up from substantially repeating a core question in its topic", () => {
+    for (const topic of SESSION_TOPIC_ORDER) {
+      const followUp = followUpForTopic(topic);
+      for (const core of variantsForTopic(topic)) {
+        expect(isSubstantialRepeat(core.japanese, followUp.japanese)).toBe(
+          false,
+        );
+      }
+    }
   });
 
   it("resolves generated follow-up ids so TTS can play them", () => {

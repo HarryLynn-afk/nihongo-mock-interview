@@ -8,7 +8,7 @@
 
 ## Already done (2026-09-08)
 
-- Practice still draws **one Question per topic** (10 core + 0–5 follow-ups).
+- Practice still draws **one Question per topic** (10 core + 0–3 follow-ups).
 - Question 163 is **Future plan**, not Study plan.
 - Missing application wordings added on existing topics: school/course interest, gap after graduation, sponsor’s reason, how tuition and living costs are prepared.
 - Generic follow-up 「もう少し詳しく教えてください。」 removed; every core topic has a specific follow-up.

@@ -196,9 +196,9 @@ export const questionBank: readonly BankQuestion[] = [
   {
     id: 161,
     topic: "studyPlan",
-    japanese: "日本語学校では、どのくらい勉強する予定ですか。",
-    englishTranslation: "How long do you plan to study at the language school?",
-    burmeseTranslation: "ဂျပန်စာကျောင်းတွင် ဘယ်လောက်ကြာအောင် သင်မည်နည်း။",
+    japanese: "日本語学校で、何年間勉強する予定ですか。",
+    englishTranslation: "How many years do you plan to study at the language school?",
+    burmeseTranslation: "ဂျပန်စာကျောင်းတွင် ဘယ်နှစ်နှစ် သင်ရန် စီစဉ်ထားသလဲ။",
   },
   {
     id: 162,
@@ -252,9 +252,11 @@ export const questionBank: readonly BankQuestion[] = [
   {
     id: 182,
     topic: "financialSupport",
-    japanese: "スポンサーは、あなたとどういう関係ですか。",
-    englishTranslation: "What is your sponsor’s relationship to you?",
-    burmeseTranslation: "စပွန်ဆာသည် သင်နှင့် ဘယ်လို ဆက်စပ်သလဲ။",
+    japanese: "学費は、自分で用意しますか。それとも家族などの支援を受けますか。",
+    englishTranslation:
+      "Will you fund your studies yourself, or receive support from family or others?",
+    burmeseTranslation:
+      "ကျောင်းစရိတ်ကို ကိုယ်တိုင် စီစဉ်မလား။ ဒါမှမဟုတ် မိသားစု စသည်တို့၏ အကူအညီ ရမလား။",
   },
   {
     id: 183,
@@ -313,9 +315,10 @@ export const followUpBank: readonly BankQuestion[] = [
     id: 211,
     topic: "educationWork",
     isFollowUp: true,
-    japanese: "卒業してから今まで、何をしていましたか。",
-    englishTranslation: "What have you been doing since you graduated?",
-    burmeseTranslation: "ဘွဲ့ရပြီးကတည်းက ယခုအထိ ဘာလုပ်နေခဲ့သလဲ။",
+    japanese: "今までの学校生活や仕事で、身につけたことは何ですか。",
+    englishTranslation: "What have you gained from your school life or work so far?",
+    burmeseTranslation:
+      "ယခုအထိ ကျောင်းနှင့် အလုပ်မှ သင်ယူရရှိခဲ့သည့် အရာက ဘာလဲ။",
   },
   {
     id: 221,
@@ -337,11 +340,11 @@ export const followUpBank: readonly BankQuestion[] = [
     id: 241,
     topic: "motivationJapan",
     isFollowUp: true,
-    japanese: "アニメや文化のほかに、勉強や仕事の目標はありますか。",
+    japanese: "日本語の勉強は、将来の勉強や仕事にどう役立つと思いますか。",
     englishTranslation:
-      "Besides anime or culture, do you have an academic or career goal?",
+      "How do you think studying Japanese will help your future education or work?",
     burmeseTranslation:
-      "အန်နီမေး သို့မဟုတ် ယဉ်ကျေးမှုအပြင် ပညာရေး သို့မဟုတ် အလုပ် ရည်မှန်းချက် ရှိသလား။",
+      "ဂျပန်စာ လေ့လာခြင်းသည် သင့်အနာဂတ် ပညာရေး သို့မဟုတ် အလုပ်အတွက် ဘယ်လို အထောက်အကူ ဖြစ်မည်ဟု ထင်သလဲ။",
   },
   {
     id: 251,
@@ -363,9 +366,11 @@ export const followUpBank: readonly BankQuestion[] = [
     id: 271,
     topic: "futurePlan",
     isFollowUp: true,
-    japanese: "大学では、何を勉強したいですか。どうしてですか。",
-    englishTranslation: "What subject do you want to study at university, and why?",
-    burmeseTranslation: "တက္ကသိုလ်တွင် ဘာသင်ချင်သလဲ။ ဘာကြောင့်လဲ။",
+    japanese: "日本語学校のあと、どのような進路を考えていますか。どうしてですか。",
+    englishTranslation:
+      "What path are you considering after language school, and why?",
+    burmeseTranslation:
+      "ဂျပန်စာကျောင်းပြီးရင် ဘယ်လို လမ်းကြောင်းကို စဉ်းစားထားသလဲ။ ဘာကြောင့်လဲ။",
   },
   {
     id: 281,

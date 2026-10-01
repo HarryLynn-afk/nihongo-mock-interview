@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import { questions } from "@/lib/content/questions";
-import { pickSessionQuestions } from "@/lib/content/questionBank";
+import { pickSessionQuestions, getBankQuestionById } from "@/lib/content/questionBank";
 import { useQuestionFlow } from "./useQuestionFlow";
 import type { AnswerSubmission } from "./useQuestionFlow";
 
@@ -154,6 +154,23 @@ describe("useQuestionFlow", () => {
 
     expect(result.current.sessionQuestions.length).toBeGreaterThan(session.length);
     expect(result.current.currentQuestion?.id).toBeGreaterThanOrEqual(200);
+  });
+
+  it("does not insert a follow-up that substantially repeats the current Question", () => {
+    const core = getBankQuestionById(141);
+    const followUp = getBankQuestionById(241);
+    if (!core || !followUp) throw new Error("missing bank questions");
+    const session = [{ ...core, japanese: followUp.japanese }];
+
+    const { result } = renderHook(() =>
+      useQuestionFlow(session, { enableFollowUps: true }),
+    );
+
+    act(() => result.current.endSenseiTurn());
+    act(() => result.current.submitAnswer(answered("はい、そうです。")));
+
+    expect(result.current.sessionQuestions).toHaveLength(1);
+    expect(result.current.phase).toBe("done");
   });
 
   it("does not insert a follow-up after a skipped Question", () => {

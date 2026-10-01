@@ -6,7 +6,10 @@ import {
   getBankQuestionById,
   type BankQuestion,
 } from "@/lib/content/questionBank";
-import { shouldOfferFollowUp } from "@/lib/content/followUpCheck";
+import {
+  isSubstantialRepeat,
+  shouldOfferFollowUp,
+} from "@/lib/content/followUpCheck";
 
 export type QuestionPhase = "senseiSpeaking" | "studentAnswering" | "done";
 
@@ -113,7 +116,10 @@ export function useQuestionFlow(
           })
         ) {
           const followUp = topic ? followUpForTopic(topic) : undefined;
-          if (followUp) {
+          if (
+            followUp &&
+            !isSubstantialRepeat(followUp.japanese, currentQuestion.japanese)
+          ) {
             followUpsUsedRef.current += 1;
             setItems((current) => {
               if (!current) return current;
