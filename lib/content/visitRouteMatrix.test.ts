@@ -74,6 +74,14 @@ describe("visit route / session matrix", () => {
     expect(setCookie).not.toMatch(/nihongo_consent_gate=;.*max-age=0/i);
   });
 
+  it("remembers this device's invite when a join link is opened", async () => {
+    const { middleware } = await import("../../middleware");
+    const res = await middleware(request("/join?from=rsu-k7m2"));
+
+    const setCookie = res.headers.get("set-cookie") ?? "";
+    expect(setCookie).toContain("nihongo_device_invite=rsu-k7m2");
+  });
+
   it("successful auth returns to the landing; failed join goes back to join", () => {
     expect(nextAfterAuth({ from: null, ok: true })).toBe("/");
     expect(nextAfterAuth({ from: "rsu-k7m2", ok: false })).toBe(

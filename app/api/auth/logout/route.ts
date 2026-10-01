@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { DEVICE_INVITE_COOKIE, JOIN_FROM_COOKIE } from "@/lib/content/joinLink";
+import { JOIN_FROM_COOKIE } from "@/lib/content/joinLink";
 import { consentGateCookie } from "@/lib/content/studyAuth";
-import { signOutDestination } from "@/lib/content/visitPolicy";
-import { lookupJoinLink } from "@/lib/server/study/lookupJoinLink";
+import { sessionHome } from "@/lib/server/study/sessionHome";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
 import {
   VISIT_CONSENT_COOKIE,
@@ -11,11 +9,9 @@ import {
 } from "@/lib/server/study/visitConsent";
 
 export async function POST() {
-  const jar = await cookies();
-  // This device's sign-up invite decides where sign-out lands. It is kept so
-  // the next tester can still sign up from the same link.
-  const inviteCode = jar.get(DEVICE_INVITE_COOKIE)?.value ?? null;
-  const link = inviteCode ? await lookupJoinLink(inviteCode) : null;
+  // Read the destination before clearing anything: it depends on this
+  // device's saved invite.
+  const destination = await sessionHome();
 
   const supabase = await createStudyServerClient();
   if (supabase) {
@@ -25,10 +21,7 @@ export async function POST() {
     }
   }
 
-  const response = NextResponse.json({
-    ok: true,
-    destination: signOutDestination(inviteCode, link),
-  });
+  const response = NextResponse.json({ ok: true, destination });
   const gate = consentGateCookie(false);
   response.cookies.set(gate.name, gate.value, gate.options);
   const options = {

@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { JOIN_FROM_COOKIE, readJoinFrom } from "@/lib/content/joinLink";
+import {
+  DEVICE_INVITE_COOKIE,
+  DEVICE_INVITE_MAX_AGE_SECONDS,
+  JOIN_FROM_COOKIE,
+  readJoinFrom,
+} from "@/lib/content/joinLink";
 import { consentGateCookie, shouldRewriteAuthCallback } from "@/lib/content/studyAuth";
 import {
   CONSENT_GATE_COOKIE,
@@ -57,6 +62,26 @@ async function redirectToLoginAndSignOut(
 }
 
 export async function middleware(request: NextRequest) {
+  const response = await handle(request);
+
+  // Opening a join link marks this device: sign-out and back-to-home then
+  // return here while the link is open. Applies to guests too.
+  if (request.nextUrl.pathname === "/join") {
+    const from = readJoinFrom(request.nextUrl.search);
+    if (from) {
+      response.cookies.set(DEVICE_INVITE_COOKIE, from, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: DEVICE_INVITE_MAX_AGE_SECONDS,
+      });
+    }
+  }
+  return response;
+}
+
+async function handle(request: NextRequest) {
   if (
     isRemovedPitchUrl(request.nextUrl.pathname, request.nextUrl.search)
   ) {

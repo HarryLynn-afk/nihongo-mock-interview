@@ -7,7 +7,7 @@ import {
   mustSignIn,
   nextAfterAuth,
   routeRole,
-  signOutDestination,
+  inviteHome,
 } from "./visitPolicy";
 
 describe("isRemovedPitchUrl", () => {
@@ -87,22 +87,22 @@ describe("nextAfterAuth", () => {
   });
 });
 
-describe("signOutDestination", () => {
+describe("inviteHome", () => {
   it("returns to the device's invite link while it is still open", () => {
     expect(
-      signOutDestination("rsu-k7m2", { signupCount: 0, maxSignups: 10 }),
+      inviteHome("rsu-k7m2", { signupCount: 0, maxSignups: 10 }),
     ).toBe("/join?from=rsu-k7m2");
   });
 
   it("falls back to the normal landing for a full link", () => {
     expect(
-      signOutDestination("rsu-k7m2", { signupCount: 10, maxSignups: 10 }),
+      inviteHome("rsu-k7m2", { signupCount: 10, maxSignups: 10 }),
     ).toBe("/");
   });
 
   it("falls back to the normal landing with no code or an unknown code", () => {
-    expect(signOutDestination(null, null)).toBe("/");
-    expect(signOutDestination("not-real", null)).toBe("/");
+    expect(inviteHome(null, null)).toBe("/");
+    expect(inviteHome("not-real", null)).toBe("/");
   });
 });
 

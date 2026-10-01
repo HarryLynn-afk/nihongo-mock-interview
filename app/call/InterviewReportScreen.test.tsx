@@ -362,6 +362,20 @@ describe("InterviewReportScreen", () => {
     ).toHaveAttribute("href", "/");
   });
 
+  it("sends Back to home to the given destination", () => {
+    render(
+      <InterviewReportScreen
+        view={voiceView}
+        onPracticeAgain={vi.fn()}
+        homeHref="/join?from=rsu-k7m2"
+      />,
+    );
+
+    expect(
+      screen.getByRole("link", { name: /back to home/i }),
+    ).toHaveAttribute("href", "/join?from=rsu-k7m2");
+  });
+
   it("hides the practice actions when onPracticeAgain is omitted", () => {
     render(<InterviewReportScreen view={voiceView} />);
 

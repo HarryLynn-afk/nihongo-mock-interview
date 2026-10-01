@@ -85,10 +85,10 @@ export function nextAfterAuth({
 }
 
 /**
- * Where a sign-out lands. The invite link is this device's sign-up desk:
- * return to it while it is still open, otherwise the normal landing.
+ * Where this session goes home: the device's invite link while it is still
+ * open, otherwise the normal landing. Drives both sign-out and back-to-home.
  */
-export function signOutDestination(
+export function inviteHome(
   inviteCode: string | null,
   link: JoinLinkRecord | null,
 ): "/" | `/join?from=${string}` {

@@ -193,6 +193,7 @@ export function InterviewReportScreen({
   onHelpStudy,
   onRequestFullSession,
   onPracticeAgain,
+  homeHref = "/",
 }: {
   view: ReportView;
   sessionId?: string;
@@ -201,6 +202,8 @@ export function InterviewReportScreen({
   onHelpStudy?: () => void;
   onRequestFullSession?: () => void;
   onPracticeAgain?: () => void;
+  /** Where "Back to home" goes. Defaults to the normal landing. */
+  homeHref?: string;
 }) {
   const copy = uiCopy(locale);
   const [stage, setStage] = useState(0);
@@ -444,7 +447,7 @@ export function InterviewReportScreen({
               {copy.report.practiceAgain}
             </button>
             <Link
-              href="/"
+              href={homeHref}
               className="rounded-full border border-eel/20 px-5 py-2.5 text-sm font-medium text-eel transition-colors hover:bg-eel/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
             >
               {copy.report.backToHome}

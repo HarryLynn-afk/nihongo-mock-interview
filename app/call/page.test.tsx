@@ -8,7 +8,7 @@ import * as liveTranscription from "./startLiveTranscription";
 import {
   getSampleReport,
 } from "@/lib/content/sampleReport";
-import CallPage from "./page";
+import { CallScreen } from "./CallScreen";
 
 vi.mock("@/lib/content/questionBank", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/content/questionBank")>();
@@ -95,7 +95,7 @@ describe("Call screen", () => {
   });
 
   async function startStudentTurn(user = userEvent.setup()) {
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
     await waitFor(() => {
       expect(capturedAudioSrcs).toContain("/question-1.mp3");
     });
@@ -207,7 +207,7 @@ describe("Call screen", () => {
   }
 
   it("renders both the student tile and the sensei tile on the light brand background", () => {
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     expect(screen.getByText("You")).toBeInTheDocument();
     expect(
@@ -227,7 +227,7 @@ describe("Call screen", () => {
 
   it("confirms before ending the interview, then leaves for home", async () => {
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     await user.click(screen.getByRole("button", { name: "End interview" }));
 
@@ -245,7 +245,7 @@ describe("Call screen", () => {
   });
 
   it("places Tanaka-sensei and the student as separate classroom tiles", () => {
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     const stage = screen.getByTestId("sensei-stage");
     const student = screen.getByTestId("student-stage");
@@ -260,7 +260,7 @@ describe("Call screen", () => {
   });
 
   it("locks the classroom to the viewport so the answer dock stays on screen", () => {
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     expect(screen.getByTestId("call-screen")).toHaveClass(
       "h-dvh",
@@ -274,7 +274,7 @@ describe("Call screen", () => {
   });
 
   it("sidebar shows Question 1 of 3 and Sensei speaking with no scores", () => {
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     expect(screen.getByTestId("interview-sidebar")).toBeInTheDocument();
     expect(screen.getByText("Question 1 of 3")).toBeInTheDocument();
@@ -288,7 +288,7 @@ describe("Call screen", () => {
   it("still starts the interview (both tiles render, no crash) when camera permission is denied", async () => {
     getUserMedia.mockRejectedValue(new DOMException("Denied", "NotAllowedError"));
 
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     await waitFor(() => {
       expect(screen.getByText(/camera off/i)).toBeInTheDocument();
@@ -307,7 +307,7 @@ describe("Call screen", () => {
   it("explains a blocked microphone on the call screen instead of failing silently", async () => {
     getUserMedia.mockRejectedValue(new DOMException("Denied", "NotAllowedError"));
 
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     await waitFor(() => {
       expect(screen.getByTestId("call-device-notice")).toHaveTextContent(
@@ -317,7 +317,7 @@ describe("Call screen", () => {
   });
 
   it("on mount, starts playing Q1 audio without a join dialog and does not warm n8n", async () => {
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     await waitFor(() => {
       expect(capturedAudioSrcs).toContain("/question-1.mp3");
@@ -333,7 +333,7 @@ describe("Call screen", () => {
   });
 
   it("HUD shows the active Question's Japanese while sensei speaks", async () => {
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     await waitFor(() => {
       expect(screen.getByTestId("language-hud")).toBeInTheDocument();
@@ -877,7 +877,7 @@ describe("Call screen", () => {
   it("POSTs /api/score once after Q3 when answers are ready, without showing scores", async () => {
     mockLiveGradeAndSurvey();
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     for (const question of questions) {
       await waitFor(() => {
@@ -926,7 +926,7 @@ describe("Call screen", () => {
     });
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     for (const question of questions) {
       await waitFor(() => {
@@ -955,7 +955,7 @@ describe("Call screen", () => {
     });
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
     await completeLockedInterview(user);
 
     expect(await screen.findByTestId("grading-screen")).toBeInTheDocument();
@@ -972,10 +972,25 @@ describe("Call screen", () => {
     });
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
     await completeLockedInterview(user);
 
     expect(await screen.findByTestId("grading-screen")).toBeInTheDocument();
+  });
+
+  it("sends the report's Back to home to the resolved home", async () => {
+    mockLiveGradeAndSurvey();
+    const user = userEvent.setup();
+    render(<CallScreen homeHref="/join?from=T1" />);
+
+    await completeLockedInterview(user);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("interview-report")).toBeInTheDocument();
+    });
+    expect(
+      screen.getByRole("link", { name: /back to home/i }),
+    ).toHaveAttribute("href", "/join?from=T1");
   });
 
   it("does not show the scoring-unavailable banner when /api/score returns a live report", async () => {
@@ -1019,7 +1034,7 @@ describe("Call screen", () => {
     });
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     for (const question of questions) {
       await waitFor(() => {
@@ -1081,7 +1096,7 @@ describe("Call screen", () => {
     });
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     expect(screen.queryByTestId("interview-report")).not.toBeInTheDocument();
 
@@ -1147,7 +1162,7 @@ describe("Call screen", () => {
     });
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     for (const question of questions) {
       await waitFor(() => {
@@ -1169,7 +1184,7 @@ describe("Call screen", () => {
 
   it("shows the mic-trouble screen instead of a report when every Question was skipped", async () => {
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     for (const question of questions) {
       await waitFor(() => {
@@ -1219,7 +1234,7 @@ describe("Call screen", () => {
     });
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     await waitFor(() => {
       expect(capturedAudioSrcs).toContain("/question-1.mp3");
@@ -1263,7 +1278,7 @@ describe("Call screen", () => {
     mockLiveGradeAndSurvey("P001");
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
     await completeLockedInterview(user);
 
     await waitFor(() => {
@@ -1284,7 +1299,7 @@ describe("Call screen", () => {
     vi.mocked(pickSessionQuestions).mockClear();
     window.history.pushState({}, "", "/call?guest=1");
 
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     await waitFor(() => {
       expect(screen.getByText("Question 1 of 3")).toBeInTheDocument();
@@ -1296,7 +1311,7 @@ describe("Call screen", () => {
     vi.mocked(pickSessionQuestions).mockClear();
     window.history.pushState({}, "", "/call");
 
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     await waitFor(() => {
       expect(pickSessionQuestions).toHaveBeenCalled();
@@ -1307,7 +1322,7 @@ describe("Call screen", () => {
     mockLiveGradeAndSurvey("P001");
     window.history.pushState({}, "", "/call?guest=1");
 
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     await expect(
       screen.findByText("Participant P001", {}, { timeout: 400 }),
@@ -1321,7 +1336,7 @@ describe("Call screen", () => {
     mockLiveGradeAndSurvey("P001");
     window.history.pushState({}, "", "/call");
 
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     await waitFor(() => {
       expect(screen.getByText("Participant P001")).toBeInTheDocument();
@@ -1333,7 +1348,7 @@ describe("Call screen", () => {
     window.history.pushState({}, "", "/call?guest=1");
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
     await completeLockedInterview(user);
 
     await waitFor(() => {
@@ -1362,7 +1377,7 @@ describe("Call screen", () => {
     window.history.pushState({}, "", "/call?guest=1");
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
     await completeLockedInterview(user);
 
     await waitFor(() => {
@@ -1379,7 +1394,7 @@ describe("Call screen", () => {
   it("asks for an email from the Guest report and stays quiet after a send this visit", async () => {
     window.history.pushState({}, "", "/call?guest=1");
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     await user.click(screen.getByRole("button", { name: /skip interview/i }));
     await waitFor(() => {
@@ -1410,7 +1425,7 @@ describe("Call screen", () => {
     sessionStorage.setItem("nihongo-full-session-request", "sent");
     window.history.pushState({}, "", "/call?guest=1");
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     await user.click(screen.getByRole("button", { name: /skip interview/i }));
     await waitFor(() => {
@@ -1427,7 +1442,7 @@ describe("Call screen", () => {
     window.history.pushState({}, "", "/call?guest=1");
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
     await completeLockedInterview(user);
 
     await waitFor(() => {
@@ -1442,7 +1457,7 @@ describe("Call screen", () => {
     mockLiveGradeAndSurvey("P001");
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
     await completeLockedInterview(user);
 
     await waitFor(
@@ -1459,7 +1474,7 @@ describe("Call screen", () => {
     mockLiveGradeAndSurvey("P001");
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
     await completeLockedInterview(user);
 
     await waitFor(() => {
@@ -1491,7 +1506,7 @@ describe("Call screen", () => {
     mockLiveGradeAndSurvey("P001");
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
     await completeLockedInterview(user);
 
     await waitFor(() => {
@@ -1520,7 +1535,7 @@ describe("Call screen", () => {
     mockLiveGradeAndSurvey("P001");
 
     const user = userEvent.setup();
-    render(<CallPage />);
+    render(<CallScreen homeHref="/" />);
 
     await user.click(screen.getByRole("button", { name: /skip interview/i }));
     await waitFor(() => {
