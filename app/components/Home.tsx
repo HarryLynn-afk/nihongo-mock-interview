@@ -96,7 +96,7 @@ function InviteLogin({ from }: { from: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-[60px] items-center justify-center rounded-full bg-feather px-8 py-3 text-lg font-medium text-white shadow-[0_14px_30px_-10px_rgba(88,204,2,0.55)] transition-[transform,box-shadow,background-color] hover:-translate-y-0.5 hover:bg-feather-dark hover:shadow-[0_18px_34px_-10px_rgba(88,204,2,0.65)]"
+        className={HEADER_PILL}
       >
         {copy.joinLink.login}
       </button>
@@ -201,11 +201,6 @@ export default function Home({ view = SIGNED_OUT_START }: { view?: LandingView }
         <p className="mx-auto mt-5 max-w-[52ch] text-sm leading-relaxed text-wolf">
           {copy.start.practiceOnly}
         </p>
-        {session.kind !== "signedIn" && (invite === "open" || invite === "full") ? (
-          <p className="mx-auto mt-5 max-w-[48ch] text-sm leading-relaxed text-wolf">
-            {copy.joinLink.explanation}
-          </p>
-        ) : null}
 
         <p className="mt-6 w-full rounded-lg border border-eel/10 bg-white/70 px-4 py-3 text-sm text-eel/80 md:hidden">
           {copy.start.computerOnly}

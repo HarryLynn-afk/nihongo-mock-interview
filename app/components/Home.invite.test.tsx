@@ -40,8 +40,8 @@ describe("Home invite landing", () => {
       screen.getByRole("button", { name: "Try a short practice" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Sign in with Google for the full interview/),
-    ).toBeInTheDocument();
+      screen.queryByText(/Sign in with Google for the full interview/),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "Participant login" }),
     ).not.toBeInTheDocument();

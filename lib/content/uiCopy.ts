@@ -77,7 +77,6 @@ const en = {
     joinInterview: "Join Interview",
   },
   joinLink: {
-    explanation: "Sign in with Google for the full interview. Guest practice is shorter and isn't saved.",
     title: "Join NihonGo",
     google: "Continue with Google",
     login: "Login",
@@ -324,7 +323,6 @@ const my: UiCopy = {
     joinInterview: "အင်တာဗျူးတွင် ပါဝင်ရန်",
   },
   joinLink: {
-    explanation: "အင်တာဗျူးအပြည့်အစုံအတွက် Google ဖြင့် ဝင်ရောက်ပါ။ ဧည့်သည် လေ့ကျင့်မှုမှာ ပိုတိုပြီး သိမ်းဆည်းမည် မဟုတ်ပါ။",
     title: "NihonGo ဝင်ရောက်ရန်",
     google: "Google ဖြင့် ဆက်ရန်",
     login: "ဝင်ရောက်ရန်",

@@ -8,12 +8,11 @@ flowchart TD
     Home["Normal landing · /"]
     Invite["Available unique-link landing · /join?from=CODE"]
     Landing["Same landing layout<br/>Try as guest in the middle<br/>Login at the top-left"]
-    InviteNote["Unique link also explains:<br/>Google sign-in opens the full interview;<br/>guest practice is shorter and unsaved"]
     Full["Full unique link:<br/>same landing with sign-ups-full popup"]
     FullDismiss["Dismiss popup;<br/>landing remains visible"]
 
     Entry -->|Normal URL| Home --> Landing
-    Entry -->|Unique link with room| Invite --> InviteNote --> Landing
+    Entry -->|Unique link with room| Invite --> Landing
     Entry -->|Unique link is full| Full -->|Close| FullDismiss
 
     Landing -->|Try as guest| GuestJoin["Guest device setup · /guest"]
@@ -42,7 +41,7 @@ flowchart TD
 ## Rules to preserve during implementation
 
 - Google sign-in returns to the landing URL that started it. The profile page never opens automatically.
-- The normal and available unique-link landing pages share their layout. The unique link keeps its invite code and explains the difference between full and guest practice.
+- The normal and available unique-link landing pages share their layout. The unique link keeps its invite code so sign-ups are attributed to the tester.
 - Signed-in users can still choose guest practice without signing out. Guest sessions remain separate from participant study sessions.
 - Consent appears after **Join interview** and before participant enrollment, device setup, or the classroom. Declining leaves the user on the signed-in landing page. Consent already given during this sign-in visit is not requested again.
 - Closing the device popup keeps the user on the signed-in landing page. Signing out returns to the original landing URL with **Try as guest** and **Login** visible.
@@ -51,7 +50,7 @@ flowchart TD
 ## Module boundaries
 
 - Both `/` and `/join?from=CODE` resolve a **landing view** on the server and pass it to the same landing module. The view provides signed-in state and consent status; the unique route also passes its link status:
-  - **Signed out:** the originating URL is known; show **Try as guest** and **Login**. An available unique link adds its invitation explanation.
+  - **Signed out:** the originating URL is known; show **Try as guest** and **Login**. An available unique link uses the same landing and attributes sign-in to its code.
   - **Signed in:** include consent status for this visit and originating URL. Show **Join interview**, secondary **Try as guest**, and **Profile** when the link is available. The profile page loads Google account details and optional participant ID separately.
   - **Unique link full for this visitor:** show the shared landing with the sign-ups-full popup and guest option; do not offer **Join interview**. The account may be absent or present. An unknown link is handled by the route before producing a landing view.
 - The landing module receives the server view and link status. It does not look up invite capacity, decide Google eligibility, or assemble OAuth return URLs.
