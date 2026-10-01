@@ -1562,4 +1562,43 @@ describe("Call screen", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows Burmese feedback on the Skip interview sample after switching to MM", async () => {
+    mockLiveGradeAndSurvey("P001");
+
+    const user = userEvent.setup();
+    render(<CallScreen homeHref="/" />);
+
+    await user.click(screen.getByRole("button", { name: /skip interview/i }));
+    await waitFor(() => {
+      expect(screen.getByTestId("interview-report")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "မြန်မာ" }));
+
+    const critiques = within(screen.getByTestId("report-critiques"));
+    expect(
+      critiques.getByText(
+        "အသံထွက်နှင့် စကားစီးဆင်းမှုကို ပိုမိုကောင်းမွန်အောင် ပြုလုပ်ရန်။",
+      ),
+    ).toBeInTheDocument();
+    expect(critiques.queryByText(/Use です\/ます/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("report-burmese")).not.toBeInTheDocument();
+
+    await user.click(
+      within(screen.getByTestId("report-question-nav")).getByRole("button", {
+        name: /q2/i,
+      }),
+    );
+    expect(
+      critiques.getByText(
+        "ဤအချက်ကို သင့်အဖြေက ကောင်းမွန်စွာ ပြည့်မီပြီးဖြစ်သည်။",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      critiques.queryByText(
+        /You named this school, Akihabara, and IT career guidance/,
+      ),
+    ).not.toBeInTheDocument();
+  });
+
 });

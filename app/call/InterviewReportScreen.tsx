@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import type { UiLocale } from "@/lib/content/locale";
 import { uiCopy } from "@/lib/content/uiCopy";
 import type { ReportQuestionCard, ReportView } from "./buildReportView";
-import { REPORT_NOT_ASSESSED } from "./buildReportView";
 
 export const REPORT_STAMP_REVEAL_MS = 700;
 export const REPORT_COACHING_REVEAL_MS = 1400;
@@ -114,16 +113,6 @@ function QuestionCard({
               />
             </div>
           </div>
-          {locale === "my" ? (
-            <p
-              lang="my"
-              data-testid="report-burmese"
-              className="rounded-xl border border-eel/10 bg-eel/5 px-4 py-3 text-sm leading-relaxed text-eel/90"
-            >
-              {card.burmese ||
-                "Burmese explanation uses locked templates. Live translation is not wired yet."}
-            </p>
-          ) : null}
         </div>
         <div className="flex flex-col gap-3">
           <div>
@@ -372,7 +361,7 @@ export function InterviewReportScreen({
                     </>
                   ) : (
                     <span className="text-eel/75">
-                      {REPORT_NOT_ASSESSED}
+                      {copy.report.notAssessed}
                     </span>
                   )}
                 </li>

@@ -132,7 +132,7 @@ describe("buildReportView", () => {
     });
 
     expect(view.critiques).toEqual([
-      formatQuotedCritique(report.critiques[0]),
+      formatQuotedCritique(report.critiques[0], "en"),
     ]);
     expect(view).not.toHaveProperty("coaching");
   });
@@ -168,12 +168,33 @@ describe("buildReportView", () => {
     });
 
     expect(view.critiques).toHaveLength(3);
-    expect(view.critiques[1].burmese).toContain("၊");
-    expect(view.critiques[2].burmese).toContain("ဒီအစား");
     expect(view.questions[1].affirming).toBe(true);
     expect(view.questions[1].strengths).toEqual(["Name the school."]);
     expect(view.questions[1].nextHeading).toBe("Optional enhancement");
     expect(view.questions[1].rewriteHeading).toBe("Useful phrase to keep");
     expect(view.questions[1].rewrite).toBe("この学校");
+  });
+
+  it("localizes every question card string when MM is selected", () => {
+    const view = buildReportView({
+      report,
+      answers: voiceAnswers,
+      locale: "my",
+    });
+    const card = view.questions[0];
+
+    expect(card).not.toHaveProperty("burmese");
+    expect(card).not.toHaveProperty("categoryLabel");
+    expect(card.evidence).toBe(
+      "အသံထွက်နှင့် စကားစီးဆင်းမှုကို ပိုမိုကောင်းမွန်အောင် ပြုလုပ်ရန်။",
+    );
+    expect(card.strengths).toEqual([
+      "သင့်အဖြေတွင် 「はじめまして」 ပါဝင်ပါသည်။",
+    ]);
+    expect(card.improvements).toEqual([
+      "အသံထွက်နှင့် စကားစီးဆင်းမှုကို ပိုမိုကောင်းမွန်အောင် ပြုလုပ်ရန်။",
+    ]);
+    expect(card.nextHeading).toBe("နောက်တစ်ကြိမ် တိုးတက်အောင်");
+    expect(card.rewriteHeading).toBe("အကြံပြု ဂျပန်အဖြေ");
   });
 });

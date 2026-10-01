@@ -3,14 +3,14 @@
   "headline": "Ready",
   "stamp": "準備OK",
   "stampColor": "#22C55E",
-  "total": 92,
+  "total": 88,
   "banner": null,
   "scores": {
     "speaking": { "raw": 5, "weight": 20, "points": 20 },
     "listening": { "raw": 4, "weight": 15, "points": 12 },
     "grammarPoliteness": { "raw": 4, "weight": 15, "points": 12 },
     "motivation": { "raw": 5, "weight": 20, "points": 20 },
-    "studyPlan": { "raw": 5, "weight": 20, "points": 20 },
+    "studyPlan": { "raw": 4, "weight": 20, "points": 16 },
     "consistency": { "raw": 4, "weight": 10, "points": 8 }
   },
   "gatesFired": [],
@@ -26,14 +26,14 @@
       "questionIndex": 1,
       "quote": "この学校で日本語を勉強したいです",
       "explanation": "You named this school, Akihabara, and IT career guidance.",
-      "rewrite": "この学校で日本語を勉強したいです。",
+      "rewrite": "この学校で日本語を勉強したいです",
       "category": "motivation"
     },
     {
       "questionIndex": 2,
       "quote": "専門学校でウェブを勉強します",
       "explanation": "Post-graduation plan is vocational school, then engineer.",
-      "rewrite": "専門学校でウェブを勉強します。",
+      "rewrite": "専門学校でウェブを勉強します",
       "category": "studyPlan"
     }
   ],

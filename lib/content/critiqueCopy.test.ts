@@ -1,61 +1,88 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildNextStep,
   formatQuotedCritique,
   futureGoalSpecificity,
-  stretchImprovement,
 } from "./critiqueCopy";
 
 describe("formatQuotedCritique", () => {
-  it("uses the affirming MY frame when rewrite equals quote", () => {
-    const view = formatQuotedCritique({
-      questionIndex: 0,
-      quote: "はじめまして",
-      explanation: "Clear self-introduction.",
-      rewrite: "はじめまして",
-      category: "speaking",
-    });
+  it("returns the AI explanation when ENG is selected", () => {
+    const view = formatQuotedCritique(
+      {
+        questionIndex: 0,
+        quote: "はじめまして",
+        explanation: "Clear self-introduction.",
+        rewrite: "はじめまして",
+        category: "speaking",
+      },
+      "en",
+    );
 
-    expect(view.quote).toBe("はじめまして");
     expect(view.explanation).toBe("Clear self-introduction.");
-    expect(view.rewrite).toBe("はじめまして");
-    expect(view.burmese).toBe(
-      "သင်ပြောခဲ့သည့်စာကြောင်း − 「はじめまして」။ အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
+    expect(view).not.toHaveProperty("burmese");
+  });
+
+  it("returns a standalone Burmese affirmation when MM is selected", () => {
+    const view = formatQuotedCritique(
+      {
+        questionIndex: 0,
+        quote: "はじめまして",
+        explanation: "Clear self-introduction.",
+        rewrite: "はじめまして",
+        category: "speaking",
+      },
+      "my",
     );
-    expect(view.burmese).not.toContain("ဒီအစား");
-  });
 
-  it("uses the corrective MY frame when rewrite differs from quote", () => {
-    const view = formatQuotedCritique({
-      questionIndex: 0,
-      quote: "hello",
-      explanation: "Need a Japanese rewrite.",
-      rewrite: "はじめまして。",
-      category: "speaking",
-    });
-
-    expect(view.burmese).toBe(
-      "သင်ပြောခဲ့သည့်စာကြောင်း − 「hello」။ အသံထွက်နှင့် စကားစီးဆင်းမှုကို ပိုမိုကောင်းမွန်အောင် ပြုလုပ်ရန်။ ဒီအစား − 「はじめまして。」 ဟုပြောနိုင်ပါသည်။",
+    expect(view.explanation).toBe(
+      "အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
     );
-    expect(view.burmese).not.toContain("ကောင်းစွာပြောနိုင်ခဲ့ပါသည်");
+    expect(view.explanation).not.toContain("ဒီအစား");
   });
 
-  it("fills {explanation_my} from the critique category, not speaking by default", () => {
-    const view = formatQuotedCritique({
-      questionIndex: 1,
-      quote: "アニメが好きです",
-      explanation: "Answer the school question.",
-      rewrite: "この学校で日本語を勉強したいです。",
-      category: "listening",
-    });
+  it("returns the category's corrective Burmese advice when the rewrite differs", () => {
+    const view = formatQuotedCritique(
+      {
+        questionIndex: 1,
+        quote: "アニメが好きです",
+        explanation: "Answer the school question.",
+        rewrite: "この学校で日本語を勉強したいです。",
+        category: "listening",
+      },
+      "my",
+    );
 
-    expect(view.burmese).toContain("မေးခွန်းနှင့် ပိုမိုကိုက်ညီအောင် အဖြေပေးရန်");
-    expect(view.burmese).not.toContain("အသံထွက်");
+    expect(view.explanation).toBe(
+      "မေးခွန်းနှင့် ပိုမိုကိုက်ညီအောင် အဖြေပေးရန်။",
+    );
+    expect(view.explanation).not.toContain("အသံထွက်");
   });
 
-  it("builds optional-enhancement copy for a strong affirming critique", () => {
-    expect(stretchImprovement("motivation")).toMatch(/career goal/i);
+  it("classifies future-goal specificity from the transcript", () => {
     expect(futureGoalSpecificity("将来ITエンジニアになりたいです")).toBe("specific");
     expect(futureGoalSpecificity("将来働きたいです")).toBe("vague");
     expect(futureGoalSpecificity("日本語が好きです")).toBe("missing");
+  });
+});
+
+describe("buildNextStep", () => {
+  it("localizes the affirming enhancement lines when MM is selected", () => {
+    const view = buildNextStep({
+      affirming: true,
+      raw: 5,
+      category: "motivation",
+      transcript: "日本で勉強したいです",
+      quote: "日本で勉強したいです",
+      explanation: "Add a personal future goal.",
+      rewrite: "日本で勉強したいです",
+      locale: "my",
+    });
+
+    expect(view.heading).toBe("ထပ်မံ တိုးတက်အောင်");
+    expect(view.lines).toEqual([
+      "ဤအချက်ကို သင့်အဖြေက ကောင်းမွန်စွာ ပြည့်မီပြီးဖြစ်သည်။",
+      "ပိုမိုကြွယ်ဝသော အဖြေလိုချင်လျှင် သင့်ရည်ရွယ်ချက်ကို ပိုမိုကိုယ်ပိုင်ဆန်အောင် အနာဂတ် လေ့လာရေး သို့မဟုတ် အလုပ်အကိုင် ရည်မှန်းချက်တစ်ခု ထည့်ပါ။",
+    ]);
+    expect(view.rewriteHeading).toBe("သိမ်းထားသင့်သော စကားစု");
   });
 });

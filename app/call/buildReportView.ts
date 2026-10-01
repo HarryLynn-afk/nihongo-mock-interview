@@ -14,9 +14,9 @@ import {
   type FormattedCritique,
 } from "@/lib/content/critiqueCopy";
 import { DEFAULT_UI_LOCALE, type UiLocale } from "@/lib/content/locale";
-import { uiCopy, type UiCopy } from "@/lib/content/uiCopy";
+import { uiCopy } from "@/lib/content/uiCopy";
 
-const SCORE_ORDER: RubricCategoryKey[] = [
+const SCORE_ORDER: Exclude<RubricCategoryKey, "speaking">[] = [
   "listening",
   "grammarPoliteness",
   "motivation",
@@ -50,7 +50,6 @@ export type ReportScoreRow = {
 export type ReportQuestionCard = {
   questionIndex: number;
   navLabel: string;
-  categoryLabel: string;
   japanese: string;
   transcript: string;
   scoreText: string;
@@ -61,7 +60,6 @@ export type ReportQuestionCard = {
   improvements: string[];
   rewriteHeading: string;
   rewrite: string;
-  burmese: string;
   evidence: string;
   affirming: boolean;
 };
@@ -86,31 +84,6 @@ export type ReportView = {
 export type ReportAnswerInput =
   | { questionIndex: number; status: "answered"; transcript: string }
   | { questionIndex: number; status: "skipped" };
-
-function scoreLabel(copy: UiCopy, key: RubricCategoryKey): string {
-  if (key === "speaking") return "Answer wording";
-  return copy.report.scores[key];
-}
-
-function radarLabel(copy: UiCopy, key: RubricCategoryKey): string {
-  if (key === "speaking") return "Wording";
-  return copy.report.radar[key];
-}
-
-function localizeNextHeading(heading: string, copy: UiCopy): string {
-  if (heading === "Improve next") return copy.report.improveNext;
-  if (heading === "Optional enhancement") return copy.report.optionalEnhancement;
-  if (heading === "Make it even stronger") return copy.report.makeStronger;
-  return heading;
-}
-
-function localizeRewriteHeading(heading: string, copy: UiCopy): string {
-  if (heading === "Suggested improved Japanese answer") {
-    return copy.report.rewriteHeading;
-  }
-  if (heading === "Useful phrase to keep") return copy.report.usefulPhrase;
-  return heading;
-}
 
 export function buildReportView({
   report,
@@ -142,8 +115,8 @@ export function buildReportView({
       const raw = row.raw as 1 | 2 | 3 | 4 | 5;
       return {
         key,
-        label: scoreLabel(copy, key),
-        radarLabel: radarLabel(copy, key),
+        label: copy.report.scores[key],
+        radarLabel: copy.report.radar[key],
         raw: row.raw,
         ratingLabel: copy.report.rating[raw],
         points: row.points,
@@ -162,7 +135,6 @@ export function buildReportView({
         return {
           questionIndex: index,
           navLabel,
-          categoryLabel: navLabel,
           japanese: question.japanese,
           transcript: copy.report.noAnswerTranscript,
           scoreText: "—",
@@ -173,7 +145,6 @@ export function buildReportView({
           improvements: [copy.report.noAnswerNextStep],
           rewriteHeading: copy.report.rewriteHeading,
           rewrite: "",
-          burmese: "",
           evidence: "",
           affirming: false,
         };
@@ -182,7 +153,7 @@ export function buildReportView({
       const critique = report.critiques.find(
         (item) => item.questionIndex === index,
       );
-      const formatted = critique ? formatQuotedCritique(critique) : null;
+      const formatted = critique ? formatQuotedCritique(critique, locale) : null;
       const affirming = Boolean(formatted && isAffirmingCritique(formatted));
       const category = critique?.category;
       const scored = category ? report.scores[category] : null;
@@ -197,6 +168,7 @@ export function buildReportView({
               quote: formatted.quote,
               explanation: formatted.explanation,
               rewrite: formatted.rewrite,
+              locale,
             })
           : null;
       const showScore = Boolean(category && category !== "speaking" && scored);
@@ -205,7 +177,6 @@ export function buildReportView({
       return {
         questionIndex: index,
         navLabel,
-        categoryLabel: category ? scoreLabel(copy, category) : navLabel,
         japanese: question.japanese,
         transcript,
         scoreText: showScore && scored ? `${scored.points}/${scored.weight}` : "—",
@@ -215,27 +186,22 @@ export function buildReportView({
           ? affirming
             ? [formatted.explanation]
             : quote && quote !== "（無言）"
-              ? [`Your answer includes 「${quote}」.`]
+              ? [
+                  copy.report.answerIncludesQuote.replace("{quote}", quote),
+                ]
               : []
           : [],
-        nextHeading: localizeNextHeading(
-          next?.heading ?? "Improve next",
-          copy,
-        ),
+        nextHeading: next?.heading ?? copy.report.improveNext,
         improvements: next?.lines ?? [],
-        rewriteHeading: localizeRewriteHeading(
-          next?.rewriteHeading ?? "Suggested improved Japanese answer",
-          copy,
-        ),
+        rewriteHeading: next?.rewriteHeading ?? copy.report.rewriteHeading,
         rewrite: next?.rewrite ?? "",
-        burmese: formatted?.burmese ?? "",
         evidence: formatted ? formatted.explanation : "",
         affirming,
       };
     }),
-    critiques: report.critiques.map(formatQuotedCritique),
+    critiques: report.critiques.map((critique) =>
+      formatQuotedCritique(critique, locale),
+    ),
     notes,
   };
 }
-
-export const REPORT_NOT_ASSESSED = "Not assessed";

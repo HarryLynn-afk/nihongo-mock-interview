@@ -156,6 +156,10 @@ const en = {
     evidence: "Evidence",
     missingElement: "Missing element",
     questionLabel: "Question",
+    answerIncludesQuote: "Your answer includes 「{quote}」.",
+    alreadyMeets: "Your answer already meets this criterion strongly.",
+    richerAnswer: "If you want a richer answer, {stretch}",
+    optionalLine: "Optional: {stretch}",
     noAnswerTranscript: "No answer was captured for this Question.",
     noAnswerNextHeading: "Try this Question again next practice",
     noAnswerNextStep:
@@ -177,6 +181,7 @@ const en = {
       4: "Good",
       5: "Strong",
     },
+    notAssessed: "Not assessed",
     scores: {
       listening: "Answer relevance",
       grammarPoliteness: "Grammar & naturalness",
@@ -406,6 +411,10 @@ const my: UiCopy = {
     evidence: "အထောက်အထား",
     missingElement: "ပျောက်နေသော အချက်",
     questionLabel: "မေးခွန်း",
+    answerIncludesQuote: "သင့်အဖြေတွင် 「{quote}」 ပါဝင်ပါသည်။",
+    alreadyMeets: "ဤအချက်ကို သင့်အဖြေက ကောင်းမွန်စွာ ပြည့်မီပြီးဖြစ်သည်။",
+    richerAnswer: "ပိုမိုကြွယ်ဝသော အဖြေလိုချင်လျှင် {stretch}",
+    optionalLine: "ထပ်ဆောင်း − {stretch}",
     noAnswerTranscript: "ဤမေးခွန်းအတွက် အဖြေ မရရှိပါ။",
     noAnswerNextHeading: "နောက်လေ့ကျင့်မှုတွင် ဤမေးခွန်းကို ထပ်ကြိုးစားပါ",
     noAnswerNextStep:
@@ -427,6 +436,7 @@ const my: UiCopy = {
       4: "ကောင်း",
       5: "ကောင်းမွန်",
     },
+    notAssessed: "အမှတ်မပေးထားပါ",
     scores: {
       listening: "အဖြေ ကိုက်ညီမှု",
       grammarPoliteness: "သဒ္ဒါနှင့် သဘာဝကျမှု",

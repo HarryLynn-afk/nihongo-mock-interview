@@ -65,6 +65,16 @@ const skippedQ2View = buildReportView({
   ],
 });
 
+const mmView = buildReportView({
+  report,
+  locale: "my",
+  answers: [
+    { questionIndex: 0, status: "answered", transcript: "はじめまして" },
+    { questionIndex: 1, status: "answered", transcript: "日本で勉強したいです" },
+    { questionIndex: 2, status: "answered", transcript: "専門学校に行きます" },
+  ],
+});
+
 describe("InterviewReportScreen", () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -173,25 +183,47 @@ describe("InterviewReportScreen", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("reveals Burmese explanation when MM is selected", () => {
-    render(<InterviewReportScreen view={voiceView} locale="my" />);
+  it("renders every critique string in Burmese when MM is selected", async () => {
+    const user = userEvent.setup();
+    render(<InterviewReportScreen view={mmView} locale="my" />);
 
+    const critiques = within(screen.getByTestId("report-critiques"));
     expect(
-      screen.getByText(
-        "သင်ပြောခဲ့သည့်စာကြောင်း − 「はじめまして」။ အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
+      critiques.getByText(
+        "အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("report-burmese")).not.toBeInTheDocument();
+    expect(
+      critiques.queryByText("Clear self-introduction."),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      within(screen.getByTestId("report-question-nav")).getByRole("button", {
+        name: /q2/i,
+      }),
+    );
+    expect(
+      critiques.getByText(
+        "သင့်အဖြေတွင် 「日本で勉強したいです」 ပါဝင်ပါသည်။",
       ),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /burmese explanation/i }),
+      critiques.getByText(
+        "လိုချင်သည့်ရည်ရွယ်ချက်ကို ပိုမိုရှင်းလင်းအောင် ဖော်ပြရန်။",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      critiques.queryByText("Add a personal future goal."),
     ).not.toBeInTheDocument();
   });
 
-  it("hides Burmese explanation on ENG", () => {
+  it("hides Burmese critique copy on ENG", () => {
     render(<InterviewReportScreen view={voiceView} locale="en" />);
 
     expect(
       screen.queryByText(
-        "သင်ပြောခဲ့သည့်စာကြောင်း − 「はじめまして」။ အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
+        "အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
       ),
     ).not.toBeInTheDocument();
   });

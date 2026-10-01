@@ -1,5 +1,7 @@
 import type { RubricCategoryKey } from "./rubric";
 import type { QuotedCritique } from "./parseQuotedCritiques";
+import type { UiLocale } from "./locale";
+import { uiCopy } from "./uiCopy";
 
 const CORRECTIVE_MY: Record<RubricCategoryKey, string> = {
   speaking: "အသံထွက်နှင့် စကားစီးဆင်းမှုကို ပိုမိုကောင်းမွန်အောင် ပြုလုပ်ရန်",
@@ -19,19 +21,46 @@ const AFFIRMING_MY: Record<RubricCategoryKey, string> = {
   consistency: "ယခင်အဖြေများနှင့် ကိုက်ညီစွာ ပြောနိုင်ပြီး",
 };
 
-const AFFIRMING_STRETCH: Record<RubricCategoryKey, string> = {
-  speaking:
-    "add one more complete spoken sentence so the self-introduction is easier to remember.",
-  listening:
-    "cover every part Tanaka-sensei asked, not only the first clause.",
-  grammarPoliteness:
-    "add one more complete です/ます sentence.",
-  motivation:
-    "add a specific future study or career goal to make your motivation more personal and memorable.",
-  studyPlan:
-    "add a realistic time frame and the next school or job after graduation.",
-  consistency:
-    "keep the same school name and plan in every answer.",
+const STRETCH: Record<UiLocale, Record<RubricCategoryKey, string>> = {
+  en: {
+    speaking:
+      "add one more complete spoken sentence so the self-introduction is easier to remember.",
+    listening:
+      "cover every part Tanaka-sensei asked, not only the first clause.",
+    grammarPoliteness: "add one more complete です/ます sentence.",
+    motivation:
+      "add a specific future study or career goal to make your motivation more personal and memorable.",
+    studyPlan:
+      "add a realistic time frame and the next school or job after graduation.",
+    consistency: "keep the same school name and plan in every answer.",
+  },
+  my: {
+    speaking:
+      "နောက်ထပ် ပြည့်စုံသော ပြောစကားတစ်ကြောင်း ထည့်ပြောပါ။",
+    listening:
+      "Tanaka-sensei မေးသည့် အချက်တိုင်းကို ဖြေပါ၊ ပထမစာကြောင်းကိုသာ မဖြေပါနှင့်။",
+    grammarPoliteness:
+      "နောက်ထပ် ပြည့်စုံသော です/ます စာကြောင်းတစ်ကြောင်း ထည့်ပါ။",
+    motivation:
+      "သင့်ရည်ရွယ်ချက်ကို ပိုမိုကိုယ်ပိုင်ဆန်အောင် အနာဂတ် လေ့လာရေး သို့မဟုတ် အလုပ်အကိုင် ရည်မှန်းချက်တစ်ခု ထည့်ပါ။",
+    studyPlan:
+      "အချိန်ကာလတစ်ခုနှင့် ဘွဲ့ရပြီးနောက် ကျောင်း သို့မဟုတ် အလုပ်ကို ထည့်ပါ။",
+    consistency:
+      "အဖြေတိုင်းတွင် ကျောင်းအမည်နှင့် အစီအစဉ်ကို တူညီစွာ ထားပါ။",
+  },
+};
+
+const GOAL_STRETCH: Record<UiLocale, { specific: string; vague: string }> = {
+  en: {
+    specific:
+      "connect this goal more directly to your choice of Japanese language school.",
+    vague: "make your future goal more specific.",
+  },
+  my: {
+    specific:
+      "ဤရည်မှန်းချက်ကို ဂျပန်ဘာသာစကားကျောင်း ရွေးချယ်မှုနှင့် ပိုမိုတိုက်ရိုက် ချိတ်ဆက်ပါ။",
+    vague: "သင့်အနာဂတ် ရည်မှန်းချက်ကို ပိုမိုတိကျအောင် ဖော်ပြပါ။",
+  },
 };
 
 export function futureGoalSpecificity(
@@ -53,18 +82,19 @@ export function futureGoalSpecificity(
 function motivationOrPlanStretch(
   category: RubricCategoryKey,
   transcript: string,
+  locale: UiLocale,
 ): string {
   if (category !== "motivation" && category !== "studyPlan") {
-    return AFFIRMING_STRETCH[category];
+    return STRETCH[locale][category];
   }
   const specificity = futureGoalSpecificity(transcript);
   if (specificity === "specific") {
-    return "connect this goal more directly to your choice of Japanese language school.";
+    return GOAL_STRETCH[locale].specific;
   }
   if (specificity === "vague") {
-    return "make your future goal more specific.";
+    return GOAL_STRETCH[locale].vague;
   }
-  return AFFIRMING_STRETCH[category];
+  return STRETCH[locale][category];
 }
 
 export type NextStepView = {
@@ -82,6 +112,7 @@ export function buildNextStep({
   quote,
   explanation,
   rewrite,
+  locale,
 }: {
   affirming: boolean;
   raw: number;
@@ -90,45 +121,38 @@ export function buildNextStep({
   quote: string;
   explanation: string;
   rewrite: string;
+  locale: UiLocale;
 }): NextStepView {
+  const copy = uiCopy(locale);
   if (!affirming) {
     return {
-      heading: "Improve next",
+      heading: copy.report.improveNext,
       lines: [explanation],
-      rewriteHeading: "Suggested improved Japanese answer",
+      rewriteHeading: copy.report.rewriteHeading,
       rewrite,
     };
   }
 
-  const stretch = motivationOrPlanStretch(category, transcript);
+  const stretch = motivationOrPlanStretch(category, transcript, locale);
   if (raw >= 5) {
     return {
-      heading: "Optional enhancement",
+      heading: copy.report.optionalEnhancement,
       lines: [
-        "Your answer already meets this criterion strongly.",
-        `If you want a richer answer, ${stretch}`,
+        copy.report.alreadyMeets,
+        copy.report.richerAnswer.replace("{stretch}", stretch),
       ],
-      rewriteHeading: "Useful phrase to keep",
+      rewriteHeading: copy.report.usefulPhrase,
       rewrite: quote,
     };
   }
 
   return {
-    heading: "Make it even stronger",
-    lines: [`Optional: ${stretch.charAt(0).toUpperCase()}${stretch.slice(1)}`],
-    rewriteHeading: "Useful phrase to keep",
+    heading: copy.report.makeStronger,
+    lines: [copy.report.optionalLine.replace("{stretch}", stretch)],
+    rewriteHeading: copy.report.usefulPhrase,
     rewrite: quote,
   };
 }
-
-const FALLBACK_STRENGTH: Record<RubricCategoryKey, string> = {
-  speaking: "You answered this Question in Japanese.",
-  listening: "You responded to Tanaka-sensei's Question.",
-  grammarPoliteness: "You stayed in Japanese for this answer.",
-  motivation: "You gave a reason for studying in Japan.",
-  studyPlan: "You described a next step after the language school.",
-  consistency: "You stayed on the same interview topic.",
-};
 
 const STRETCH_REWRITE_EXTRA = [
   "この学校で日本語を勉強したいです。",
@@ -140,7 +164,6 @@ export type FormattedCritique = {
   quote: string;
   explanation: string;
   rewrite: string;
-  burmese: string;
 };
 
 export function isAffirmingCritique(critique: {
@@ -148,14 +171,6 @@ export function isAffirmingCritique(critique: {
   rewrite: string;
 }): boolean {
   return critique.rewrite === critique.quote;
-}
-
-export function stretchImprovement(category: RubricCategoryKey): string {
-  return AFFIRMING_STRETCH[category];
-}
-
-export function fallbackStrength(category: RubricCategoryKey): string {
-  return FALLBACK_STRENGTH[category];
 }
 
 export function stretchRewriteForQuestion(
@@ -169,11 +184,20 @@ export function stretchRewriteForQuestion(
   return `${withStop}${extra}`;
 }
 
-export function formatQuotedCritique(critique: QuotedCritique): FormattedCritique {
+export function formatQuotedCritique(
+  critique: QuotedCritique,
+  locale: UiLocale,
+): FormattedCritique {
   const { quote, explanation, rewrite, category } = critique;
-  const burmese =
-    rewrite === quote
-      ? `သင်ပြောခဲ့သည့်စာကြောင်း − 「${quote}」။ ${AFFIRMING_MY[category]}၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။`
-      : `သင်ပြောခဲ့သည့်စာကြောင်း − 「${quote}」။ ${CORRECTIVE_MY[category]}။ ဒီအစား − 「${rewrite}」 ဟုပြောနိုင်ပါသည်။`;
-  return { quote, explanation, rewrite, burmese };
+  if (locale === "my") {
+    return {
+      quote,
+      rewrite,
+      explanation:
+        rewrite === quote
+          ? `${AFFIRMING_MY[category]}၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။`
+          : `${CORRECTIVE_MY[category]}။`,
+    };
+  }
+  return { quote, explanation, rewrite };
 }
