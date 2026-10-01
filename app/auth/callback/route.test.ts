@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { JOIN_FROM_COOKIE } from "@/lib/content/joinLink";
+import { DEVICE_INVITE_COOKIE, JOIN_FROM_COOKIE } from "@/lib/content/joinLink";
 import { CONSENT_GATE_COOKIE } from "@/lib/content/studyAuth";
 
 const ORIGINAL_ENV = { ...process.env };
@@ -76,6 +76,7 @@ describe("GET /auth/callback", () => {
     );
     const setCookie = res.headers.get("set-cookie") ?? "";
     expect(setCookie).toContain(`${JOIN_FROM_COOKIE}=T1`);
+    expect(setCookie).toContain(`${DEVICE_INVITE_COOKIE}=T1`);
     expect(setCookie.toLowerCase()).toContain("httponly");
   });
 

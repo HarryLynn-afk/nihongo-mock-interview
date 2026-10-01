@@ -14,6 +14,7 @@
  */
 
 import { CONSENT_GATE_COOKIE, consentGateIsOpen } from "./studyAuth";
+import { joinPageView, type JoinLinkRecord } from "./joinLink";
 
 export type RouteRole =
   | "guestHome"
@@ -81,6 +82,19 @@ export function nextAfterAuth({
     return "/login";
   }
   return from ? `/join?from=${encodeURIComponent(from)}` : "/";
+}
+
+/**
+ * Where a sign-out lands. The invite link is this device's sign-up desk:
+ * return to it while it is still open, otherwise the normal landing.
+ */
+export function signOutDestination(
+  inviteCode: string | null,
+  link: JoinLinkRecord | null,
+): "/" | `/join?from=${string}` {
+  return joinPageView(inviteCode, link).status === "open" && inviteCode
+    ? `/join?from=${encodeURIComponent(inviteCode)}`
+    : "/";
 }
 
 /** Re-export so middleware/tests import visit policy from one place. */

@@ -1,6 +1,6 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { JOIN_FROM_COOKIE, readJoinFrom } from "@/lib/content/joinLink";
+import { JOIN_FROM_COOKIE, DEVICE_INVITE_COOKIE, DEVICE_INVITE_MAX_AGE_SECONDS, readJoinFrom } from "@/lib/content/joinLink";
 import {
   allowlistedLoginGate,
   consentGateCookie,
@@ -59,6 +59,14 @@ function redirectWithJoinFrom(
       secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: JOIN_COOKIE_MAX_AGE_SECONDS,
+    });
+    // Remember this device's invite past sign-out so the next tester can join.
+    response.cookies.set(DEVICE_INVITE_COOKIE, from, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: DEVICE_INVITE_MAX_AGE_SECONDS,
     });
   }
   if (openConsentGate) {

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import {
+  DEVICE_INVITE_COOKIE,
+  DEVICE_INVITE_MAX_AGE_SECONDS,
   JOIN_FROM_COOKIE,
   readJoinFrom,
   startJoinGoogle,
@@ -62,6 +64,16 @@ export const POST = withApiGuard(async (request) => {
       secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: COOKIE_MAX_AGE_SECONDS,
+    });
+  }
+  if (from) {
+    // Remember this device's invite past sign-out so the next tester can join.
+    response.cookies.set(DEVICE_INVITE_COOKIE, from, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: DEVICE_INVITE_MAX_AGE_SECONDS,
     });
   }
   return response;

@@ -5,6 +5,14 @@ export type JoinLinkRecord = {
 
 export const JOIN_FROM_COOKIE = "nihongo_join_from";
 
+/**
+ * This device's sign-up invite. Longer-lived than the transient join cookie:
+ * it survives sign-out so the next tester can sign up from the same link.
+ */
+export const DEVICE_INVITE_COOKIE = "nihongo_device_invite";
+
+export const DEVICE_INVITE_MAX_AGE_SECONDS = 60 * 60 * 24 * 90;
+
 export type JoinPageView = {
   status: "open" | "full" | "unknown";
   showGoogle: boolean;
