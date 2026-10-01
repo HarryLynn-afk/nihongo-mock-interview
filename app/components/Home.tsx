@@ -1,9 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import type { LandingView } from "@/lib/content/landingView";
-import { HashSessionCatcher } from "../auth/HashSessionCatcher";
+import { GoogleSignInDialog } from "./GoogleSignInDialog";
 import { JoinInterview } from "./JoinInterview";
 import { LanguageToggle } from "./LanguageToggle";
 import { useCopy } from "./useUiLocale";
@@ -11,6 +11,13 @@ import { useCopy } from "./useUiLocale";
 const HOW_IT_WORKS_STEPS = ["join", "speak", "report"] as const;
 
 const SENSEI_NAME = "Tanaka-sensei";
+
+const SIGNED_OUT_START: LandingView = {
+  origin: "/",
+  invite: "none",
+  from: null,
+  session: { kind: "signedOut" },
+};
 
 function CtaArrow() {
   return (
@@ -61,29 +68,58 @@ function AccentHeadline({ text }: { text: string }) {
   );
 }
 
-export default function Home({
-  catchAuth = true,
-  hero,
-  headerAction,
-  view,
-  inviteNote = false,
-  joinDisabled = false,
-}: {
-  catchAuth?: boolean;
-  /** Replaces Try as guest and the guest caption. Omit on the public start screen. */
-  hero?: ReactNode;
-  /** Replaces the header Participant login pill. Pass null to show none. */
-  headerAction?: ReactNode | null;
-  view?: LandingView;
-  inviteNote?: boolean;
-  joinDisabled?: boolean;
-}) {
+const HEADER_PILL =
+  "inline-flex min-h-11 items-center gap-2 rounded-full bg-[#d8f5b0] px-4 text-sm font-medium text-feather-dark shadow-[0_4px_7px_rgba(88,204,2,0.12)] transition-colors hover:bg-[#c8ee96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather";
+
+/**
+ * Join-link Login. Opens Google through join-google so the invite code is
+ * carried into the callback. A different action than the plain /login link.
+ */
+function InviteLogin({ from }: { from: string }) {
+  const { copy } = useCopy();
+  const [open, setOpen] = useState(false);
+
+  async function startGoogle() {
+    const res = await fetch("/api/auth/join-google", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ from }),
+    });
+    const data = (await res.json()) as { url?: string | null };
+    if (data.url) {
+      window.location.assign(data.url);
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex min-h-[60px] items-center justify-center rounded-full bg-feather px-8 py-3 text-lg font-medium text-white shadow-[0_14px_30px_-10px_rgba(88,204,2,0.55)] transition-[transform,box-shadow,background-color] hover:-translate-y-0.5 hover:bg-feather-dark hover:shadow-[0_18px_34px_-10px_rgba(88,204,2,0.65)]"
+      >
+        {copy.joinLink.login}
+      </button>
+      {open ? (
+        <GoogleSignInDialog
+          title={copy.joinLink.title}
+          body={copy.login.body}
+          onClose={() => setOpen(false)}
+          onContinue={startGoogle}
+        />
+      ) : null}
+    </>
+  );
+}
+
+export default function Home({ view = SIGNED_OUT_START }: { view?: LandingView }) {
   const { locale, setLocale, copy } = useCopy();
+  const { origin, invite, from, session } = view;
+  const [dismissedFullFor, setDismissedFullFor] = useState<string | null>(null);
+  const fullNoticeOpen = invite === "full" && dismissedFullFor !== from;
 
   return (
     <div className="relative flex min-h-screen flex-col bg-[radial-gradient(circle_at_10%_55%,rgba(255,255,255,0.7),transparent_45%),linear-gradient(180deg,#e8f8d4_0%,#f4fbef_55%,#ffffff_100%)] text-eel">
-      {catchAuth ? <HashSessionCatcher idle /> : null}
-
       <header className="mx-auto flex w-full max-w-[1400px] flex-wrap items-center gap-x-4 gap-y-3 px-5 py-6 md:px-12">
         <Link
           href="/"
@@ -100,10 +136,10 @@ export default function Home({
         <div className="ml-auto flex items-center gap-x-4">
           <LanguageToggle locale={locale} onChange={setLocale} />
           <div className="flex items-center">
-            {view?.kind === "signedIn" ? (
+            {session.kind === "signedIn" ? (
               <Link
-                href={`/profile?returnTo=${encodeURIComponent(view.origin)}`}
-                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#d8f5b0] px-4 text-sm font-medium text-feather-dark shadow-[0_4px_7px_rgba(88,204,2,0.12)] transition-colors hover:bg-[#c8ee96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
+                href={`/profile?returnTo=${encodeURIComponent(origin)}`}
+                className={HEADER_PILL}
               >
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="size-5">
                   <circle cx="12" cy="8" r="3.5" />
@@ -111,17 +147,13 @@ export default function Home({
                 </svg>
                 {copy.account.profile}
               </Link>
-            ) : headerAction === undefined ? (
-              <Link
-                href="/login"
-                scroll={false}
-                className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full bg-[#d8f5b0] px-4 text-sm font-medium text-feather-dark shadow-[0_4px_7px_rgba(88,204,2,0.12)] transition-colors hover:bg-[#c8ee96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather"
-              >
+            ) : invite === "open" && from ? (
+              <InviteLogin from={from} />
+            ) : invite === "none" ? (
+              <Link href="/login" scroll={false} className={HEADER_PILL}>
                 {copy.joinLink.login}
               </Link>
-            ) : (
-              headerAction
-            )}
+            ) : null}
           </div>
         </div>
       </header>
@@ -139,16 +171,20 @@ export default function Home({
           {copy.start.subhead}
         </p>
 
-        {view?.kind === "signedIn" ? (
+        {session.kind === "signedIn" ? (
           <div className="mt-10 hidden justify-center md:flex">
-            {joinDisabled ? null : (
+            {invite === "full" ? null : (
               <JoinInterview
-                consentRequired={!view.consentedThisVisit}
+                consentRequired={!session.consentedThisVisit}
                 className="!text-xl"
               />
             )}
           </div>
-        ) : hero ?? (
+        ) : invite === "unknown" ? (
+          <p className="mx-auto mt-10 max-w-md text-sm text-eel/80">
+            {copy.joinLink.unknown}
+          </p>
+        ) : (
           <div className="mt-10 hidden justify-center md:flex">
             <JoinInterview
               label={copy.start.tryAsGuest}
@@ -157,15 +193,15 @@ export default function Home({
             />
           </div>
         )}
-        {hero || view?.kind === "signedIn" ? null : (
+        {session.kind !== "signedIn" && invite !== "unknown" ? (
           <p className="mt-3 hidden text-[12.5px] text-wolf md:block">
             {copy.start.guestCaption}
           </p>
-        )}
+        ) : null}
         <p className="mx-auto mt-5 max-w-[52ch] text-sm leading-relaxed text-wolf">
           {copy.start.practiceOnly}
         </p>
-        {inviteNote && view?.kind !== "signedIn" ? (
+        {session.kind !== "signedIn" && (invite === "open" || invite === "full") ? (
           <p className="mx-auto mt-5 max-w-[48ch] text-sm leading-relaxed text-wolf">
             {copy.joinLink.explanation}
           </p>
@@ -200,6 +236,17 @@ export default function Home({
           })}
         </ol>
       </section>
+
+      {fullNoticeOpen ? (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-eel/40 p-5">
+          <div role="dialog" aria-modal="true" aria-labelledby="full-link-title" className="relative w-full max-w-[440px] rounded-[20px] bg-white px-7 py-10 text-center text-eel shadow-[0_30px_70px_-20px_rgba(28,71,46,0.35)]">
+            <button type="button" aria-label={copy.login.close} onClick={() => setDismissedFullFor(from)} className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full text-wolf hover:bg-eel/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feather">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" className="size-4"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+            <h2 id="full-link-title" className="font-display text-xl font-bold">{copy.joinLink.full}</h2>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

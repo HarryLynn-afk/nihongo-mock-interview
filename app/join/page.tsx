@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { joinPageView, readJoinFrom } from "@/lib/content/joinLink";
 import { lookupJoinLink } from "@/lib/server/study/lookupJoinLink";
 import { getLandingView } from "@/lib/server/study/landingView";
-import { JoinLinkLanding } from "./JoinLinkLanding";
+import Home from "../components/Home";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 /**
  * Capped tester join-link. Not linked from `/`. Testers share
  * `/join?from=CODE`; Google sign-up becomes a Participant after consent.
+ * Renders the same landing module as `/`, differing only by invite status.
  */
 export default async function JoinPage({
   searchParams,
@@ -25,6 +26,6 @@ export default async function JoinPage({
   if (!from || !link) {
     notFound();
   }
-  const landing = await getLandingView(`/join?from=${encodeURIComponent(from)}`);
-  return <JoinLinkLanding from={from} view={joinPageView(from, link)} landing={landing} />;
+  const base = await getLandingView(`/join?from=${encodeURIComponent(from)}`);
+  return <Home view={{ ...base, invite: joinPageView(from, link).status, from }} />;
 }

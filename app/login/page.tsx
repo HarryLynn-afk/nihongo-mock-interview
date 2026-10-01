@@ -12,7 +12,7 @@ export default function LoginPage() {
   return (
     <>
       <div inert>
-        <Home catchAuth={false} />
+        <Home />
       </div>
       <ParticipantLoginDialog />
     </>
