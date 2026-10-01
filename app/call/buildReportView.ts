@@ -1,7 +1,6 @@
 import type { InterviewReport } from "@/lib/content/sampleReport";
 import {
-  normalizePracticeTotal,
-  type Headline,
+  RUBRIC_CATEGORY_KEYS,
   type RubricCategoryKey,
 } from "@/lib/content/rubric";
 import type { InterviewQuestion } from "@/lib/content/questions";
@@ -11,18 +10,9 @@ import {
   buildNextStep,
   formatQuotedCritique,
   isAffirmingCritique,
-  type FormattedCritique,
 } from "@/lib/content/critiqueCopy";
 import { DEFAULT_UI_LOCALE, type UiLocale } from "@/lib/content/locale";
 import { uiCopy } from "@/lib/content/uiCopy";
-
-const SCORE_ORDER: Exclude<RubricCategoryKey, "speaking">[] = [
-  "listening",
-  "grammarPoliteness",
-  "motivation",
-  "studyPlan",
-  "consistency",
-];
 
 const PITCH_NAV_TOPICS = [
   "selfIntroduction",
@@ -30,21 +20,12 @@ const PITCH_NAV_TOPICS = [
   "studyPlan",
 ] as const;
 
-const STAMP_COLOR_CLASS: Record<Headline, string> = {
-  Ready: "text-feather",
-  AlmostReady: "text-bee",
-  KeepPracticing: "text-red-500",
-};
-
 export type ReportScoreRow = {
   key: RubricCategoryKey;
   label: string;
   radarLabel: string;
-  raw: number;
-  ratingLabel: string;
-  points: number;
-  weight: number;
-  assessed: boolean;
+  level: 1 | 2 | 3 | 4;
+  levelLabel: string;
 };
 
 export type ReportQuestionCard = {
@@ -52,33 +33,26 @@ export type ReportQuestionCard = {
   navLabel: string;
   japanese: string;
   transcript: string;
-  scoreText: string;
-  ratingLabel: string;
   quote: string;
-  strengths: string[];
-  nextHeading: string;
-  improvements: string[];
+  evidence: string;
+  improvement: string;
+  improvementHeading: string;
   rewriteHeading: string;
   rewrite: string;
-  evidence: string;
+  categoryLabel: string;
+  ratingLabel: string;
   affirming: boolean;
 };
 
 export type ReportView = {
   title: string;
   answerQualityTitle: string;
-  headlineLabel: string;
-  stamp: InterviewReport["stamp"];
-  stampColorClass: string;
+  progressLabel: string;
   total: number;
   disclaimer: string;
-  listeningNote: string;
-  voiceNote: string | null;
   banner: string | null;
   scores: ReportScoreRow[];
   questions: ReportQuestionCard[];
-  critiques: FormattedCritique[];
-  notes: string[];
 };
 
 export type ReportAnswerInput =
@@ -97,31 +71,22 @@ export function buildReportView({
   locale?: UiLocale;
 }): ReportView {
   const copy = uiCopy(locale);
-  const notes: string[] = [];
 
   return {
     title: copy.report.title,
     answerQualityTitle: copy.report.answerQualityTitle,
-    headlineLabel: copy.report.headline[report.headline],
-    stamp: report.stamp,
-    stampColorClass: STAMP_COLOR_CLASS[report.headline],
-    total: normalizePracticeTotal(report.scores, false),
+    progressLabel: copy.report.practiceProgress,
+    total: report.total,
     disclaimer: copy.report.disclaimer,
-    listeningNote: copy.report.listeningNote,
-    voiceNote: null,
     banner: report.banner,
-    scores: SCORE_ORDER.map((key) => {
-      const row = report.scores[key];
-      const raw = row.raw as 1 | 2 | 3 | 4 | 5;
+    scores: RUBRIC_CATEGORY_KEYS.map((key) => {
+      const level = report.scores[key].raw as 1 | 2 | 3 | 4;
       return {
         key,
         label: copy.report.scores[key],
         radarLabel: copy.report.radar[key],
-        raw: row.raw,
-        ratingLabel: copy.report.rating[raw],
-        points: row.points,
-        weight: row.weight,
-        assessed: true,
+        level,
+        levelLabel: copy.report.rating[level],
       };
     }),
     questions: sessionQuestions.map((question, index) => {
@@ -137,15 +102,14 @@ export function buildReportView({
           navLabel,
           japanese: question.japanese,
           transcript: copy.report.noAnswerTranscript,
-          scoreText: "—",
-          ratingLabel: "",
           quote: "",
-          strengths: [],
-          nextHeading: copy.report.noAnswerNextHeading,
-          improvements: [copy.report.noAnswerNextStep],
+          evidence: "",
+          improvement: copy.report.noAnswerNextStep,
+          improvementHeading: copy.report.noAnswerNextHeading,
           rewriteHeading: copy.report.rewriteHeading,
           rewrite: "",
-          evidence: "",
+          categoryLabel: "",
+          ratingLabel: "",
           affirming: false,
         };
       }
@@ -171,37 +135,21 @@ export function buildReportView({
               locale,
             })
           : null;
-      const showScore = Boolean(category && category !== "speaking" && scored);
-      const quote = formatted?.quote ?? "";
-      const raw = scored ? (scored.raw as 1 | 2 | 3 | 4 | 5) : null;
       return {
         questionIndex: index,
         navLabel,
         japanese: question.japanese,
         transcript,
-        scoreText: showScore && scored ? `${scored.points}/${scored.weight}` : "—",
-        ratingLabel: showScore && scored && raw ? copy.report.rating[raw] : "",
-        quote,
-        strengths: formatted
-          ? affirming
-            ? [formatted.explanation]
-            : quote && quote !== "（無言）"
-              ? [
-                  copy.report.answerIncludesQuote.replace("{quote}", quote),
-                ]
-              : []
-          : [],
-        nextHeading: next?.heading ?? copy.report.improveNext,
-        improvements: next?.lines ?? [],
+        quote: formatted?.quote ?? "",
+        evidence: formatted ? formatted.explanation : "",
+        improvement: next?.improvement ?? "",
+        improvementHeading: next?.heading ?? copy.report.improveNext,
         rewriteHeading: next?.rewriteHeading ?? copy.report.rewriteHeading,
         rewrite: next?.rewrite ?? "",
-        evidence: formatted ? formatted.explanation : "",
+        categoryLabel: category ? copy.report.scores[category] : "",
+        ratingLabel: scored ? copy.report.rating[scored.raw as 1 | 2 | 3 | 4] : "",
         affirming,
       };
     }),
-    critiques: report.critiques.map((critique) =>
-      formatQuotedCritique(critique, locale),
-    ),
-    notes,
   };
 }

@@ -1,38 +1,41 @@
 import { describe, expect, it } from "vitest";
+import { RUBRIC_CATEGORY_KEYS } from "./rubric";
 import { parseQuotedCritiques } from "./parseQuotedCritiques";
 
 describe("parseQuotedCritiques", () => {
+  it("accepts every category key the rubric defines", () => {
+    for (const category of RUBRIC_CATEGORY_KEYS) {
+      expect(
+        parseQuotedCritiques(
+          [
+            {
+              questionIndex: 0,
+              quote: "はじめまして",
+              explanation: "Clear self-introduction.",
+              rewrite: "はじめまして",
+              category,
+            },
+          ],
+          [{ questionIndex: 0, transcript: "はじめまして。" }],
+        ),
+      ).toEqual([
+        {
+          questionIndex: 0,
+          quote: "はじめまして",
+          explanation: "Clear self-introduction.",
+          rewrite: "はじめまして",
+          category,
+        },
+      ]);
+    }
+  });
+
   it("rejects old coaching-only JSON as a miss", () => {
     expect(
       parseQuotedCritiques(undefined, [
         { questionIndex: 0, transcript: "はじめまして。" },
       ]),
     ).toBeNull();
-  });
-
-  it("keeps a critique whose quote is an exact substring of the stored transcript", () => {
-    expect(
-      parseQuotedCritiques(
-        [
-          {
-            questionIndex: 0,
-            quote: "はじめまして",
-            explanation: "Clear self-introduction.",
-            rewrite: "はじめまして",
-            category: "speaking",
-          },
-        ],
-        [{ questionIndex: 0, transcript: "はじめまして。" }],
-      ),
-    ).toEqual([
-      {
-        questionIndex: 0,
-        quote: "はじめまして",
-        explanation: "Clear self-introduction.",
-        rewrite: "はじめまして",
-        category: "speaking",
-      },
-    ]);
   });
 
   it("rejects a fabricated quote that is not a substring of the transcript", () => {
@@ -44,7 +47,7 @@ describe("parseQuotedCritiques", () => {
             quote: "東京に行きたいです",
             explanation: "Invented phrase.",
             rewrite: "はじめまして。",
-            category: "listening",
+            category: "answerRelevance",
           },
         ],
         [{ questionIndex: 0, transcript: "はじめまして。" }],
@@ -61,7 +64,7 @@ describe("parseQuotedCritiques", () => {
             quote: "（無言）",
             explanation: "No spoken answer.",
             rewrite: "はじめまして。アウンミンハントです。",
-            category: "speaking",
+            category: "contentCompleteness",
           },
         ],
         [{ questionIndex: 0, transcript: "  " }],
@@ -72,7 +75,7 @@ describe("parseQuotedCritiques", () => {
         quote: "（無言）",
         explanation: "No spoken answer.",
         rewrite: "はじめまして。アウンミンハントです。",
-        category: "speaking",
+        category: "contentCompleteness",
       },
     ]);
   });
@@ -103,7 +106,7 @@ describe("parseQuotedCritiques", () => {
             quote: "はじめまして",
             explanation: "No spoken answer.",
             rewrite: "（無言）",
-            category: "speaking",
+            category: "japaneseClarity",
           },
         ],
         [{ questionIndex: 0, transcript: "はじめまして。" }],
@@ -120,14 +123,14 @@ describe("parseQuotedCritiques", () => {
             quote: "はい",
             explanation: "First.",
             rewrite: "はい。",
-            category: "speaking",
+            category: "answerRelevance",
           },
           {
             questionIndex: 0,
             quote: "はい",
             explanation: "Duplicate index.",
             rewrite: "はい。",
-            category: "listening",
+            category: "contentCompleteness",
           },
         ],
         [
@@ -147,7 +150,7 @@ describe("parseQuotedCritiques", () => {
             quote: "",
             explanation: "Missing quote.",
             rewrite: "はじめまして。",
-            category: "speaking",
+            category: "grammarPoliteness",
           },
         ],
         [{ questionIndex: 0, transcript: "はじめまして。" }],
@@ -164,14 +167,14 @@ describe("parseQuotedCritiques", () => {
             quote: "はじめまして",
             explanation: "Clear self-introduction.",
             rewrite: "はじめまして。",
-            category: "speaking",
+            category: "japaneseClarity",
           },
           {
             questionIndex: 2,
             quote: "専門学校",
             explanation: "Name a next step.",
             rewrite: "専門学校でウェブを勉強します。",
-            category: "studyPlan",
+            category: "contentCompleteness",
           },
         ],
         [

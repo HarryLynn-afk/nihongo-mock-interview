@@ -2,109 +2,52 @@ import { describe, expect, it } from "vitest";
 import { scoreReport } from "./rubric";
 
 describe("scoreReport", () => {
-  it("returns Ready/準備OK when no gates fire and total >= 75 with Motivation/StudyPlan >= 4", () => {
+  it("turns five level-4 practice scores into a 100% progress total with no verdict", () => {
     const result = scoreReport({
-      speaking: 5,
-      listening: 4,
+      answerRelevance: 4,
+      contentCompleteness: 4,
+      japaneseClarity: 4,
       grammarPoliteness: 4,
-      motivation: 5,
-      studyPlan: 5,
       consistency: 4,
     });
 
-    expect(result.headline).toBe("Ready");
-    expect(result.stamp).toBe("準備OK");
-    expect(result.total).toBe(90);
-    expect(result.gatesFired).toEqual([]);
-  });
-
-  it("does not Gate speaking from a transcript, even when the speaking integer is 2", () => {
-    const result = scoreReport({
-      speaking: 2,
-      listening: 5,
-      grammarPoliteness: 5,
-      motivation: 5,
-      studyPlan: 5,
-      consistency: 5,
-    });
-
-    expect(result.headline).toBe("Ready");
     expect(result.total).toBe(100);
-    expect(result.gatesFired).not.toContain("speaking");
-  });
-
-  it("returns KeepPracticing/要練習 when Motivation <= 2, even if Japanese is strong", () => {
-    const result = scoreReport({
-      speaking: 5,
-      listening: 5,
-      grammarPoliteness: 5,
-      motivation: 2,
-      studyPlan: 5,
-      consistency: 5,
+    expect(result.scores).toEqual({
+      answerRelevance: { raw: 4, weight: 25, points: 25 },
+      contentCompleteness: { raw: 4, weight: 25, points: 25 },
+      japaneseClarity: { raw: 4, weight: 20, points: 20 },
+      grammarPoliteness: { raw: 4, weight: 20, points: 20 },
+      consistency: { raw: 4, weight: 10, points: 10 },
     });
-
-    expect(result.headline).toBe("KeepPracticing");
-    expect(result.gatesFired).toContain("motivation");
+    expect(result).not.toHaveProperty("headline");
+    expect(result).not.toHaveProperty("stamp");
+    expect(result).not.toHaveProperty("gatesFired");
   });
 
-  it("returns KeepPracticing/要練習 when Study plan <= 2, even if Japanese is strong", () => {
+  it("weight-totals a mixed practice session (worked example)", () => {
     const result = scoreReport({
-      speaking: 5,
-      listening: 5,
-      grammarPoliteness: 5,
-      motivation: 5,
-      studyPlan: 2,
-      consistency: 5,
-    });
-
-    expect(result.headline).toBe("KeepPracticing");
-    expect(result.gatesFired).toContain("studyPlan");
-  });
-
-  it("returns AlmostReady/もう少し when no gate fires but total stays below 75", () => {
-    const result = scoreReport({
-      speaking: 3,
-      listening: 3,
-      grammarPoliteness: 3,
-      motivation: 3,
-      studyPlan: 3,
+      answerRelevance: 3,
+      contentCompleteness: 4,
+      japaneseClarity: 2,
+      grammarPoliteness: 4,
       consistency: 3,
     });
 
-    expect(result.headline).toBe("AlmostReady");
-    expect(result.stamp).toBe("もう少し");
-    expect(result.gatesFired).toEqual([]);
+    expect(result.scores.answerRelevance.points).toBe(18.75);
+    expect(result.scores.japaneseClarity.points).toBe(10);
+    expect(result.scores.consistency.points).toBe(7.5);
+    expect(result.total).toBe(81);
   });
 
-  it("does not let a low speaking integer block Ready", () => {
+  it("rounds a .5 progress total up", () => {
     const result = scoreReport({
-      speaking: 3,
-      listening: 5,
-      grammarPoliteness: 5,
-      motivation: 5,
-      studyPlan: 5,
-      consistency: 5,
+      answerRelevance: 2,
+      contentCompleteness: 4,
+      japaneseClarity: 4,
+      grammarPoliteness: 4,
+      consistency: 2,
     });
 
-    expect(result.total).toBe(100);
-    expect(result.headline).toBe("Ready");
-  });
-
-  it("does not Gate speaking or require speaking >= 4 when assessSpeaking is false", () => {
-    const result = scoreReport(
-      {
-        speaking: 1,
-        listening: 5,
-        grammarPoliteness: 5,
-        motivation: 5,
-        studyPlan: 5,
-        consistency: 5,
-      },
-      { assessSpeaking: false },
-    );
-
-    expect(result.gatesFired).toEqual([]);
-    expect(result.headline).toBe("Ready");
-    expect(result.total).toBe(100);
+    expect(result.total).toBe(83);
   });
 });

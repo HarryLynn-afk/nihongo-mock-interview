@@ -13,7 +13,7 @@ describe("formatQuotedCritique", () => {
         quote: "はじめまして",
         explanation: "Clear self-introduction.",
         rewrite: "はじめまして",
-        category: "speaking",
+        category: "japaneseClarity",
       },
       "en",
     );
@@ -29,13 +29,13 @@ describe("formatQuotedCritique", () => {
         quote: "はじめまして",
         explanation: "Clear self-introduction.",
         rewrite: "はじめまして",
-        category: "speaking",
+        category: "japaneseClarity",
       },
       "my",
     );
 
     expect(view.explanation).toBe(
-      "အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
+      "ဂျပန်စကားကို ရှင်းလင်းစွာ ပြောနိုင်ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
     );
     expect(view.explanation).not.toContain("ဒီအစား");
   });
@@ -47,7 +47,7 @@ describe("formatQuotedCritique", () => {
         quote: "アニメが好きです",
         explanation: "Answer the school question.",
         rewrite: "この学校で日本語を勉強したいです。",
-        category: "listening",
+        category: "answerRelevance",
       },
       "my",
     );
@@ -66,11 +66,29 @@ describe("formatQuotedCritique", () => {
 });
 
 describe("buildNextStep", () => {
-  it("localizes the affirming enhancement lines when MM is selected", () => {
+  it("returns the explanation as the single improvement when a correction is needed", () => {
+    const view = buildNextStep({
+      affirming: false,
+      raw: 1,
+      category: "grammarPoliteness",
+      transcript: "はじめまして",
+      quote: "はじめまして",
+      explanation: "Use です/ます all the way through.",
+      rewrite: "はじめまして。",
+      locale: "en",
+    });
+
+    expect(view.improvement).toBe("Use です/ます all the way through.");
+    expect(view.heading).toBe("Improve next");
+    expect(view.rewriteHeading).toBe("Suggested improved Japanese answer");
+    expect(view.rewrite).toBe("はじめまして。");
+  });
+
+  it("turns the improvement into one optional stretch for a strong answer", () => {
     const view = buildNextStep({
       affirming: true,
-      raw: 5,
-      category: "motivation",
+      raw: 4,
+      category: "contentCompleteness",
       transcript: "日本で勉強したいです",
       quote: "日本で勉強したいです",
       explanation: "Add a personal future goal.",
@@ -79,10 +97,28 @@ describe("buildNextStep", () => {
     });
 
     expect(view.heading).toBe("ထပ်မံ တိုးတက်အောင်");
-    expect(view.lines).toEqual([
-      "ဤအချက်ကို သင့်အဖြေက ကောင်းမွန်စွာ ပြည့်မီပြီးဖြစ်သည်။",
-      "ပိုမိုကြွယ်ဝသော အဖြေလိုချင်လျှင် သင့်ရည်ရွယ်ချက်ကို ပိုမိုကိုယ်ပိုင်ဆန်အောင် အနာဂတ် လေ့လာရေး သို့မဟုတ် အလုပ်အကိုင် ရည်မှန်းချက်တစ်ခု ထည့်ပါ။",
-    ]);
+    expect(view.improvement).toBe(
+      "ပိုမိုကြွယ်ဝသော အဖြေလိုချင်လျှင် အကြောင်းရင်း၊ နေရာ သို့မဟုတ် နောက်တစ်ဆင့်ကဲ့သို့ အတိအကျ အချက်အလက် တစ်ခုနှစ်ခု ထည့်ပြောပါ။",
+    );
     expect(view.rewriteHeading).toBe("သိမ်းထားသင့်သော စကားစု");
+  });
+
+  it("invites an optional stretch for an affirming level-3 answer", () => {
+    const view = buildNextStep({
+      affirming: true,
+      raw: 3,
+      category: "answerRelevance",
+      transcript: "学校のことを聞かれました",
+      quote: "学校",
+      explanation: "Cover every part of the question.",
+      rewrite: "学校",
+      locale: "en",
+    });
+
+    expect(view.heading).toBe("Make it even stronger");
+    expect(view.improvement).toBe(
+      "Optional: cover every part Tanaka-sensei asked, not only the first clause.",
+    );
+    expect(view.rewrite).toBe("学校");
   });
 });

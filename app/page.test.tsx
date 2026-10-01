@@ -62,7 +62,7 @@ describe("Home (start screen)", () => {
     expect(screen.getByText("Respond aloud in Japanese.")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Get feedback on relevance, grammar and politeness, motivation, study plan, and consistency.",
+        "Get feedback on answer relevance, completeness, Japanese clarity, grammar and politeness, and consistency.",
       ),
     ).toBeInTheDocument();
     expect(

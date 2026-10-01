@@ -4,12 +4,11 @@ import { resetGroqCapacityForTests } from "../groqCapacity";
 import { runGroqGrade } from "./runGroqGrade";
 
 const SAMPLE_SCORES = {
-  speaking: 5,
-  listening: 4,
-  grammarPoliteness: 4,
-  motivation: 5,
-  studyPlan: 5,
-  consistency: 4,
+  answerRelevance: 4,
+  contentCompleteness: 3,
+  japaneseClarity: 4,
+  grammarPoliteness: 3,
+  consistency: 3,
 };
 
 const critiques = [
@@ -18,7 +17,7 @@ const critiques = [
     quote: "はじめまして",
     explanation: "Use です/ます all the way through.",
     rewrite: "はじめまして。アウンミンハントです。",
-    category: "speaking" as const,
+    category: "japaneseClarity" as const,
   },
 ];
 
@@ -35,7 +34,7 @@ describe("runGroqGrade", () => {
     resetGroqCapacityForTests();
   });
 
-  it("scores Groq raw 1-5s with qwen/qwen3.8-27b and the grade key", async () => {
+  it("scores Groq raw 1-4s with qwen/qwen3.8-27b and the grade key", async () => {
     const groqFetch = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -62,10 +61,7 @@ describe("runGroqGrade", () => {
 
     expect(report).toEqual(
       expect.objectContaining({
-        headline: "Ready",
-        stamp: "準備OK",
-        total: 90,
-        gatesFired: [],
+        total: 86,
         source: "grade",
         banner: null,
         profileName: "",
@@ -118,7 +114,7 @@ describe("runGroqGrade", () => {
 
     expect(report).toEqual(
       expect.objectContaining({
-        headline: "Ready",
+        total: 86,
         source: "grade",
         critiques,
       }),

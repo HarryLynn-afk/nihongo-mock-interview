@@ -5,12 +5,11 @@ const ORIGINAL_ENV = { ...process.env };
 
 const GROQ_GRADE_JSON = {
   scores: {
-    speaking: 5,
-    listening: 4,
-    grammarPoliteness: 4,
-    motivation: 5,
-    studyPlan: 5,
-    consistency: 4,
+    answerRelevance: 4,
+    contentCompleteness: 3,
+    japaneseClarity: 4,
+    grammarPoliteness: 3,
+    consistency: 3,
   },
   critiques: [
     {
@@ -18,7 +17,7 @@ const GROQ_GRADE_JSON = {
       quote: "はじめまして",
       explanation: "Use です/ます all the way through.",
       rewrite: "はじめまして。",
-      category: "speaking",
+      category: "japaneseClarity",
     },
   ],
 };
@@ -109,10 +108,10 @@ describe("POST /api/score", () => {
 
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      report: { source: string; headline: string; banner: string | null };
+      report: { source: string; total: number; banner: string | null };
     };
     expect(body.report.source).toBe("grade");
-    expect(body.report.headline).toBe("Ready");
+    expect(body.report.total).toBe(86);
     expect(body.report.banner).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(String(fetchMock.mock.calls[0][0])).toContain("api.groq.com");
@@ -192,10 +191,10 @@ describe("POST /api/score", () => {
 
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      report: { source: string; headline: string; banner: string | null };
+      report: { source: string; total: number; banner: string | null };
     };
     expect(body.report.source).toBe("grade");
-    expect(body.report.headline).toBe("Ready");
+    expect(body.report.total).toBe(86);
     expect(body.report.banner).toBeNull();
     expect(JSON.stringify(body)).not.toMatch(/429|Too Many Requests|rate limit/i);
     expect(fetchMock).toHaveBeenCalledTimes(2);

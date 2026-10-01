@@ -134,13 +134,16 @@ Without step 2, `/login` can still render, but nothing is stored and returning t
 
 ## Scoring (short)
 
-`POST /api/score` is the only client grading entry. Groq emits raw 1–5 scores; weights, Gates, Headline, and Stamp are computed in `lib/content/rubric.ts` (`scoreReport`). Speaking is not a Gate and is omitted from `/100`.
+`POST /api/score` is the only client grading entry. Groq emits raw 1–4 practice levels; the weights and the 0–100 **Practice progress** total are computed in `lib/content/rubric.ts` (`scoreReport`). There are no gates, verdicts, or pass thresholds. Speaking, pronunciation, fluency, and listening comprehension are never scored from a transcript.
 
-- **Interview Answer Quality** — transcript radar / bars / `/100` (Answer relevance, grammar, Motivation, Study plan, Consistency) for answered Questions. A skipped Question gets a no-answer card. If every Question was skipped, `/call` shows mic-troubleshooting copy instead of the report and never POSTs `/api/score`.
+- **Interview Answer Quality** — five criteria (Answer relevance 25, Content completeness 25, Japanese clarity 20, Grammar and politeness 20, Cross-answer consistency 10) shown as a radar / bars with level labels. Motivation and study-plan content stays visible as question-specific coaching inside Content completeness. A skipped Question gets a no-answer card. If every Question was skipped, `/call` shows mic-troubleshooting copy instead of the report and never POSTs `/api/score`.
+- Every answer card shows evidence from the transcript, one improvement, and one example rewrite.
 
 Speech Delivery has been removed. Audio streams for live captions; answers retain transcripts and attempt metadata, without recorded clips or word timestamps.
 
-If Groq misses (timeout, bad JSON, or 429/503/529 capacity skip), the last screen is the locked sample InterviewReport plus a scoring-unavailable banner.
+If Groq and DeepSeek both miss, the last screen is the locked sample practice report (`mocks/sample-report.json`) plus a scoring-unavailable banner.
+
+Current rubric details: `docs/grading-system.md`. Prompt snapshot: `docs/rubric-generated.md`.
 
 ## Project layout
 
@@ -152,10 +155,10 @@ public/              Sensei clips (`question-{id}.mp3`) and tile image
 supabase/migrations/ Study SQL — paste in the dashboard, not auto-applied
 scripts/             prebuild env check; generate-time TTS
 docs/                PRD, issues, ubiquitous language, rubric snapshot
-mocks/               sample-report-ready.json (`banner` stays null)
+mocks/               sample-report.json (`banner` stays null)
 ```
 
-Product requirements: `docs/prd-nihongo.md`. Domain terms: `docs/ubiquitous-language.md`.
+Product requirements: `docs/prd-nihongo.md`. Domain terms: `docs/ubiquitous-language.md`. Current grading: `docs/grading-system.md`.
 
 ## Deploy (Issue 15)
 

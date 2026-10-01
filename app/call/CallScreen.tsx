@@ -186,7 +186,6 @@ export function CallScreen({ homeHref = "/" }: { homeHref?: string }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        headline: report.headline,
         total: report.total,
         source: report.source,
         answers: answers.map((answer) => ({

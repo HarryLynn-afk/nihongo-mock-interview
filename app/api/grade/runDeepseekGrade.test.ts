@@ -3,12 +3,11 @@ import { getRubricPrompt } from "@/lib/content/rubric";
 import { runDeepseekGrade } from "./runDeepseekGrade";
 
 const SAMPLE_SCORES = {
-  speaking: 5,
-  listening: 4,
-  grammarPoliteness: 4,
-  motivation: 5,
-  studyPlan: 5,
-  consistency: 4,
+  answerRelevance: 4,
+  contentCompleteness: 3,
+  japaneseClarity: 4,
+  grammarPoliteness: 3,
+  consistency: 3,
 };
 
 const critiques = [
@@ -17,7 +16,7 @@ const critiques = [
     quote: "はじめまして",
     explanation: "Use です/ます all the way through.",
     rewrite: "はじめまして。アウンミンハントです。",
-    category: "speaking" as const,
+    category: "japaneseClarity" as const,
   },
 ];
 
@@ -61,10 +60,7 @@ describe("runDeepseekGrade", () => {
 
     expect(report).toEqual(
       expect.objectContaining({
-        headline: "Ready",
-        stamp: "準備OK",
-        total: 90,
-        gatesFired: [],
+        total: 86,
         source: "grade",
         banner: null,
         profileName: "",

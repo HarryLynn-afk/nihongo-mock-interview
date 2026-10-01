@@ -6,7 +6,7 @@ import type { UiLocale } from "@/lib/content/locale";
 import { uiCopy } from "@/lib/content/uiCopy";
 import type { ReportQuestionCard, ReportView } from "./buildReportView";
 
-export const REPORT_STAMP_REVEAL_MS = 700;
+export const REPORT_PROGRESS_REVEAL_MS = 700;
 export const REPORT_COACHING_REVEAL_MS = 1400;
 
 const CX = 140;
@@ -24,7 +24,7 @@ function axisPoint(index: number, count: number, radius: number) {
 function radarPolygon(scores: ReportView["scores"]) {
   return scores
     .map((score, index) => {
-      const point = axisPoint(index, scores.length, (score.raw / 5) * AXIS_RADIUS);
+      const point = axisPoint(index, scores.length, (score.level / 4) * AXIS_RADIUS);
       return `${point.x},${point.y}`;
     })
     .join(" ");
@@ -94,10 +94,12 @@ function QuestionCard({
           </p>
           <p className="mt-1 text-eel/90">{card.japanese}</p>
         </div>
-        <p className="rounded-full bg-feather/20 px-3 py-1 text-sm text-eel">
-          {card.ratingLabel ? `${card.ratingLabel} · ` : ""}
-          {card.scoreText}
-        </p>
+        {card.ratingLabel ? (
+          <p className="rounded-full bg-feather/20 px-3 py-1 text-sm text-eel">
+            {card.categoryLabel ? `${card.categoryLabel} · ` : ""}
+            {card.ratingLabel}
+          </p>
+        ) : null}
       </header>
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
         <div className="flex flex-col gap-3">
@@ -116,38 +118,12 @@ function QuestionCard({
         </div>
         <div className="flex flex-col gap-3">
           <div>
-            <p className="text-xs font-medium tracking-wide text-feather">
-              {copy.report.whatWentWell}
-            </p>
-            <ul className="mt-2 flex flex-col gap-1 text-sm text-eel/90">
-              {card.strengths.length > 0 ? (
-                card.strengths.map((line) => (
-                  <li key={line} className="flex gap-2">
-                    <span aria-hidden="true">✓</span>
-                    <span>{line}</span>
-                  </li>
-                ))
-              ) : (
-                <li className="text-eel/75">{copy.report.noStrength}</li>
-              )}
-            </ul>
-          </div>
-          <div>
             <p className="text-xs font-medium tracking-wide text-bee">
-              {card.nextHeading}
+              {card.improvementHeading}
             </p>
-            <ul className="mt-2 flex flex-col gap-1 text-sm text-eel/90">
-              {card.improvements.length > 0 ? (
-                card.improvements.map((line) => (
-                  <li key={line} className="flex gap-2">
-                    <span aria-hidden="true">△</span>
-                    <span>{line}</span>
-                  </li>
-                ))
-              ) : (
-                <li className="text-eel/75">{copy.report.noExtra}</li>
-              )}
-            </ul>
+            <p className="mt-2 text-sm text-eel/90">
+              {card.improvement || copy.report.noExtra}
+            </p>
           </div>
         </div>
       </div>
@@ -204,18 +180,21 @@ export function InterviewReportScreen({
   }, [onRevealComplete]);
 
   useEffect(() => {
-    const stamp = window.setTimeout(() => setStage(1), REPORT_STAMP_REVEAL_MS);
+    const progress = window.setTimeout(
+      () => setStage(1),
+      REPORT_PROGRESS_REVEAL_MS,
+    );
     const coaching = window.setTimeout(() => {
       setStage(2);
       onRevealCompleteRef.current?.();
     }, REPORT_COACHING_REVEAL_MS);
     return () => {
-      window.clearTimeout(stamp);
+      window.clearTimeout(progress);
       window.clearTimeout(coaching);
     };
   }, []);
 
-  const radarScores = view.scores.filter((score) => score.assessed);
+  const radarScores = view.scores;
   const selected = view.questions[selectedIndex] ?? view.questions[0];
   const hasTopAction = Boolean(onHelpStudy || onRequestFullSession);
 
@@ -272,22 +251,21 @@ export function InterviewReportScreen({
               ) : null}
             </div>
             <div
-              data-testid="report-stamp"
+              data-testid="report-progress"
               className={`text-right ${revealClass(stage >= 1)}`}
             >
               <p className="text-3xl font-medium md:text-4xl">
-                {view.total}/100
+                {view.total}%
               </p>
-              <p className="text-sm font-medium">
-                {view.headlineLabel} —{" "}
-                <span className={view.stampColorClass}>{view.stamp}</span>
+              <p className="text-sm font-medium text-eel/90">
+                {view.progressLabel}
               </p>
             </div>
           </header>
 
           <div className="grid gap-4 rounded-2xl border border-eel/10 bg-eel/5 p-4 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)]">
             <div
-              data-testid="readiness-radar"
+              data-testid="practice-radar"
               className={revealClass(stage >= 0)}
             >
               <svg viewBox="0 0 280 260" className="mx-auto h-52 w-full max-w-xs">
@@ -342,42 +320,21 @@ export function InterviewReportScreen({
                   <span className="w-44 shrink-0 text-eel/90">
                     {score.label}
                   </span>
-                  {score.assessed ? (
-                    <>
-                      <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-eel/10">
-                        <span
-                          className="block h-full rounded-full bg-feather"
-                          style={{
-                            width: `${Math.max(8, (score.points / score.weight) * 100)}%`,
-                          }}
-                        />
-                      </span>
-                      <span className="w-20 shrink-0 text-right text-xs text-eel/80">
-                        {score.ratingLabel}
-                      </span>
-                      <span className="w-12 shrink-0 text-right tabular-nums">
-                        {score.points}/{score.weight}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-eel/75">
-                      {copy.report.notAssessed}
-                    </span>
-                  )}
+                  <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-eel/10">
+                    <span
+                      className="block h-full rounded-full bg-feather"
+                      style={{
+                        width: `${(score.level / 4) * 100}%`,
+                      }}
+                    />
+                  </span>
+                  <span className="w-44 shrink-0 text-right text-xs text-eel/80">
+                    {score.levelLabel}
+                  </span>
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-eel/75 lg:col-span-2">
-              {view.listeningNote}
-              {view.voiceNote ? ` ${view.voiceNote}` : null}
-            </p>
-            {view.notes.map((line) => (
-              <p key={line} className="text-xs text-eel/80 lg:col-span-2">
-                {line}
-              </p>
-            ))}
           </div>
-
         </div>
 
         <div data-testid="report-review" className="flex flex-col gap-3">
@@ -407,9 +364,11 @@ export function InterviewReportScreen({
                     <span className="font-medium">
                       Q{card.questionIndex + 1} {card.navLabel}
                     </span>
-                    <span className="ml-2 text-xs text-eel/80">
-                      {card.scoreText}
-                    </span>
+                    {card.ratingLabel ? (
+                      <span className="ml-2 text-xs text-eel/80">
+                        {card.ratingLabel}
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}

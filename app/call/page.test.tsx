@@ -164,25 +164,21 @@ describe("Call screen", () => {
           new Response(
             JSON.stringify({
               report: {
-                headline: "Ready",
-                stamp: "準備OK",
                 total: 88,
                 scores: {
-                  speaking: { raw: 5, weight: 20, points: 20 },
-                  listening: { raw: 4, weight: 15, points: 12 },
-                  grammarPoliteness: { raw: 4, weight: 15, points: 12 },
-                  motivation: { raw: 5, weight: 20, points: 20 },
-                  studyPlan: { raw: 4, weight: 20, points: 16 },
-                  consistency: { raw: 4, weight: 10, points: 8 },
+                  answerRelevance: { raw: 4, weight: 25, points: 25 },
+                  contentCompleteness: { raw: 4, weight: 25, points: 25 },
+                  japaneseClarity: { raw: 3, weight: 20, points: 15 },
+                  grammarPoliteness: { raw: 3, weight: 20, points: 15 },
+                  consistency: { raw: 3, weight: 10, points: 7.5 },
                 },
-                gatesFired: [],
                 critiques: [
                   {
                     questionIndex: 0,
                     quote: "はじめまして",
                     explanation: "Use です/ます all the way through.",
                     rewrite: "はじめまして。",
-                    category: "speaking",
+                    category: "japaneseClarity",
                   },
                 ],
                 profileName: "Aung Min Khant",
@@ -912,7 +908,7 @@ describe("Call screen", () => {
     });
   });
 
-  it("shows scoring unavailable when /api/score returns a null report, with no sample Ready stamp", async () => {
+  it("shows scoring unavailable when /api/score returns a null report, with no sample progress report", async () => {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       if (String(input).includes("/api/score")) {
         return Promise.resolve(
@@ -943,7 +939,9 @@ describe("Call screen", () => {
     });
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     expect(screen.queryByTestId("interview-report")).not.toBeInTheDocument();
-    expect(screen.queryByText("準備OK")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Practice progress/),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the grading state while /api/score is still pending", async () => {
@@ -1000,25 +998,21 @@ describe("Call screen", () => {
           new Response(
             JSON.stringify({
               report: {
-                headline: "Ready",
-                stamp: "準備OK",
-                total: 92,
+                total: 88,
                 scores: {
-                  speaking: { raw: 5, weight: 20, points: 20 },
-                  listening: { raw: 4, weight: 15, points: 12 },
-                  grammarPoliteness: { raw: 4, weight: 15, points: 12 },
-                  motivation: { raw: 5, weight: 20, points: 20 },
-                  studyPlan: { raw: 5, weight: 20, points: 20 },
-                  consistency: { raw: 4, weight: 10, points: 8 },
+                  answerRelevance: { raw: 4, weight: 25, points: 25 },
+                  contentCompleteness: { raw: 4, weight: 25, points: 25 },
+                  japaneseClarity: { raw: 3, weight: 20, points: 15 },
+                  grammarPoliteness: { raw: 3, weight: 20, points: 15 },
+                  consistency: { raw: 3, weight: 10, points: 7.5 },
                 },
-                gatesFired: [],
                 critiques: [
                   {
                     questionIndex: 0,
                     quote: "はじめまして",
                     explanation: "Use です/ます all the way through.",
                     rewrite: "はじめまして。",
-                    category: "speaking",
+                    category: "japaneseClarity",
                   },
                 ],
                 profileName: "Aung Min Khant",
@@ -1052,35 +1046,31 @@ describe("Call screen", () => {
     expect(
       screen.queryByText("Scoring unavailable — sample report."),
     ).not.toBeInTheDocument();
-    expect(screen.getByText("準備OK")).toBeInTheDocument();
+    expect(screen.getByTestId("report-progress")).toHaveTextContent("88%");
   });
 
-  it("shows the Interview Readiness report after Q3 when /api/score returns a report", async () => {
+  it("shows the live practice report after Q3 when /api/score returns a report", async () => {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       if (String(input).includes("/api/score")) {
         return Promise.resolve(
           new Response(
             JSON.stringify({
               report: {
-                headline: "Ready",
-                stamp: "準備OK",
-                total: 92,
+                total: 88,
                 scores: {
-                  speaking: { raw: 5, weight: 20, points: 20 },
-                  listening: { raw: 4, weight: 15, points: 12 },
-                  grammarPoliteness: { raw: 4, weight: 15, points: 12 },
-                  motivation: { raw: 5, weight: 20, points: 20 },
-                  studyPlan: { raw: 5, weight: 20, points: 20 },
-                  consistency: { raw: 4, weight: 10, points: 8 },
+                  answerRelevance: { raw: 4, weight: 25, points: 25 },
+                  contentCompleteness: { raw: 4, weight: 25, points: 25 },
+                  japaneseClarity: { raw: 3, weight: 20, points: 15 },
+                  grammarPoliteness: { raw: 3, weight: 20, points: 15 },
+                  consistency: { raw: 3, weight: 10, points: 7.5 },
                 },
-                gatesFired: [],
                 critiques: [
                   {
                     questionIndex: 0,
                     quote: "はじめまして",
                     explanation: "Use です/ます all the way through.",
                     rewrite: "はじめまして。",
-                    category: "speaking",
+                    category: "japaneseClarity",
                   },
                 ],
                 profileName: "Aung Min Khant",
@@ -1114,39 +1104,35 @@ describe("Call screen", () => {
       expect(screen.getByTestId("interview-report")).toBeInTheDocument();
     });
     expect(screen.getByText("AI Interview Practice Feedback")).toBeInTheDocument();
-    expect(screen.getByText("準備OK")).toBeInTheDocument();
-    expect(screen.getByText("90/100")).toBeInTheDocument();
+    expect(screen.getByTestId("report-progress")).toHaveTextContent("88%");
+    expect(screen.getByText("Practice progress")).toBeInTheDocument();
     expect(
       screen.queryByText("Scoring unavailable — sample report."),
     ).not.toBeInTheDocument();
   });
 
-  it("shows the honest AlmostReady live report", async () => {
+  it("shows an honest mid-practice live report", async () => {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       if (String(input).includes("/api/score")) {
         return Promise.resolve(
           new Response(
             JSON.stringify({
               report: {
-                headline: "AlmostReady",
-                stamp: "もう少し",
-                total: 70,
+                total: 73,
                 scores: {
-                  speaking: { raw: 4, weight: 20, points: 16 },
-                  listening: { raw: 3, weight: 15, points: 9 },
-                  grammarPoliteness: { raw: 3, weight: 15, points: 9 },
-                  motivation: { raw: 4, weight: 20, points: 16 },
-                  studyPlan: { raw: 4, weight: 20, points: 16 },
-                  consistency: { raw: 4, weight: 10, points: 8 },
+                  answerRelevance: { raw: 3, weight: 25, points: 18.75 },
+                  contentCompleteness: { raw: 3, weight: 25, points: 18.75 },
+                  japaneseClarity: { raw: 3, weight: 20, points: 15 },
+                  grammarPoliteness: { raw: 3, weight: 20, points: 15 },
+                  consistency: { raw: 2, weight: 10, points: 5 },
                 },
-                gatesFired: [],
                 critiques: [
                   {
                     questionIndex: 0,
                     quote: "はじめまして",
                     explanation: "Add one concrete study hour.",
                     rewrite: "はじめまして。",
-                    category: "studyPlan",
+                    category: "contentCompleteness",
                   },
                 ],
                 profileName: "Aung Min Khant",
@@ -1177,9 +1163,8 @@ describe("Call screen", () => {
     await waitFor(() => {
       expect(screen.getByTestId("interview-report")).toBeInTheDocument();
     });
-    expect(screen.getByText("もう少し")).toBeInTheDocument();
-    expect(screen.getByText("73/100")).toBeInTheDocument();
-    expect(screen.queryByText("90/100")).not.toBeInTheDocument();
+    expect(screen.getByTestId("report-progress")).toHaveTextContent("73%");
+    expect(screen.queryByText("88%")).not.toBeInTheDocument();
   });
 
   it("shows the mic-trouble screen instead of a report when every Question was skipped", async () => {
@@ -1578,7 +1563,7 @@ describe("Call screen", () => {
     const critiques = within(screen.getByTestId("report-critiques"));
     expect(
       critiques.getByText(
-        "အသံထွက်နှင့် စကားစီးဆင်းမှုကို ပိုမိုကောင်းမွန်အောင် ပြုလုပ်ရန်။",
+        "ဂျပန်စကား၏ အဓိပ္ပာယ်ကို ပိုမိုရှင်းလင်းအောင် ပြောရန်။",
       ),
     ).toBeInTheDocument();
     expect(critiques.queryByText(/Use です\/ます/)).not.toBeInTheDocument();
@@ -1591,7 +1576,7 @@ describe("Call screen", () => {
     );
     expect(
       critiques.getByText(
-        "ဤအချက်ကို သင့်အဖြေက ကောင်းမွန်စွာ ပြည့်မီပြီးဖြစ်သည်။",
+        "ပိုမိုကြွယ်ဝသော အဖြေလိုချင်လျှင် အကြောင်းရင်း၊ နေရာ သို့မဟုတ် နောက်တစ်ဆင့်ကဲ့သို့ အတိအကျ အချက်အလက် တစ်ခုနှစ်ခု ထည့်ပြောပါ။",
       ),
     ).toBeInTheDocument();
     expect(

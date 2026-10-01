@@ -4,49 +4,43 @@ import type { UiLocale } from "./locale";
 import { uiCopy } from "./uiCopy";
 
 const CORRECTIVE_MY: Record<RubricCategoryKey, string> = {
-  speaking: "အသံထွက်နှင့် စကားစီးဆင်းမှုကို ပိုမိုကောင်းမွန်အောင် ပြုလုပ်ရန်",
-  listening: "မေးခွန်းနှင့် ပိုမိုကိုက်ညီအောင် အဖြေပေးရန်",
-  grammarPoliteness: "ဂျပန်သဒ္ဒါနှင့် ယဉ်ကျေးသုံးနှုန်းမှုကို ပိုမိုတိကျအောင် ပြုလုပ်ရန်",
-  motivation: "လိုချင်သည့်ရည်ရွယ်ချက်ကို ပိုမိုရှင်းလင်းအောင် ဖော်ပြရန်",
-  studyPlan: "လေ့လာမည့်အစီအစဉ်ကို ပိုမိုရှင်းလင်းအောင် ဖော်ပြရန်",
+  answerRelevance: "မေးခွန်းနှင့် ပိုမိုကိုက်ညီအောင် အဖြေပေးရန်",
+  contentCompleteness: "ပိုမိုအသုံးဝင်သော အချက်အလက်များ ထည့်သွင်းဖြေရန်",
+  japaneseClarity: "ဂျပန်စကား၏ အဓိပ္ပာယ်ကို ပိုမိုရှင်းလင်းအောင် ပြောရန်",
+  grammarPoliteness:
+    "ဂျပန်သဒ္ဒါနှင့် ယဉ်ကျေးသုံးနှုန်းမှုကို ပိုမိုတိကျအောင် ပြုလုပ်ရန်",
   consistency: "ယခင်အဖြေများနှင့် ပိုမိုကိုက်ညီအောင် ပြုလုပ်ရန်",
 };
 
 const AFFIRMING_MY: Record<RubricCategoryKey, string> = {
-  speaking: "အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး",
-  listening: "မေးခွန်းနှင့် ကိုက်ညီသော အဖြေပေးနိုင်ပြီး",
+  answerRelevance: "မေးခွန်းနှင့် ကိုက်ညီသော အဖြေပေးနိုင်ပြီး",
+  contentCompleteness:
+    "လိုအပ်သော အချက်အလက်များ လုံလောက်စွာ ဖော်ပြနိုင်ပြီး",
+  japaneseClarity: "ဂျပန်စကားကို ရှင်းလင်းစွာ ပြောနိုင်ပြီး",
   grammarPoliteness: "ဂျပန်သဒ္ဒါနှင့် ယဉ်ကျေးသုံးနှုန်းမှု တိကျပြီး",
-  motivation: "ရည်ရွယ်ချက်ကို ရှင်းလင်းစွာ ဖော်ပြနိုင်ပြီး",
-  studyPlan: "လေ့လာမည့်အစီအစဉ်ကို ရှင်းလင်းစွာ ဖော်ပြနိုင်ပြီး",
   consistency: "ယခင်အဖြေများနှင့် ကိုက်ညီစွာ ပြောနိုင်ပြီး",
 };
 
 const STRETCH: Record<UiLocale, Record<RubricCategoryKey, string>> = {
   en: {
-    speaking:
-      "add one more complete spoken sentence so the self-introduction is easier to remember.",
-    listening:
+    answerRelevance:
       "cover every part Tanaka-sensei asked, not only the first clause.",
+    contentCompleteness:
+      "add one or two concrete details (a reason, a place, or a next step) so the answer feels complete.",
+    japaneseClarity: "say the same idea in one shorter, clearly connected sentence.",
     grammarPoliteness: "add one more complete です/ます sentence.",
-    motivation:
-      "add a specific future study or career goal to make your motivation more personal and memorable.",
-    studyPlan:
-      "add a realistic time frame and the next school or job after graduation.",
     consistency: "keep the same school name and plan in every answer.",
   },
   my: {
-    speaking:
-      "နောက်ထပ် ပြည့်စုံသော ပြောစကားတစ်ကြောင်း ထည့်ပြောပါ။",
-    listening:
+    answerRelevance:
       "Tanaka-sensei မေးသည့် အချက်တိုင်းကို ဖြေပါ၊ ပထမစာကြောင်းကိုသာ မဖြေပါနှင့်။",
+    contentCompleteness:
+      "အကြောင်းရင်း၊ နေရာ သို့မဟုတ် နောက်တစ်ဆင့်ကဲ့သို့ အတိအကျ အချက်အလက် တစ်ခုနှစ်ခု ထည့်ပြောပါ။",
+    japaneseClarity:
+      "အဓိပ္ပာယ်တူစကားကို ပိုတိုပြီး ဆက်စပ်မှုရှိသော စာကြောင်းတစ်ကြောင်းနဲ့ ပြောပါ။",
     grammarPoliteness:
       "နောက်ထပ် ပြည့်စုံသော です/ます စာကြောင်းတစ်ကြောင်း ထည့်ပါ။",
-    motivation:
-      "သင့်ရည်ရွယ်ချက်ကို ပိုမိုကိုယ်ပိုင်ဆန်အောင် အနာဂတ် လေ့လာရေး သို့မဟုတ် အလုပ်အကိုင် ရည်မှန်းချက်တစ်ခု ထည့်ပါ။",
-    studyPlan:
-      "အချိန်ကာလတစ်ခုနှင့် ဘွဲ့ရပြီးနောက် ကျောင်း သို့မဟုတ် အလုပ်ကို ထည့်ပါ။",
-    consistency:
-      "အဖြေတိုင်းတွင် ကျောင်းအမည်နှင့် အစီအစဉ်ကို တူညီစွာ ထားပါ။",
+    consistency: "အဖြေတိုင်းတွင် ကျောင်းအမည်နှင့် အစီအစဉ်ကို တူညီစွာ ထားပါ။",
   },
 };
 
@@ -79,12 +73,12 @@ export function futureGoalSpecificity(
   return "missing";
 }
 
-function motivationOrPlanStretch(
+function contentStretch(
   category: RubricCategoryKey,
   transcript: string,
   locale: UiLocale,
 ): string {
-  if (category !== "motivation" && category !== "studyPlan") {
+  if (category !== "contentCompleteness") {
     return STRETCH[locale][category];
   }
   const specificity = futureGoalSpecificity(transcript);
@@ -99,7 +93,7 @@ function motivationOrPlanStretch(
 
 export type NextStepView = {
   heading: string;
-  lines: string[];
+  improvement: string;
   rewriteHeading: string;
   rewrite: string;
 };
@@ -127,20 +121,17 @@ export function buildNextStep({
   if (!affirming) {
     return {
       heading: copy.report.improveNext,
-      lines: [explanation],
+      improvement: explanation,
       rewriteHeading: copy.report.rewriteHeading,
       rewrite,
     };
   }
 
-  const stretch = motivationOrPlanStretch(category, transcript, locale);
-  if (raw >= 5) {
+  const stretch = contentStretch(category, transcript, locale);
+  if (raw >= 4) {
     return {
       heading: copy.report.optionalEnhancement,
-      lines: [
-        copy.report.alreadyMeets,
-        copy.report.richerAnswer.replace("{stretch}", stretch),
-      ],
+      improvement: copy.report.richerAnswer.replace("{stretch}", stretch),
       rewriteHeading: copy.report.usefulPhrase,
       rewrite: quote,
     };
@@ -148,17 +139,11 @@ export function buildNextStep({
 
   return {
     heading: copy.report.makeStronger,
-    lines: [copy.report.optionalLine.replace("{stretch}", stretch)],
+    improvement: copy.report.optionalLine.replace("{stretch}", stretch),
     rewriteHeading: copy.report.usefulPhrase,
     rewrite: quote,
   };
 }
-
-const STRETCH_REWRITE_EXTRA = [
-  "この学校で日本語を勉強したいです。",
-  "将来の仕事のためにも、ここで実践的な日本語を学びたいです。",
-  "その後、日本語を使って働きたいです。",
-] as const;
 
 export type FormattedCritique = {
   quote: string;
@@ -171,17 +156,6 @@ export function isAffirmingCritique(critique: {
   rewrite: string;
 }): boolean {
   return critique.rewrite === critique.quote;
-}
-
-export function stretchRewriteForQuestion(
-  questionIndex: number,
-  quote: string,
-): string {
-  const extra = STRETCH_REWRITE_EXTRA[questionIndex] ?? STRETCH_REWRITE_EXTRA[0];
-  const base = quote.trim() || "（無言）";
-  const withStop = /[。．.]$/.test(base) ? base : `${base}。`;
-  if (withStop.includes(extra)) return withStop;
-  return `${withStop}${extra}`;
 }
 
 export function formatQuotedCritique(

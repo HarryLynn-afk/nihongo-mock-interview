@@ -7,39 +7,35 @@ import type { InterviewReport } from "@/lib/content/sampleReport";
 import { questions } from "@/lib/content/questions";
 
 const report: InterviewReport = {
-  headline: "Ready",
-  stamp: "準備OK",
-  total: 92,
+  total: 88,
   scores: {
-    speaking: { raw: 5, weight: 20, points: 20 },
-    listening: { raw: 4, weight: 15, points: 12 },
-    grammarPoliteness: { raw: 4, weight: 15, points: 12 },
-    motivation: { raw: 5, weight: 20, points: 20 },
-    studyPlan: { raw: 5, weight: 20, points: 20 },
-    consistency: { raw: 4, weight: 10, points: 8 },
+    answerRelevance: { raw: 4, weight: 25, points: 25 },
+    contentCompleteness: { raw: 4, weight: 25, points: 25 },
+    japaneseClarity: { raw: 3, weight: 20, points: 15 },
+    grammarPoliteness: { raw: 3, weight: 20, points: 15 },
+    consistency: { raw: 3, weight: 10, points: 7.5 },
   },
-  gatesFired: [],
   critiques: [
     {
       questionIndex: 0,
       quote: "はじめまして",
       explanation: "Clear self-introduction.",
       rewrite: "はじめまして",
-      category: "speaking",
+      category: "answerRelevance",
     },
     {
       questionIndex: 1,
       quote: "日本で勉強したいです",
       explanation: "Add a personal future goal.",
       rewrite: "日本のIT業界で働きたいので、日本で勉強したいです。",
-      category: "motivation",
+      category: "contentCompleteness",
     },
     {
       questionIndex: 2,
       quote: "専門学校に行きます",
       explanation: "Name a next step after school.",
       rewrite: "専門学校でウェブを勉強します。",
-      category: "studyPlan",
+      category: "contentCompleteness",
     },
   ],
   profileName: "Aung Min Khant",
@@ -88,13 +84,13 @@ describe("InterviewReportScreen", () => {
     const review = screen.getByTestId("report-review");
 
     expect(within(overview).getByText("Interview Answer Quality")).toBeInTheDocument();
-    expect(within(overview).getByTestId("readiness-radar")).toBeInTheDocument();
+    expect(within(overview).getByTestId("practice-radar")).toBeInTheDocument();
     expect(within(overview).queryByTestId("report-question-nav")).not.toBeInTheDocument();
     expect(within(overview).queryByTestId("report-critiques")).not.toBeInTheDocument();
 
     expect(within(review).getByTestId("report-question-nav")).toBeInTheDocument();
     expect(within(review).getByTestId("report-critiques")).toBeInTheDocument();
-    expect(within(review).queryByTestId("readiness-radar")).not.toBeInTheDocument();
+    expect(within(review).queryByTestId("practice-radar")).not.toBeInTheDocument();
 
     await user.click(
       within(review).getByRole("button", { name: /q2 motivation/i }),
@@ -118,10 +114,10 @@ describe("InterviewReportScreen", () => {
         "speech-delivery",
       ),
     ).not.toBeInTheDocument();
-    expect(screen.getByText("Clear self-introduction.")).toBeInTheDocument();
+    expect(screen.getAllByText("はじめまして").length).toBeGreaterThan(0);
   });
 
-  it("shows AI Interview Practice Feedback, the stamp in its locked color, criterion scores as points/weight, and the /100 total", () => {
+  it("shows the practice progress percent with no verdict wording", () => {
     render(<InterviewReportScreen view={voiceView} />);
 
     expect(screen.getByText("AI Interview Practice Feedback")).toBeInTheDocument();
@@ -129,102 +125,68 @@ describe("InterviewReportScreen", () => {
     expect(
       screen.queryByText(/Based on the confirmed response transcript/i),
     ).not.toBeInTheDocument();
-    const stamp = screen.getByText(/準備OK/);
-    expect(stamp).toHaveClass("text-feather");
+    expect(screen.getByTestId("report-progress")).toHaveTextContent("88%");
+    expect(screen.getByText("Practice progress")).toBeInTheDocument();
     expect(screen.getByTestId("interview-report")).toHaveClass("bg-white");
-    expect(screen.getByText("90/100")).toBeInTheDocument();
-    expect(screen.getAllByText("12/15").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("20/20").length).toBeGreaterThan(0);
-    expect(screen.getByText("8/10")).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Ready|Almost Ready|Keep Practicing|要練習|もう少し|準備OK/),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByText(/N5|JLPT|\bA1\b|\bPass\b|\bFail\b/),
     ).not.toBeInTheDocument();
-    expect(screen.queryByText(/How scoring works/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Practice next/i)).not.toBeInTheDocument();
   });
 
-  it("does not list Listening as a scored criterion", () => {
+  it("lists the five practice criteria and never Listening", () => {
     render(<InterviewReportScreen view={voiceView} />);
 
     const bars = within(screen.getByTestId("report-score-bars"));
-    expect(bars.queryByText(/^Listening$/)).not.toBeInTheDocument();
     expect(bars.getByText("Answer relevance")).toBeInTheDocument();
-    expect(screen.getByText(/Listening comprehension is not scored/i)).toBeInTheDocument();
+    expect(bars.getByText("Content completeness")).toBeInTheDocument();
+    expect(bars.getByText("Japanese clarity")).toBeInTheDocument();
+    expect(bars.getByText("Grammar and politeness")).toBeInTheDocument();
+    expect(bars.getByText("Cross-answer consistency")).toBeInTheDocument();
+    expect(bars.queryByText(/^Listening$/)).not.toBeInTheDocument();
+    expect(bars.queryByText("Motivation")).not.toBeInTheDocument();
+    expect(bars.queryByText("Study plan")).not.toBeInTheDocument();
+    expect(bars.getAllByText("Strong practice response").length).toBeGreaterThan(0);
+    expect(bars.getAllByText("Adequate for practice").length).toBeGreaterThan(0);
   });
 
-  it("keeps pronunciation out of the report radar", () => {
+  it("labels each radar axis with full untruncated category names", () => {
     render(<InterviewReportScreen view={voiceView} />);
 
-    expect(screen.queryByTestId("speech-delivery")).not.toBeInTheDocument();
-    const radar = within(screen.getByTestId("readiness-radar"));
+    const radar = within(screen.getByTestId("practice-radar"));
     expect(radar.queryByText("Pronunciation")).not.toBeInTheDocument();
+    expect(radar.getByText("Relevance")).toBeInTheDocument();
+    expect(radar.getByText("Content")).toBeInTheDocument();
+    expect(radar.getByText("Clarity")).toBeInTheDocument();
+    expect(radar.getByText("Grammar")).toBeInTheDocument();
+    expect(radar.getByText("Consistency")).toBeInTheDocument();
+    expect(radar.queryByText("Listening")).not.toBeInTheDocument();
   });
 
-  it("shows one selected question card with strengths, not three stacked critiques", () => {
+  it("shows one selected question card with evidence, one improvement, and one rewrite", () => {
     render(<InterviewReportScreen view={voiceView} />);
 
     const critiques = within(screen.getByTestId("report-critiques"));
     expect(critiques.getAllByText("はじめまして").length).toBeGreaterThan(0);
-    expect(critiques.getByText("Clear self-introduction.")).toBeInTheDocument();
+    expect(
+      critiques.queryByText(
+        "မေးခွန်းနှင့် ကိုက်ညီသော အဖြေပေးနိုင်ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
+      ),
+    ).not.toBeInTheDocument();
     expect(critiques.getByText("Optional enhancement")).toBeInTheDocument();
     expect(
-      critiques.getByText(/already meets this criterion strongly/i),
+      critiques.getByText(
+        "If you want a richer answer, cover every part Tanaka-sensei asked, not only the first clause.",
+      ),
     ).toBeInTheDocument();
     expect(critiques.getByText("Useful phrase to keep")).toBeInTheDocument();
+    expect(critiques.queryByText("What you did well")).not.toBeInTheDocument();
     expect(critiques.queryByText("Improve next")).not.toBeInTheDocument();
     expect(critiques.queryByText("Add a personal future goal.")).not.toBeInTheDocument();
     expect(
-      critiques.queryByText(
-        "သင်ပြောခဲ့သည့်စာကြောင်း − 「はじめまして」။ အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
-      ),
-    ).not.toBeInTheDocument();
-    expect(
       screen.queryByTestId("report-coaching"),
-    ).not.toBeInTheDocument();
-  });
-
-  it("renders every critique string in Burmese when MM is selected", async () => {
-    const user = userEvent.setup();
-    render(<InterviewReportScreen view={mmView} locale="my" />);
-
-    const critiques = within(screen.getByTestId("report-critiques"));
-    expect(
-      critiques.getByText(
-        "အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
-      ),
-    ).toBeInTheDocument();
-    expect(screen.queryByTestId("report-burmese")).not.toBeInTheDocument();
-    expect(
-      critiques.queryByText("Clear self-introduction."),
-    ).not.toBeInTheDocument();
-
-    await user.click(
-      within(screen.getByTestId("report-question-nav")).getByRole("button", {
-        name: /q2/i,
-      }),
-    );
-    expect(
-      critiques.getByText(
-        "သင့်အဖြေတွင် 「日本で勉強したいです」 ပါဝင်ပါသည်။",
-      ),
-    ).toBeInTheDocument();
-    expect(
-      critiques.getByText(
-        "လိုချင်သည့်ရည်ရွယ်ချက်ကို ပိုမိုရှင်းလင်းအောင် ဖော်ပြရန်။",
-      ),
-    ).toBeInTheDocument();
-    expect(
-      critiques.queryByText("Add a personal future goal."),
-    ).not.toBeInTheDocument();
-  });
-
-  it("hides Burmese critique copy on ENG", () => {
-    render(<InterviewReportScreen view={voiceView} locale="en" />);
-
-    expect(
-      screen.queryByText(
-        "အသံထွက်နှင့် စကားစီးဆင်းမှု ချောမွေ့ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
-      ),
     ).not.toBeInTheDocument();
   });
 
@@ -239,6 +201,51 @@ describe("InterviewReportScreen", () => {
     expect(critiques.getByText("Add a personal future goal.")).toBeInTheDocument();
     expect(critiques.getByText("Improve next")).toBeInTheDocument();
     expect(critiques.getByText("日本のIT業界で働きたいので、日本で勉強したいです。")).toBeInTheDocument();
+  });
+
+  it("renders every critique string in Burmese when MM is selected", async () => {
+    const user = userEvent.setup();
+    render(<InterviewReportScreen view={mmView} locale="my" />);
+
+    const critiques = within(screen.getByTestId("report-critiques"));
+    expect(
+      critiques.getByText(
+        /မေးခွန်းနှင့် ကိုက်ညီသော အဖြေပေးနိုင်ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      critiques.getByText(
+        "ပိုမိုကြွယ်ဝသော အဖြေလိုချင်လျှင် Tanaka-sensei မေးသည့် အချက်တိုင်းကို ဖြေပါ၊ ပထမစာကြောင်းကိုသာ မဖြေပါနှင့်။",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("report-burmese")).not.toBeInTheDocument();
+    expect(
+      critiques.queryByText("Clear self-introduction."),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      within(screen.getByTestId("report-question-nav")).getByRole("button", {
+        name: /q2/i,
+      }),
+    );
+    expect(
+      critiques.getByText(
+        "ပိုမိုအသုံးဝင်သော အချက်အလက်များ ထည့်သွင်းဖြေရန်။",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      critiques.queryByText("Add a personal future goal."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides Burmese critique copy on ENG", () => {
+    render(<InterviewReportScreen view={voiceView} locale="en" />);
+
+    expect(
+      screen.queryByText(
+        "မေးခွန်းနှင့် ကိုက်ညီသော အဖြေပေးနိုင်ပြီး၊ ကောင်းစွာပြောနိုင်ခဲ့ပါသည်။",
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it("shows a no-answer card when the selected Question was skipped", async () => {
@@ -257,42 +264,23 @@ describe("InterviewReportScreen", () => {
     expect(critiques.getByText(/check your microphone/i)).toBeInTheDocument();
   });
 
-  it("renders a radar of the assessed scores", () => {
-    render(<InterviewReportScreen view={voiceView} />);
-
-    expect(screen.getByTestId("readiness-radar")).toBeInTheDocument();
-  });
-
-  it("labels each radar axis with full untruncated category names", () => {
-    render(<InterviewReportScreen view={voiceView} />);
-
-    const radar = within(screen.getByTestId("readiness-radar"));
-    expect(radar.queryByText("Pronunciation")).not.toBeInTheDocument();
-    expect(radar.getByText("Grammar")).toBeInTheDocument();
-    expect(radar.getByText("Motivation")).toBeInTheDocument();
-    expect(radar.getByText("Study plan")).toBeInTheDocument();
-    expect(radar.getByText("Consistency")).toBeInTheDocument();
-    expect(radar.getByText("Relevance")).toBeInTheDocument();
-    expect(radar.queryByText("Listening")).not.toBeInTheDocument();
-  });
-
-  it("reveals radar, then stamp, then critiques — never all at once", async () => {
+  it("reveals radar, then progress, then critiques — never all at once", async () => {
     vi.useFakeTimers();
     render(<InterviewReportScreen view={voiceView} />);
 
-    expect(screen.getByTestId("readiness-radar")).toHaveClass("opacity-100");
-    expect(screen.getByTestId("report-stamp")).toHaveClass("opacity-0");
+    expect(screen.getByTestId("practice-radar")).toHaveClass("opacity-100");
+    expect(screen.getByTestId("report-progress")).toHaveClass("opacity-0");
     expect(screen.getByTestId("report-critiques")).toHaveClass("opacity-0");
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(699);
     });
-    expect(screen.getByTestId("report-stamp")).toHaveClass("opacity-0");
+    expect(screen.getByTestId("report-progress")).toHaveClass("opacity-0");
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
     });
-    expect(screen.getByTestId("report-stamp")).toHaveClass("opacity-100");
+    expect(screen.getByTestId("report-progress")).toHaveClass("opacity-100");
     expect(screen.getByTestId("report-critiques")).toHaveClass("opacity-0");
 
     await act(async () => {

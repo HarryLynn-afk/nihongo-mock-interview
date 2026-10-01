@@ -1,43 +1,41 @@
 import { describe, expect, it } from "vitest";
 import { parseRawScores } from "./rubric";
 
+const VALID = {
+  answerRelevance: 3,
+  contentCompleteness: 4,
+  japaneseClarity: 2,
+  grammarPoliteness: 4,
+  consistency: 3,
+} as const;
+
 describe("parseRawScores", () => {
   it("throws when a required category is missing", () => {
-    const malformed = {
-      speaking: 5,
-      listening: 4,
-      grammarPoliteness: 4,
-      motivation: 5,
-      // studyPlan missing
-      consistency: 4,
-    };
+    const { contentCompleteness, ...malformed } = VALID;
 
-    expect(() => parseRawScores(malformed)).toThrow(/studyPlan/);
+    expect(contentCompleteness).toBe(4);
+    expect(() => parseRawScores(malformed)).toThrow(/contentCompleteness/);
   });
 
-  it("throws when a category score is out of the 1-5 range", () => {
-    const malformed = {
-      speaking: 6,
-      listening: 4,
-      grammarPoliteness: 4,
-      motivation: 5,
-      studyPlan: 5,
-      consistency: 4,
-    };
+  it("throws when a category score is above the 1-4 range", () => {
+    expect(() => parseRawScores({ ...VALID, answerRelevance: 5 })).toThrow(
+      /answerRelevance/,
+    );
+  });
 
-    expect(() => parseRawScores(malformed)).toThrow(/speaking/);
+  it("throws when a category score is below the 1-4 range", () => {
+    expect(() => parseRawScores({ ...VALID, consistency: 0 })).toThrow(
+      /consistency/,
+    );
+  });
+
+  it("throws when a category score is not an integer", () => {
+    expect(() => parseRawScores({ ...VALID, japaneseClarity: 2.5 })).toThrow(
+      /japaneseClarity/,
+    );
   });
 
   it("returns the scores unchanged when the input is already valid", () => {
-    const valid = {
-      speaking: 5,
-      listening: 4,
-      grammarPoliteness: 4,
-      motivation: 5,
-      studyPlan: 5,
-      consistency: 4,
-    };
-
-    expect(parseRawScores(valid)).toEqual(valid);
+    expect(parseRawScores(VALID)).toEqual(VALID);
   });
 });

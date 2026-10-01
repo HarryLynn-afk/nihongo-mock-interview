@@ -1,15 +1,9 @@
-import type { RubricCategoryKey } from "./rubric";
+import {
+  RUBRIC_CATEGORY_KEYS,
+  type RubricCategoryKey,
+} from "./rubric";
 
 const SILENT_QUOTE = "（無言）";
-
-const CATEGORY_KEYS: RubricCategoryKey[] = [
-  "speaking",
-  "listening",
-  "grammarPoliteness",
-  "motivation",
-  "studyPlan",
-  "consistency",
-];
 
 export type CritiqueAnswer = {
   questionIndex: number;
@@ -43,7 +37,7 @@ export function parseQuotedCritiques(
     if (typeof row.rewrite !== "string") return null;
     if (
       typeof row.category !== "string" ||
-      !CATEGORY_KEYS.includes(row.category as RubricCategoryKey)
+      !RUBRIC_CATEGORY_KEYS.includes(row.category as RubricCategoryKey)
     ) {
       return null;
     }

@@ -30,7 +30,7 @@ describe("useInterviewScore", () => {
 
   it("POSTs /api/score once when answers become ready, with GradeAnswer fields only", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ report: { headline: "Ready" } }), {
+      new Response(JSON.stringify({ report: { total: 88, source: "grade" } }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       }),
@@ -88,7 +88,7 @@ describe("useInterviewScore", () => {
 
   it("keeps the { report } JSON from /api/score, including a dual-fail banner", async () => {
     const sampleReport = {
-      headline: "Ready",
+      total: 88,
       source: "sample",
       banner: "Scoring unavailable — sample report.",
     };

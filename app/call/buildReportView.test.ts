@@ -1,29 +1,24 @@
 import { describe, expect, it } from "vitest";
 import type { InterviewReport } from "@/lib/content/sampleReport";
-import { formatQuotedCritique } from "@/lib/content/critiqueCopy";
 import { questions } from "@/lib/content/questions";
 import { buildReportView } from "./buildReportView";
 
 const report: InterviewReport = {
-  headline: "Ready",
-  stamp: "準備OK",
-  total: 90,
+  total: 81,
   scores: {
-    speaking: { raw: 5, weight: 20, points: 20 },
-    listening: { raw: 4, weight: 15, points: 12 },
-    grammarPoliteness: { raw: 4, weight: 15, points: 12 },
-    motivation: { raw: 5, weight: 20, points: 20 },
-    studyPlan: { raw: 5, weight: 20, points: 20 },
-    consistency: { raw: 4, weight: 10, points: 8 },
+    answerRelevance: { raw: 3, weight: 25, points: 18.75 },
+    contentCompleteness: { raw: 4, weight: 25, points: 25 },
+    japaneseClarity: { raw: 2, weight: 20, points: 10 },
+    grammarPoliteness: { raw: 4, weight: 20, points: 20 },
+    consistency: { raw: 3, weight: 10, points: 7.5 },
   },
-  gatesFired: [],
   critiques: [
     {
       questionIndex: 0,
       quote: "はじめまして",
       explanation: "Use です/ます all the way through.",
       rewrite: "はじめまして。",
-      category: "speaking",
+      category: "grammarPoliteness",
     },
   ],
   profileName: "Aung Min Khant",
@@ -38,16 +33,7 @@ const voiceAnswers = [
 ];
 
 describe("buildReportView", () => {
-  it("does not treat a speaking Gate as Japanese-ability coaching", () => {
-    const view = buildReportView({
-      report: { ...report, headline: "KeepPracticing", stamp: "要練習", gatesFired: ["speaking"] },
-      answers: voiceAnswers,
-    });
-
-    expect(view.notes.some((line) => /life plan/i.test(line))).toBe(false);
-  });
-
-  it("exposes AI Interview Practice Feedback, stamp color, content scores, and the transcript /100 total", () => {
+  it("exposes the practice progress total and five criterion rows without a verdict", () => {
     const view = buildReportView({
       report,
       answers: voiceAnswers,
@@ -55,51 +41,50 @@ describe("buildReportView", () => {
 
     expect(view.title).toBe("AI Interview Practice Feedback");
     expect(view.answerQualityTitle).toBe("Interview Answer Quality");
-    expect(view).not.toHaveProperty("answerQualityNote");
-    expect(view.headlineLabel).toBe("Strong");
-    expect(view.stamp).toBe("準備OK");
-    expect(view.stampColorClass).toBe("text-feather");
-    expect(view.total).toBe(90);
+    expect(view.progressLabel).toBe("Practice progress");
+    expect(view.total).toBe(81);
     expect(view.banner).toBeNull();
-    expect(view.disclaimer).toMatch(/not an official language-proficiency/i);
+    expect(view.disclaimer).toMatch(/not an official admission assessment/i);
     expect(view.scores.map((score) => score.key)).toEqual([
-      "listening",
+      "answerRelevance",
+      "contentCompleteness",
+      "japaneseClarity",
       "grammarPoliteness",
-      "motivation",
-      "studyPlan",
       "consistency",
     ]);
-    expect(view).not.toHaveProperty("delivery");
-    expect(view.voiceNote).toBeNull();
+    expect(view.scores.find((score) => score.key === "answerRelevance")).toEqual({
+      key: "answerRelevance",
+      label: "Answer relevance",
+      radarLabel: "Relevance",
+      level: 3,
+      levelLabel: "Adequate for practice",
+    });
+    expect(view).not.toHaveProperty("headlineLabel");
+    expect(view).not.toHaveProperty("stamp");
+    expect(view).not.toHaveProperty("listeningNote");
+    expect(view).not.toHaveProperty("voiceNote");
   });
 
-  it("shows Answer relevance instead of a listening-comprehension score", () => {
+  it("gives each answered Question one evidence quote, one improvement, and one rewrite", () => {
     const view = buildReportView({
       report,
       answers: voiceAnswers,
     });
-
-    expect(view.scores.find((score) => score.key === "listening")?.label).toBe(
-      "Answer relevance",
-    );
-    expect(view.listeningNote).toMatch(/listening comprehension is not scored/i);
-  });
-
-  it("builds one question card per Interview Question", () => {
-    const view = buildReportView({
-      report,
-      answers: voiceAnswers,
-    });
+    const card = view.questions[0];
 
     expect(view.questions).toHaveLength(3);
-    expect(view.questions[0].japanese).toBe(questions[0].japanese);
-    expect(view.questions[0].transcript).toBe("はじめまして");
-    expect(view.questions[0].improvements).toEqual([
-      "Use です/ます all the way through.",
-    ]);
-    expect(view.questions[0].rewrite).toBe("はじめまして。");
-    expect(view.questions[0].scoreText).toBe("—");
-    expect(view.questions[0].affirming).toBe(false);
+    expect(card.japanese).toBe(questions[0].japanese);
+    expect(card.transcript).toBe("はじめまして");
+    expect(card.quote).toBe("はじめまして");
+    expect(card.evidence).toBe("Use です/ます all the way through.");
+    expect(card.improvement).toBe("Use です/ます all the way through.");
+    expect(card.improvementHeading).toBe("Improve next");
+    expect(card.rewrite).toBe("はじめまして。");
+    expect(card.categoryLabel).toBe("Grammar and politeness");
+    expect(card.ratingLabel).toBe("Strong practice response");
+    expect(card.affirming).toBe(false);
+    expect(card).not.toHaveProperty("strengths");
+    expect(card).not.toHaveProperty("improvements");
   });
 
   it("builds a no-answer card for a skipped Question, keeping the nav complete", () => {
@@ -116,28 +101,14 @@ describe("buildReportView", () => {
     expect(view.questions[1].transcript).toBe(
       "No answer was captured for this Question.",
     );
-    expect(view.questions[1].scoreText).toBe("—");
-    expect(view.questions[1].strengths).toEqual([]);
-    expect(view.questions[1].improvements[0]).toMatch(/microphone/i);
+    expect(view.questions[1].improvement).toMatch(/microphone/i);
     expect(view.questions[1].rewrite).toBe("");
     expect(view.questions[1].affirming).toBe(false);
     expect(view.questions[0].transcript).toBe("はじめまして");
     expect(view.questions[2].transcript).toBe("専門学校に行きます");
   });
 
-  it("exposes formatted critiques instead of freeform coaching notes", () => {
-    const view = buildReportView({
-      report,
-      answers: voiceAnswers,
-    });
-
-    expect(view.critiques).toEqual([
-      formatQuotedCritique(report.critiques[0], "en"),
-    ]);
-    expect(view).not.toHaveProperty("coaching");
-  });
-
-  it("formats every stored critique, not a 2-4 coaching list", () => {
+  it("turns an affirming critique into one optional stretch with a useful phrase", () => {
     const three = {
       ...report,
       critiques: [
@@ -147,14 +118,14 @@ describe("buildReportView", () => {
           quote: "この学校",
           explanation: "Name the school.",
           rewrite: "この学校",
-          category: "motivation" as const,
+          category: "contentCompleteness" as const,
         },
         {
           questionIndex: 2,
           quote: "専門学校",
           explanation: "Name a next step.",
           rewrite: "専門学校でウェブを勉強します。",
-          category: "studyPlan" as const,
+          category: "contentCompleteness" as const,
         },
       ],
     };
@@ -167,11 +138,10 @@ describe("buildReportView", () => {
       ],
     });
 
-    expect(view.critiques).toHaveLength(3);
     expect(view.questions[1].affirming).toBe(true);
-    expect(view.questions[1].strengths).toEqual(["Name the school."]);
-    expect(view.questions[1].nextHeading).toBe("Optional enhancement");
+    expect(view.questions[1].improvementHeading).toBe("Optional enhancement");
     expect(view.questions[1].rewriteHeading).toBe("Useful phrase to keep");
+    expect(view.questions[1].improvement).toMatch(/richer answer/i);
     expect(view.questions[1].rewrite).toBe("この学校");
   });
 
@@ -184,17 +154,15 @@ describe("buildReportView", () => {
     const card = view.questions[0];
 
     expect(card).not.toHaveProperty("burmese");
-    expect(card).not.toHaveProperty("categoryLabel");
     expect(card.evidence).toBe(
-      "အသံထွက်နှင့် စကားစီးဆင်းမှုကို ပိုမိုကောင်းမွန်အောင် ပြုလုပ်ရန်။",
+      "ဂျပန်သဒ္ဒါနှင့် ယဉ်ကျေးသုံးနှုန်းမှုကို ပိုမိုတိကျအောင် ပြုလုပ်ရန်။",
     );
-    expect(card.strengths).toEqual([
-      "သင့်အဖြေတွင် 「はじめまして」 ပါဝင်ပါသည်။",
-    ]);
-    expect(card.improvements).toEqual([
-      "အသံထွက်နှင့် စကားစီးဆင်းမှုကို ပိုမိုကောင်းမွန်အောင် ပြုလုပ်ရန်။",
-    ]);
-    expect(card.nextHeading).toBe("နောက်တစ်ကြိမ် တိုးတက်အောင်");
+    expect(card.improvement).toBe(
+      "ဂျပန်သဒ္ဒါနှင့် ယဉ်ကျေးသုံးနှုန်းမှုကို ပိုမိုတိကျအောင် ပြုလုပ်ရန်။",
+    );
+    expect(card.improvementHeading).toBe("နောက်တစ်ကြိမ် တိုးတက်အောင်");
     expect(card.rewriteHeading).toBe("အကြံပြု ဂျပန်အဖြေ");
+    expect(card.categoryLabel).toBe("သဒ္ဒါနှင့် ယဉ်ကျေးမှု");
+    expect(card.ratingLabel).toBe("ကောင်းမွန်သော လေ့ကျင့်မှုအဖြေ");
   });
 });

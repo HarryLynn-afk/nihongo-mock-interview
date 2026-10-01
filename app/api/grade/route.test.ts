@@ -4,12 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const ORIGINAL_ENV = { ...process.env };
 
 const SAMPLE_SCORES = {
-  speaking: 5,
-  listening: 4,
-  grammarPoliteness: 4,
-  motivation: 5,
-  studyPlan: 5,
-  consistency: 4,
+  answerRelevance: 4,
+  contentCompleteness: 3,
+  japaneseClarity: 4,
+  grammarPoliteness: 3,
+  consistency: 3,
 };
 
 describe("POST /api/grade", () => {
@@ -56,7 +55,7 @@ describe("POST /api/grade", () => {
                       quote: "はじめまして",
                       explanation: "Use です/ます all the way through.",
                       rewrite: "はじめまして。",
-                      category: "speaking",
+                      category: "japaneseClarity",
                     },
                   ],
                 }),
@@ -87,8 +86,8 @@ describe("POST /api/grade", () => {
     );
 
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { report: { headline: string; source: string } };
-    expect(body.report.headline).toBe("Ready");
+    const body = (await res.json()) as { report: { total: number; source: string } };
+    expect(body.report.total).toBe(86);
     expect(body.report.source).toBe("grade");
     expect(groqFetch).toHaveBeenCalledWith(
       "https://api.groq.com/openai/v1/chat/completions",

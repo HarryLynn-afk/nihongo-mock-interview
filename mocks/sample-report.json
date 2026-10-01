@@ -1,0 +1,36 @@
+{
+  "source": "mocks/sample-report.json",
+  "total": 88,
+  "scores": {
+    "answerRelevance": { "raw": 4, "weight": 25, "points": 25 },
+    "contentCompleteness": { "raw": 4, "weight": 25, "points": 25 },
+    "japaneseClarity": { "raw": 3, "weight": 20, "points": 15 },
+    "grammarPoliteness": { "raw": 3, "weight": 20, "points": 15 },
+    "consistency": { "raw": 3, "weight": 10, "points": 7.5 }
+  },
+  "critiques": [
+    {
+      "questionIndex": 0,
+      "quote": "アウン・ミン・タントです",
+      "explanation": "The name form is understandable; use と申します for a formal self-introduction.",
+      "rewrite": "アウン・ミン・タントと申します。",
+      "category": "japaneseClarity"
+    },
+    {
+      "questionIndex": 1,
+      "quote": "この学校で日本語を勉強したいです",
+      "explanation": "You named this school as the reason for studying in Japan.",
+      "rewrite": "この学校で日本語を勉強したいです",
+      "category": "contentCompleteness"
+    },
+    {
+      "questionIndex": 2,
+      "quote": "専門学校でウェブを勉強します",
+      "explanation": "The next step after language school is named clearly.",
+      "rewrite": "専門学校でウェブを勉強します",
+      "category": "contentCompleteness"
+    }
+  ],
+  "profileName": "Aung Min Khant",
+  "notes": "Used when Groq and DeepSeek grading both miss. Includes one corrective and two affirming critiques so the last screen is not an empty coaching list."
+}
