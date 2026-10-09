@@ -3,6 +3,8 @@
 **Date:** 2026-09-02
 **Built by:** Kyaw Naing Lin
 
+Historical PRD. Use `docs/grading-system.md` and `claude2.md` for current grading and open tasks.
+
 ---
 
 ## Problem
@@ -65,7 +67,7 @@ Prospective Japanese language-school applicants and faculty testers on the live 
   - Usability EN: `How easy was this practice session to use?` — 1 = Very difficult, 5 = Very easy.
   - Usability MY: `ဒီလေ့ကျင့်ခန်းစက်ရှင်ကို အသုံးပြုရလွယ်ကူပါသလဲ။` — 1 = အလွန်ခက်ခဲသည်, 5 = အလွန်လွယ်ကူသည်။
   - Skip EN: `Skip` — Skip MY: `ကျော်မည်`
-- **Ship vs testers:** the app may merge with the survey **hidden** if the form URL is missing. Faculty testers and real applicants must not run until: form URL wired, n8n prompt Published, native Burmese review of all MY drafts, and an **explicit instructor answer on RSU / CSC 485 consent** (see Open Questions).
+- **Ship vs testers:** the app may merge with the survey **hidden** if the form URL is missing. Faculty testers and real applicants must not run until: form URL wired, native Burmese review of all MY drafts, and an **explicit instructor answer on RSU / CSC 485 consent** (see Open Questions).
 
 ### Should Have
 - Keep `InterviewReport.source` (`n8n` | `grade` | `sample`) in the client for debugging; do not send n8n vs Groq to the research form.
@@ -92,7 +94,7 @@ Build and merge in three checkpoints so each is a working demo, not one all-or-n
 
 1. **Pushback cap** — local transcript check, attempt counter, try-again line, empty-Speak → Type counts, Scribe/sidebar only on stored attempt. Scoring payload may already send `pushbackCount` / `forced`; graders may ignore them until phase 2.
 2. **Critique schema + grader sync** — replace coaching notes; quote / rewrite / category rules; `getRubricPrompt` + n8n + Groq + sample JSON; retire Pitch Headline swap. Phase 1 behavior stays.
-3. **Survey + session id** — reveal-gated usefulness step, optional form URL, Skip/Submit POST including per-Question pushback fields. Phase 1–2 stay. Testers still wait on form URL, n8n Publish, native MY review, and the consent/IRB answer.
+3. **Survey + session id** — reveal-gated usefulness step, optional form URL, Skip/Submit POST including per-Question pushback fields. Phase 1–2 stay. Testers still wait on form URL, native MY review, and the consent/IRB answer.
 
 ## Technical Constraints
 - Existing stack: Next.js App Router, Vitest, thin `/api/score` over `gradeInterview` (n8n then `runGroqGrade` then `getSampleReport`). `lib/content/rubric.ts` remains the only copy of weights, gates, and Headline math — this change must not retune them.
@@ -107,7 +109,6 @@ Build and merge in three checkpoints so each is a working demo, not one all-or-n
 - Session id format (e.g. UUID vs short token) — only “random, shown on report, sent with the POST” is locked.
 - Exact visual placement of the session tag and try-again line (HUD vs answer dock) beyond “Question stays, line underneath, small unobtrusive tag.”
 - Native Burmese review may change all MY drafts (try-again, templates, survey, both `{explanation_my}` sets) before testers run; English/JA locks stay unless review finds a JA issue. Reviewer uses **this PRD’s `။` / `၊` templates**, not older `。` drafts.
-- n8n Code node may need a pass-through so critique objects are not stripped; confirm when re-pasting RubricDoc (Issue 18 class work, tester blocker).
 
 ## Success Criteria
 - Empty Speak Submit increments the attempt cap, opens Type, stores no answer; a third failed attempt stores and advances.
@@ -124,4 +125,4 @@ Build and merge in three checkpoints so each is a working demo, not one all-or-n
 - `useQuestionFlow`, `useAnswerCapture`, call page answer dock / HUD, `useBackgroundScribe`, `InterviewSidebar`.
 - `getRubricPrompt` / `parseRawScores` (or a sibling parser for critiques) / `runGroqGrade` / `gradeInterview` / `docs/rubric-generated.md`.
 - `buildReportView`, `InterviewReportScreen`, `selectDisplayedReport`, `mocks/sample-report-ready.json`.
-- Manual: Publish n8n with the new RubricDoc, create the research Google Form, native Burmese review, and instructor yes/no on RSU/CSC 485 consent — tester blockers, not merge blockers for hiding the survey.
+- Manual: Create the research Google Form, get native Burmese review, and instructor yes/no on RSU/CSC 485 consent — tester blockers, not merge blockers for hiding the survey.

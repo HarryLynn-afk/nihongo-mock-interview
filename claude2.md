@@ -35,20 +35,19 @@
 3. Confirm Participant Skip + Submit → two research-form rows with `P-`. An anonymous guest does not POST Help the study (Help the study is signed-in reports only).
 4. Native Burmese review of remaining MY drafts.
 5. Instructor written yes/no on RSU / CSC 485 consent.
-6. Unpublish old n8n **NihonGo grade** webhook.
-7. Optional Netlify: `DEEPGRAM_STT_API_KEY` (Member), `DEEPSEEK_GRADE_API_KEY` (+ ~$2 credit), `ELEVENLABS_TTS_API_KEY` only to regenerate clips.
-8. Remove **Skip interview** before Issue 15; Netlify deploy; move Supabase / Google off `localhost`.
-9. Phase 3 root CSS. Not a deploy blocker.
-10. Mobbin polish (not a blocker).
-11. CSC 485 research question — later.
-12. User-count proof: Google Form N; `P00x` people; do not count Guest `G-` as unique students.
-13. Later: one Groq critique per rubric category.
-14. Later: live Burmese on the report (new translate path — `/api/translate` removed).
-15. Later: InterviewReport refresh / draft resume after tab close.
-16. Later: Guest session cap.
-17. Later: Google account chooser brand name after public site + brand verification.
-18. Later: soft dock hint if testers miss auto-pause (no modal).
-19. **Speech Delivery empty clip** — the coaching rewrite (`a452adb`) supersedes the old judged labels, but the 0-byte clip (`docs/bug-speech-delivery-no-audio.md`) still needs a live check that an answered Question always yields a clip (one-PCM-capture fix `7d168da` is unverified live). Then live-verify the new coaching cards (folds into task 2).
+6. Optional Netlify: `DEEPGRAM_STT_API_KEY` (Member), `DEEPSEEK_GRADE_API_KEY` (+ ~$2 credit), `ELEVENLABS_TTS_API_KEY` only to regenerate clips.
+7. Remove **Skip interview** before Issue 15; Netlify deploy; move Supabase / Google off `localhost`.
+8. Phase 3 root CSS. Not a deploy blocker.
+9. Mobbin polish (not a blocker).
+10. CSC 485 research question — later.
+11. User-count proof: Google Form N; `P00x` people; do not count Guest `G-` as unique students.
+12. Later: one Groq critique per rubric category.
+13. Later: live Burmese on the report (new translate path — `/api/translate` removed).
+14. Later: InterviewReport refresh / draft resume after tab close.
+15. Later: Guest session cap.
+16. Later: Google account chooser brand name after public site + brand verification.
+17. Later: soft dock hint if testers miss auto-pause (no modal).
+18. **Speech Delivery empty clip** — the coaching rewrite (`a452adb`) supersedes the old judged labels, but the 0-byte clip (`docs/bug-speech-delivery-no-audio.md`) still needs a live check that an answered Question always yields a clip (one-PCM-capture fix `7d168da` is unverified live). Then live-verify the new coaching cards (folds into task 2).
 
 ---
 

@@ -45,7 +45,6 @@ describe("POST /api/score", () => {
       ...ORIGINAL_ENV,
       GROQ_GRADE_API_KEY: "test-grade-key",
     };
-    delete process.env.N8N_WEBHOOK_URL;
     delete process.env.DEEPSEEK_GRADE_API_KEY;
   });
 
@@ -85,7 +84,7 @@ describe("POST /api/score", () => {
     expect(res.status).toBe(403);
   });
 
-  it("returns { report } from Groq and does not call n8n", async () => {
+  it("returns { report } from Groq", async () => {
     const fetchMock = groqFetchMock();
     vi.stubGlobal("fetch", fetchMock);
 
@@ -118,11 +117,6 @@ describe("POST /api/score", () => {
     expect(body.report.banner).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(String(fetchMock.mock.calls[0][0])).toContain("api.groq.com");
-    expect(
-      fetchMock.mock.calls.some((call) =>
-        String(call[0]).includes("webhook/nihongo-grade"),
-      ),
-    ).toBe(false);
   });
 
   it("does not call /api/grade", async () => {

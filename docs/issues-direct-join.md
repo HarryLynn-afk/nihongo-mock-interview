@@ -4,7 +4,7 @@ Vertical slices for Approach B: no Profile card, Join into the Interview, consis
 
 **CSC 485** research work is not in this list. **Issue 15** (Netlify) stays in `docs/issues-nihongo.md`.
 
-Issues **16–17 are built** (2026-08-28). Remaining: **18** (re-paste RubricDoc into n8n).
+Issues **16–17 are built** (2026-08-28). The old workflow-publishing issue was superseded; this list has no remaining tasks.
 
 For each issue: `/build-plan` before starting, `/tdd` while building, `/after-task` when done.
 
@@ -68,42 +68,13 @@ Change `gradeInterview` and `runGroqGrade` to POST `{ answers }` only (no Profil
 - Ubiquitous language: **RawScores** / **scoreReport** / **RubricDoc** / **InterviewReport**. **Consistency** is answer-to-answer, not answers vs **Profile**.
 
 ### Out of Scope
-Re-pasting the prompt into the live n8n workflow (Issue 18). Reweighting or dropping the consistency category. Changing Pitch-mode captions or last-screen swap. Sign-in.
-
----
-
-## 18. Re-paste RubricDoc into n8n and Publish
-
-**Type:** Feature
-**Size:** Small (< 2hrs)
-**Depends on:** 17
-
-### Context
-Issue 17 updated `docs/rubric-generated.md`. Production n8n still runs the old LLM prompt (consistency vs written Profile) unless the new RubricDoc is pasted and the workflow is Published (`docs/prd-direct-join.md` Should Have).
-
-### Task
-In the published **NihonGo grade** workflow, set the LLM node prompt to **Define below** (not `chatInput`) from the current `docs/rubric-generated.md` LLM section. Confirm the Code node still uses the generated `scoreReport` snippet from that same file. Publish (n8n Cloud has no “Active” toggle that replaces Publish). Do not point n8n at `/api/grade`.
-
-### Acceptance Criteria
-- [ ] n8n LLM prompt matches the current `docs/rubric-generated.md` system prompt (consistency = three answers; no pre-filled student card)
-- [ ] n8n Code node still applies `scoreReport` from that RubricDoc (weights/Gates/Headline unchanged)
-- [ ] Workflow is Published after the edit
-- [ ] n8n still does not call `/api/grade`
-- [ ] A local mocked test suite still passes without a live webhook (`npm test`)
-
-### Technical Notes
-- Ask before any live POST that spends `N8N_WEBHOOK_URL` or `GROQ_GRADE_API_KEY`.
-- Webhook still receives `{ answers }` (Issue 17). If the LLM node reads `$json.body`, it must work without `profile`.
-- Ubiquitous language: **RubricDoc**, **InterviewReport**, **Headline**.
-
-### Out of Scope
-Changing Next.js code. Netlify (Issue 15). Pitch-mode last-screen swap. Deleting `lib/content/profile.ts`. CSC 485 evaluation.
+Reweighting or dropping the consistency category. Changing Pitch-mode captions or last-screen swap. Sign-in.
 
 ---
 
 ## Build order
 
-16 → 17 → 18.
+16 → 17.
 
 Issue **15** (deploy) stays independent and waits until the demo is good enough.
 

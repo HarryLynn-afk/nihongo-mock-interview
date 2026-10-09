@@ -44,7 +44,7 @@ Do not plan a 29 Aug Launch Pack rebuild.
 - Email choice before the Guest lobby (“How do you want to practice?”, leave an email, already-sent dialog). The address form stays on the Guest report.
 - Landing glance pills (Speak in Japanese, Coaching report, 10–15 min) on `/` or valid `/join?from=CODE`
 - ENG/MM inside the Google sign-in dialog, and the join-popup line “Sign in with Google to join this tester's practice group.”
-- n8n grade webhook, warm ping, Gemini as the live grader
+- Gemini as the live grader
 - Magic-link / SMTP login
 - Pitch last-screen swap to a canned Ready report
 - Printing N5, JLPT, or A1 on the splash, call bar, or report headline

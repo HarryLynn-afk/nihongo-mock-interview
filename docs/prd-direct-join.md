@@ -3,6 +3,8 @@
 **Date:** 2026-08-28
 **Built by:** Kyaw Naing Lin
 
+Historical PRD. Use `docs/grading-system.md` and `claude2.md` for current grading and open tasks.
+
 ---
 
 ## Problem
@@ -20,15 +22,14 @@ Friends (about 10–15 later) trying the live Interview for a smooth demo. The s
 - Start screen shows **NihonGo**, subtitle **Japanese language school interview practice**, and **Join interview**. No Profile card and no Aung Min Khant name/age/hometown/education/plan/sponsor on `/`.
 - Desktop CSS gate unchanged: narrow viewports still see “Open on a computer to join the interview.”
 - Join still opens the existing device check, then the 15s reminder (Skip), then `/call`. No sign-up, password, or email field.
-- `POST /api/score` / n8n / `runGroqGrade` send `{ answers }` only. They must not attach the locked Aung Min Khant Profile.
+- `POST /api/score` / `runGroqGrade` send `{ answers }` only. They must not attach the locked Aung Min Khant Profile.
 - Rubric **consistency** (weight 10) means: the three answers match each other (same person, same plan, no contradictions). Not “spoken answers vs written Profile.”
-- `getRubricDoc()` / `docs/rubric-generated.md` stay in sync with that wording so n8n can be re-pasted.
+- `getRubricDoc()` / `docs/rubric-generated.md` stay in sync with that wording.
 - Groq-produced `InterviewReport.profileName` is not Aung Min Khant (empty or a generic label). Dual-fail sample may keep canned scores; it must not be presented as that student’s identity on the start screen.
 - Splash, Zoom bar, and report headline still never print N5, JLPT, A1, Pass, or Fail.
 
 ### Should Have
 - `?pitch=1` may still skip Join overlays and show locked EN/MY captions by question index (presentation captions, not a Profile card).
-- After this ships, re-paste the new rubric prompt into the published n8n **NihonGo grade** workflow.
 
 ### Must NOT Have (explicit exclusions)
 - Sign-in, accounts, database, or a Profile create form in this change.
@@ -41,7 +42,7 @@ Friends (about 10–15 later) trying the live Interview for a smooth demo. The s
 ## Technical Constraints
 - Existing stack: Next.js App Router, thin route handlers, `lib/content/rubric.ts` as the only copy of weights/gates/headline math.
 - `lib/content/profile.ts` may remain as a fixture file; it must not be imported by the start screen or by `/api/grade` / `/api/score` graders.
-- n8n must never call `/api/grade`. Client still POSTs `/api/score` once after Scribe `ready`.
+- Client still POSTs `/api/score` once after Scribe `ready`.
 - Ask before spending `.env.local` keys. This change is local tests only.
 
 ## Open Questions
@@ -58,4 +59,3 @@ Friends (about 10–15 later) trying the live Interview for a smooth demo. The s
 ## Dependencies
 - Current `/` Join + lobby (`JoinInterview`, `useInterviewLobby`).
 - `gradeInterview` / `runGroqGrade` / `getRubricPrompt`.
-- n8n re-paste after rubric snapshot update (manual; not blocked for local demo).

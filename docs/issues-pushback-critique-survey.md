@@ -2,6 +2,8 @@
 
 Vertical slices in the PRD’s three phases. Same-Question **Pushback** is a capped clarification, not retry/history. Use terms from `docs/ubiquitous-language.md` plus the new terms this PRD introduces (**Pushback**, quoted **critique**, **Usefulness step**).
 
+Historical issue plan. For current grading and open tasks, use `docs/grading-system.md` and `claude2.md`.
+
 Issue **21** is Speak restore (`docs/issues-speak-restore-choice.md`). This list starts at **22**.
 
 For each issue: `/build-plan` before starting, `/tdd` while building, `/after-task` when done.
@@ -132,11 +134,11 @@ Change `getRubricPrompt()` so the LLM returns **RawScores** plus exactly three c
 
 ### Technical Notes
 - `lib/content/rubric.ts`, new parse helper beside `parseRawScores`, `runGroqGrade.ts`, `gradeInterview.ts`, `sampleReport.ts`, `docs/rubric-generated.md`.
-- n8n Code node must still run `scoreReport` on scores; critiques pass through on the **InterviewReport** (confirm when Issue 29 re-pastes).
+- Critiques pass through on the **InterviewReport**.
 - Ubiquitous language: **RawScores**, **RubricDoc**, **InterviewReport**, **RubricCategoryKey**. Do not runtime-check English vs category.
 
 ### Out of Scope
-Report UI templates (Issue 26). Pitch last-screen swap (Issue 27). Usefulness step. Publishing n8n (Issue 29). Replacing n8n. Extra LLM “grade the grader” call.
+Report UI templates (Issue 26). Pitch last-screen swap (Issue 27). Usefulness step. Extra LLM “grade the grader” call.
 
 ---
 
@@ -229,7 +231,7 @@ Creating the Google Form or wiring a production URL (Issue 29). Instructor IRB d
 
 ---
 
-## 29. Unblock testers: RubricDoc in n8n, research form, Burmese review, consent answer
+## 29. Unblock testers: research form, Burmese review, consent answer
 
 **Type:** Feature
 **Size:** Small (< 2hrs)
@@ -239,22 +241,20 @@ Creating the Google Form or wiring a production URL (Issue 29). Instructor IRB d
 Code can merge with the survey hidden. Faculty testers and real applicants must not run until ops and CSC 485 consent are done (`docs/prd-pushback-critique-survey.md` Ship vs testers / Open Questions).
 
 ### Task
-(1) Paste current `docs/rubric-generated.md` into published n8n **NihonGo grade** (Define below, not `chatInput`); keep Code `scoreReport`; ensure critique objects are not stripped; Publish. Do not point n8n at `/api/grade`. (2) Create the dedicated research Google Form (not the tester-count form); put the URL in env; map POST fields from Issue 28. (3) Native Burmese review of PRD MY drafts (`။` / `၊` templates, not old `。`); replace strings in the content module only. (4) Get an explicit instructor yes/no on RSU / CSC 485 consent beyond the in-app one-liner. Ask before any live n8n/Groq POST.
+(1) Create the dedicated research Google Form (not the tester-count form); put the URL in env; map POST fields from Issue 28. (2) Native Burmese review of PRD MY drafts (`။` / `၊` templates, not old `。`); replace strings in the content module only. (3) Get an explicit instructor yes/no on RSU / CSC 485 consent beyond the in-app one-liner. Ask before any live Groq POST.
 
 ### Acceptance Criteria
-- [ ] n8n Published prompt matches current RubricDoc (quoted critiques + consistency = three answers)
-- [ ] n8n still does not call `/api/grade`
 - [ ] Research form URL is set; a Skip and a Submit land as separate rows with session id
 - [ ] Native reviewer signed off (or tracked edits) on all MY drafts in the PRD
 - [ ] Instructor consent/IRB question has a written yes/no before the first tester session
 - [ ] `npm test` still passes without live keys
 
 ### Technical Notes
-- This is ops + copy, not a scoring-math change. Issue **18** may already have been done for Direct Join; this paste is the **new** critique prompt.
+- This is ops + copy, not a scoring-math change.
 - Ubiquitous language: **RubricDoc**, **InterviewReport**, **Usefulness step**.
 
 ### Out of Scope
-Netlify Issue 15. Replacing n8n. Changing weights/Gates. Retry/history. Start-screen wording. Renaming Listening.
+Netlify Issue 15. Changing weights/Gates. Retry/history. Start-screen wording. Renaming Listening.
 
 ---
 
