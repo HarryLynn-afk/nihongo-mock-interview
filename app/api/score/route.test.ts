@@ -1,6 +1,58 @@
 /** @vitest-environment node */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const study = vi.hoisted(() => ({
+  getUser: vi.fn(),
+  row: { value: null as Record<string, unknown> | null },
+  writes: vi.fn(),
+  visit: { id: "visit-1", proof: "" },
+}));
+
+vi.mock("next/headers", () => ({
+  cookies: async () => ({
+    get: (name: string) => {
+      if (name === "nihongo_visit_id") return { value: study.visit.id };
+      if (name === "nihongo_visit_consented") return { value: study.visit.proof };
+      return undefined;
+    },
+  }),
+}));
+
+vi.mock("@/lib/server/study/serverClient", () => ({
+  createStudyServerClient: async () => ({ auth: { getUser: study.getUser } }),
+}));
+
+vi.mock("@/lib/server/study/adminClients", () => ({
+  createStudyAdminClient: () => ({
+    from: (table: string) => {
+      if (table === "participants") {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: { participant_id: "P001" }, error: null }),
+            }),
+          }),
+        };
+      }
+      if (table === "study_sessions") {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: study.row.value, error: null }),
+            }),
+          }),
+          insert: async (row: Record<string, unknown>) => {
+            study.writes(row);
+            study.row.value = row;
+            return { error: null };
+          },
+        };
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    },
+  }),
+}));
+
 const ORIGINAL_ENV = { ...process.env };
 
 const GROQ_GRADE_JSON = {
@@ -41,6 +93,10 @@ function groqFetchMock() {
 describe("POST /api/score", () => {
   beforeEach(() => {
     vi.resetModules();
+    study.getUser.mockReset();
+    study.writes.mockReset();
+    study.row.value = null;
+    study.getUser.mockResolvedValue({ data: { user: null } });
     process.env = {
       ...ORIGINAL_ENV,
       GROQ_GRADE_API_KEY: "test-grade-key",
@@ -117,6 +173,81 @@ describe("POST /api/score", () => {
     expect(body.report.banner).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(String(fetchMock.mock.calls[0][0])).toContain("api.groq.com");
+  });
+
+  it("saves a participant grade once and returns the saved report on retry", async () => {
+    process.env.STUDY_VISIT_SIGNING_KEY = "test-secret";
+    study.getUser.mockResolvedValue({
+      data: { user: { id: "user-1", email: "tester@example.com" } },
+    });
+    const { createVisitConsentProof } = await import("@/lib/server/study/visitConsent");
+    study.visit.proof = (await createVisitConsentProof("user-1", study.visit.id))!;
+    const { createStudyAttemptToken } = await import("@/lib/server/study/scoreAttempt");
+    const attemptToken = await createStudyAttemptToken("user-1", "attempt-1");
+    const fetchMock = groqFetchMock();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { POST } = await import("./route");
+    const request = () =>
+      new Request("http://localhost/api/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          attemptToken,
+          answers: [
+            {
+              questionIndex: 0,
+              questionId: 1,
+              status: "answered",
+              transcript: "はじめまして。",
+              pushbackCount: 0,
+              isFollowUp: true,
+            },
+          ],
+        }),
+      });
+
+    const first = await POST(request());
+    const firstBody = await first.json();
+    const second = await POST(request());
+
+    expect(first.status).toBe(200);
+    expect(firstBody.studySave).toBe("saved");
+    expect(study.writes).toHaveBeenCalledTimes(1);
+    expect(study.row.value?.participant_id).toBe("P001");
+    expect(study.row.value?.follow_up_count).toBe(0);
+    expect(study.row.value?.report).toEqual(firstBody.report);
+    expect(await second.json()).toEqual(firstBody);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns the report with a retry state when the database request throws", async () => {
+    process.env.STUDY_VISIT_SIGNING_KEY = "test-secret";
+    study.getUser.mockResolvedValue({
+      data: { user: { id: "user-1", email: "tester@example.com" } },
+    });
+    const { createVisitConsentProof } = await import("@/lib/server/study/visitConsent");
+    study.visit.proof = (await createVisitConsentProof("user-1", study.visit.id))!;
+    const { createStudyAttemptToken } = await import("@/lib/server/study/scoreAttempt");
+    const attemptToken = await createStudyAttemptToken("user-1", "attempt-2");
+    study.writes.mockImplementationOnce(() => { throw new Error("database offline"); });
+    vi.stubGlobal("fetch", groqFetchMock());
+
+    const { POST } = await import("./route");
+    const res = await POST(new Request("http://localhost/api/score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        attemptToken,
+        answers: [{ questionIndex: 0, questionId: 1, status: "answered", transcript: "はじめまして。", pushbackCount: 0 }],
+      }),
+    }));
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.report?.source).toBe("grade");
+    expect(body.studySave).toBe("retry");
+    expect(study.row.value).toBeNull();
   });
 
   it("does not call /api/grade", async () => {

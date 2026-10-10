@@ -11,6 +11,17 @@ const VALID_ROW = {
 };
 
 describe("parseAnswers", () => {
+  it("rejects more answers than a complete interview can contain", () => {
+    expect(parseAnswers(Array.from({ length: 14 }, (_, questionIndex) => ({
+      ...VALID_ROW,
+      questionIndex,
+    })))).toBeNull();
+  });
+  it("rejects text too long for an interview answer", () => {
+    expect(parseAnswers([{ ...VALID_ROW, transcript: "あ".repeat(4001) }])).toBeNull();
+    expect(parseAnswers([{ ...VALID_ROW, questionJapanese: "あ".repeat(1001) }])).toBeNull();
+    expect(parseAnswers([{ ...VALID_ROW, topic: "x".repeat(81) }])).toBeNull();
+  });
   it("rejects a row with an invalid pushbackCount", () => {
     expect(parseAnswers([{ ...VALID_ROW, pushbackCount: 3 }])).toBeNull();
   });

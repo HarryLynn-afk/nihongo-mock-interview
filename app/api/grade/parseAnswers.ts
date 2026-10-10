@@ -1,7 +1,7 @@
 import type { GradeAnswer } from "./runGroqGrade";
 
 export function parseAnswers(value: unknown): GradeAnswer[] | null {
-  if (!Array.isArray(value) || value.length === 0) return null;
+  if (!Array.isArray(value) || value.length === 0 || value.length > 13) return null;
   const answers: GradeAnswer[] = [];
   const seen = new Set<number>();
   for (const item of value) {
@@ -12,10 +12,12 @@ export function parseAnswers(value: unknown): GradeAnswer[] | null {
       typeof row.questionId !== "number" ||
       row.topic === undefined ||
       (row.topic !== null &&
-        (typeof row.topic !== "string" || row.topic.trim() === "")) ||
+        (typeof row.topic !== "string" || row.topic.trim() === "" || row.topic.length > 80)) ||
       typeof row.questionJapanese !== "string" ||
       row.questionJapanese.trim() === "" ||
-      typeof row.transcript !== "string"
+      row.questionJapanese.length > 1000 ||
+      typeof row.transcript !== "string" ||
+      row.transcript.length > 4000
     ) {
       return null;
     }

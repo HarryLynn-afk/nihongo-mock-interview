@@ -141,7 +141,7 @@ describe("Call screen", () => {
     return within(screen.getByTestId("language-hud"));
   }
 
-  function mockLiveGradeAndSurvey(participantId?: string) {
+  function mockLiveGradeAndSurvey(participantId?: string, studySave?: "saved" | "retry") {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       if (String(input).includes("/api/study/auth")) {
         return Promise.resolve(
@@ -163,6 +163,7 @@ describe("Call screen", () => {
         return Promise.resolve(
           new Response(
             JSON.stringify({
+              studySave,
               report: {
                 total: 88,
                 scores: {
@@ -1299,6 +1300,37 @@ describe("Call screen", () => {
     expect(screen.getByTestId("session-id").textContent).toMatch(
       /^P-[A-HJ-NP-Z2-9]{4}$/,
     );
+  });
+
+  it("sends a participant attempt to grading without a separate study save", async () => {
+    mockLiveGradeAndSurvey("P001");
+    const user = userEvent.setup();
+    render(<CallScreen homeHref="/" attemptToken="signed-attempt" />);
+    await completeLockedInterview(user);
+
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.some(([url]) => String(url) === "/api/score")).toBe(true);
+    });
+    const scoreCall = fetchMock.mock.calls.find(([url]) => String(url) === "/api/score")!;
+    const body = JSON.parse(String(scoreCall[1]?.body));
+    expect(body.attemptToken).toBe("signed-attempt");
+    expect(body.answers).toHaveLength(3);
+    expect(body.answers[0].status).toBe("answered");
+    expect(fetchMock.mock.calls.some(([url]) => String(url) === "/api/study/save")).toBe(false);
+  });
+
+  it("keeps a failed participant save visible and lets the learner retry", async () => {
+    mockLiveGradeAndSurvey("P001", "retry");
+    const user = userEvent.setup();
+    render(<CallScreen homeHref="/" attemptToken="signed-attempt" />);
+    await completeLockedInterview(user);
+
+    const retry = await screen.findByRole("button", { name: /retry saving/i });
+    expect(screen.getByText(/could not save this interview/i)).toBeInTheDocument();
+    await user.click(retry);
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.filter(([url]) => String(url) === "/api/score")).toHaveLength(2);
+    });
   });
 
   it("gives a Guest the 3 locked Questions and does not draw the topic bank", async () => {

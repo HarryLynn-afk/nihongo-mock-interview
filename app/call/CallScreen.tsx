@@ -69,7 +69,13 @@ const DEBUG_PREVIEW_ANSWERS: StoredAnswer[] = questions.map(
   }),
 );
 
-export function CallScreen({ homeHref = "/" }: { homeHref?: string }) {
+export function CallScreen({
+  homeHref = "/",
+  attemptToken,
+}: {
+  homeHref?: string;
+  attemptToken?: string;
+}) {
   const [devicePrefs, setDevicePrefs] = useState(DEFAULT_DEVICE_PREFS);
   const [sessionKind, setSessionKind] = useState<CallSessionKind>("participant");
   const [sessionQuestions, setSessionQuestions] = useState<
@@ -91,7 +97,6 @@ export function CallScreen({ homeHref = "/" }: { homeHref?: string }) {
     null,
   );
   const [endConfirmOpen, setEndConfirmOpen] = useState(false);
-  const savedStudyRef = useRef(false);
   const { locale, setLocale, copy } = useCopy();
 
   useEffect(() => {
@@ -153,8 +158,11 @@ export function CallScreen({ homeHref = "/" }: { homeHref?: string }) {
         followUpsForCallSession(sessionKind) && sessionQuestions !== null,
     });
   const gradeAnswers = useGradeAnswers({ answers, phase, sessionQuestions: flowQuestions });
-  const { report: scoredReport, scoringFailed } =
-    useInterviewScore(gradeAnswers);
+  const { report: scoredReport, scoringFailed, studySave, retrySave } =
+    useInterviewScore(
+      gradeAnswers,
+      attemptToken ? { attemptToken, sessionAnswers: answers } : undefined,
+    );
   const previewing = previewReport !== null;
   const report = previewReport ?? scoredReport;
   const showScoringUnavailable =
@@ -178,34 +186,6 @@ export function CallScreen({ homeHref = "/" }: { homeHref?: string }) {
         setFormEnabled(false);
       });
   }, [report, previewing, signedIn]);
-
-  useEffect(() => {
-    if (!report || !participantId || savedStudyRef.current || previewing) return;
-    savedStudyRef.current = true;
-    void fetch("/api/study/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        total: report.total,
-        source: report.source,
-        answers: answers.map((answer) => ({
-          questionIndex: answer.questionIndex,
-          status: answer.status,
-          transcript: answer.status === "answered" ? answer.transcript : "",
-          pushbackCount:
-            answer.status === "answered" ? answer.pushbackCount : 2,
-          isFollowUp: answer.isFollowUp,
-        })),
-        scores: report.scores,
-        pushbackCount: answers.reduce(
-          (sum, answer) =>
-            sum + (answer.status === "answered" ? answer.pushbackCount : 0),
-          0,
-        ),
-        followUpCount: answers.filter((answer) => answer.isFollowUp).length,
-      }),
-    }).catch(() => {});
-  }, [report, participantId, answers, previewing]);
 
   const {
     liveCaption,
@@ -426,6 +406,8 @@ export function CallScreen({ homeHref = "/" }: { homeHref?: string }) {
                   : undefined
               }
               onPracticeAgain={() => window.location.reload()}
+              saveFailed={studySave === "retry" && !previewing}
+              onRetrySave={() => void retrySave()}
               homeHref={homeHref}
               locale={locale}
             />

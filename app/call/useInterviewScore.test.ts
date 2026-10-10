@@ -83,6 +83,33 @@ describe("useInterviewScore", () => {
     );
   });
 
+  it("sends the complete participant session and exposes a failed save for retry", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ report: { total: 88, source: "grade" }, studySave: "retry" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const sessionAnswers = [
+      { questionIndex: 0, questionId: 1, status: "answered" as const, transcript: "はい。", pushbackCount: 0 as const, isFollowUp: false },
+      { questionIndex: 1, questionId: 2, status: "skipped" as const, transcript: "", pushbackCount: 0 as const, isFollowUp: false },
+    ];
+
+    const { result } = renderHook(() => useInterviewScore(
+      { status: "ready", answers: [FIRST_ANSWER] },
+      { attemptToken: "attempt-token", sessionAnswers },
+    ));
+
+    await waitFor(() => expect(result.current.studySave).toBe("retry"));
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/score",
+      expect.objectContaining({
+        body: JSON.stringify({ attemptToken: "attempt-token", answers: sessionAnswers }),
+      }),
+    );
+  });
+
   it("keeps the { report } JSON from /api/score, including a dual-fail banner", async () => {
     const sampleReport = {
       total: 88,

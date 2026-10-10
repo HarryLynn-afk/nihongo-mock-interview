@@ -157,6 +157,8 @@ export function InterviewReportScreen({
   onRevealComplete,
   onHelpStudy,
   onRequestFullSession,
+  saveFailed,
+  onRetrySave,
   onPracticeAgain,
   homeHref = "/",
 }: {
@@ -166,6 +168,8 @@ export function InterviewReportScreen({
   onRevealComplete?: () => void;
   onHelpStudy?: () => void;
   onRequestFullSession?: () => void;
+  saveFailed?: boolean;
+  onRetrySave?: () => void;
   onPracticeAgain?: () => void;
   /** Where "Back to home" goes. Defaults to the normal landing. */
   homeHref?: string;
@@ -226,6 +230,14 @@ export function InterviewReportScreen({
           hasTopAction ? "pt-12" : ""
         }`}
       >
+        {saveFailed ? (
+          <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border border-eel/20 bg-eel/5 p-3 text-sm">
+            <span>{copy.report.saveFailed}</span>
+            <button type="button" onClick={onRetrySave} className="rounded-full bg-feather px-4 py-2 font-medium text-white">
+              {copy.report.retrySave}
+            </button>
+          </div>
+        ) : null}
         <div data-testid="report-overview" className="flex flex-col gap-4">
           <header
             className={`flex flex-wrap items-end justify-between gap-3 ${
