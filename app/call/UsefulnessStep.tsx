@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { UiLocale } from "@/lib/content/locale";
 import {
   OPEN_ENDED_KEYS,
+  MAX_SURVEY_TEXT_LENGTH,
   RATING_KEYS,
   type OpenEndedKey,
   type SurveyPayload,
@@ -18,10 +19,12 @@ const RATINGS: SurveyRating[] = [1, 2, 3, 4, 5];
 export function UsefulnessStep({
   view,
   locale = "en",
+  onSubmit,
   onFinished,
 }: {
   view: UsefulnessView;
   locale?: UiLocale;
+  onSubmit: (payload: SurveyPayload) => Promise<boolean>;
   onFinished?: (outcome: "skipped" | "submitted" | "dismissed") => void;
 }) {
   const chrome = uiCopy(locale);
@@ -31,6 +34,8 @@ export function UsefulnessStep({
     unclear: "",
     improvement: "",
   });
+  const [sending, setSending] = useState(false);
+  const [sendFailed, setSendFailed] = useState(false);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -44,12 +49,18 @@ export function UsefulnessStep({
     return locale === "my" ? entry.burmese : entry.english;
   }
 
-  function post(payload: SurveyPayload) {
-    void fetch("/api/survey", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }).catch(() => {});
+  async function submit(payload: SurveyPayload) {
+    setSending(true);
+    setSendFailed(false);
+    let sent = false;
+    try {
+      sent = await onSubmit(payload);
+    } catch {
+      // Keep the answers available for another attempt.
+    }
+    setSending(false);
+    if (sent) onFinished?.(payload.skipped ? "skipped" : "submitted");
+    else setSendFailed(true);
   }
 
   const complete = RATING_KEYS.every((key) => ratings[key] !== undefined);
@@ -114,6 +125,7 @@ export function UsefulnessStep({
             <span>{pick(view.copy.openEnded[key])}</span>
             <textarea
               value={openEnded[key]}
+              maxLength={MAX_SURVEY_TEXT_LENGTH}
               onChange={(event) =>
                 setOpenEnded((prev) => ({ ...prev, [key]: event.target.value }))
               }
@@ -122,18 +134,23 @@ export function UsefulnessStep({
           </label>
         ))}
 
+        {sendFailed ? (
+          <p role="alert" className="text-sm text-red-700">
+            {chrome.usefulness.sendFailed}
+          </p>
+        ) : null}
+
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            disabled={!complete}
+            disabled={!complete || sending}
             onClick={() => {
               if (!complete) return;
-              post({
+              void submit({
                 skipped: false,
                 ratings: ratings as SurveyRatings,
                 openEnded,
               });
-              onFinished?.("submitted");
             }}
             className="rounded-full bg-feather px-6 py-3 font-medium text-white disabled:opacity-40"
           >
@@ -141,10 +158,8 @@ export function UsefulnessStep({
           </button>
           <button
             type="button"
-            onClick={() => {
-              post({ skipped: true });
-              onFinished?.("skipped");
-            }}
+            disabled={sending}
+            onClick={() => void submit({ skipped: true })}
             className="rounded-full bg-eel/10 px-6 py-3 font-medium text-eel"
             aria-label="Skip"
           >

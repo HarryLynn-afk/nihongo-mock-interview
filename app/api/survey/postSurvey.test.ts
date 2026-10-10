@@ -24,6 +24,15 @@ const submitPayload: SurveyPayload = {
 };
 
 describe("postSurvey", () => {
+  it("reports an upstream HTTP failure", async () => {
+    const fakeFetch = vi.fn().mockResolvedValue(new Response(null, { status: 500 }));
+    await expect(postSurvey({
+      url: "https://example.com/formResponse",
+      payload: submitPayload,
+      fetchImpl: fakeFetch,
+    })).rejects.toThrow("Survey delivery failed");
+  });
+
   it("POSTs the payload to the form URL as form-urlencoded", async () => {
     const fakeFetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
 
@@ -86,7 +95,7 @@ describe("postSurvey", () => {
     expect([...params.keys()]).toEqual([]);
   });
 
-  it("never throws even when fetch rejects", async () => {
+  it("reports a network failure", async () => {
     const fakeFetch = vi.fn().mockRejectedValue(new Error("network down"));
 
     await expect(
@@ -95,6 +104,6 @@ describe("postSurvey", () => {
         payload: submitPayload,
         fetchImpl: fakeFetch,
       }),
-    ).resolves.toBeUndefined();
+    ).rejects.toThrow("network down");
   });
 });

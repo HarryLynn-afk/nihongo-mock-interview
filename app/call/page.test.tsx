@@ -1282,10 +1282,10 @@ describe("Call screen", () => {
   });
 
   it("shows Help the study and the session id after the report without opening the dialog immediately", async () => {
-    mockLiveGradeAndSurvey("P001");
+    mockLiveGradeAndSurvey("P001", "saved");
 
     const user = userEvent.setup();
-    render(<CallScreen homeHref="/" />);
+    render(<CallScreen homeHref="/" attemptToken="signed-attempt" />);
     await completeLockedInterview(user);
 
     await waitFor(() => {
@@ -1410,7 +1410,7 @@ describe("Call screen", () => {
     expect(screen.queryByTestId("full-session-request")).not.toBeInTheDocument();
   });
 
-  it("shows Help the study and no email ask to a signed-in guest", async () => {
+  it("does not offer a survey to a signed-in guest without a saved attempt", async () => {
     mockLiveGradeAndSurvey("P001");
     window.history.pushState({}, "", "/call?guest=1");
 
@@ -1418,13 +1418,9 @@ describe("Call screen", () => {
     render(<CallScreen homeHref="/" />);
     await completeLockedInterview(user);
 
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /help the study/i }),
-      ).toBeInTheDocument();
-    });
+    await screen.findByTestId("interview-report");
     expect(
-      screen.queryByRole("button", { name: /request the full interview/i }),
+      screen.queryByRole("button", { name: /help the study/i }),
     ).not.toBeInTheDocument();
     expect(screen.getByTestId("session-id").textContent).toMatch(/^G-/);
   });
@@ -1509,10 +1505,10 @@ describe("Call screen", () => {
   });
 
   it("lets Help the study open and reopen the Usefulness dialog after Close", async () => {
-    mockLiveGradeAndSurvey("P001");
+    mockLiveGradeAndSurvey("P001", "saved");
 
     const user = userEvent.setup();
-    render(<CallScreen homeHref="/" />);
+    render(<CallScreen homeHref="/" attemptToken="signed-attempt" />);
     await completeLockedInterview(user);
 
     await waitFor(() => {
@@ -1541,10 +1537,10 @@ describe("Call screen", () => {
   });
 
   it("hides Help the study after Usefulness Submit", async () => {
-    mockLiveGradeAndSurvey("P001");
+    mockLiveGradeAndSurvey("P001", "saved");
 
     const user = userEvent.setup();
-    render(<CallScreen homeHref="/" />);
+    render(<CallScreen homeHref="/" attemptToken="signed-attempt" />);
     await completeLockedInterview(user);
 
     await waitFor(() => {
@@ -1561,12 +1557,19 @@ describe("Call screen", () => {
     }
     await user.click(screen.getByRole("button", { name: /^submit$/i }));
 
-    expect(
+    await waitFor(() => expect(
       screen.queryByRole("dialog", { name: /help the study/i }),
-    ).not.toBeInTheDocument();
+    ).not.toBeInTheDocument());
     expect(
       screen.queryByRole("button", { name: /help the study/i }),
     ).not.toBeInTheDocument();
+    const surveyPost = fetchMock.mock.calls.find((call) =>
+      String(call[0]).includes("/api/survey") && (call[1] as RequestInit | undefined)?.method === "POST",
+    );
+    expect(JSON.parse((surveyPost?.[1] as RequestInit).body as string)).toEqual({
+      attemptToken: "signed-attempt",
+      survey: expect.objectContaining({ skipped: false }),
+    });
   });
 
   it("keeps Help the study on a Skip interview sample report after Close", async () => {
@@ -1598,6 +1601,33 @@ describe("Call screen", () => {
     expect(
       screen.getByRole("button", { name: /help the study/i }),
     ).toBeInTheDocument();
+  });
+
+  it("finishes a preview survey locally without posting it", async () => {
+    mockLiveGradeAndSurvey("P001");
+    const user = userEvent.setup();
+    render(<CallScreen homeHref="/" />);
+
+    await user.click(screen.getByRole("button", { name: /skip interview/i }));
+    await user.click(await screen.findByRole("button", { name: /help the study/i }));
+    await user.click(screen.getByRole("button", { name: /^skip$/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: /help the study/i })).not.toBeInTheDocument();
+    });
+    expect(fetchMock.mock.calls.filter((call) =>
+      String(call[0]).includes("/api/survey") && (call[1] as RequestInit | undefined)?.method === "POST",
+    )).toHaveLength(0);
+  });
+
+  it("hides the real survey until the participant grade is saved", async () => {
+    mockLiveGradeAndSurvey("P001", "retry");
+    const user = userEvent.setup();
+    render(<CallScreen homeHref="/" attemptToken="attempt-token" />);
+    await completeLockedInterview(user);
+    await screen.findByTestId("interview-report");
+
+    expect(screen.queryByRole("button", { name: /help the study/i })).not.toBeInTheDocument();
   });
 
   it("shows Burmese feedback on the Skip interview sample after switching to MM", async () => {

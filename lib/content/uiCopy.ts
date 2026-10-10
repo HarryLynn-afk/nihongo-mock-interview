@@ -218,6 +218,7 @@ const en = {
     title: "Help the study",
     close: "Close",
     submit: "Submit",
+    sendFailed: "Could not send your answers. Please try again.",
   },
   micTrouble: {
     title: "We couldn't hear you",
@@ -463,6 +464,7 @@ const my: UiCopy = {
     title: "လေ့လာမှုကို ကူညီရန်",
     close: "ပိတ်ရန်",
     submit: "ပို့ရန်",
+    sendFailed: "အဖြေများ ပို့၍ မရပါ။ ထပ်ကြိုးစားပါ။",
   },
   micTrouble: {
     title: "သင့်အသံ မကြားရပါ",

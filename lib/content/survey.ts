@@ -21,6 +21,7 @@ export type RatingKey = (typeof RATING_KEYS)[number];
 
 export const OPEN_ENDED_KEYS = ["mostHelpful", "unclear", "improvement"] as const;
 export type OpenEndedKey = (typeof OPEN_ENDED_KEYS)[number];
+export const MAX_SURVEY_TEXT_LENGTH = 1000;
 
 export type SurveyRating = 1 | 2 | 3 | 4 | 5;
 export type SurveyRatings = Record<RatingKey, SurveyRating>;

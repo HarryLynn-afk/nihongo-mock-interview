@@ -46,13 +46,10 @@ export async function postSurvey({
     }
   }
 
-  try {
-    await fetchImpl(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body,
-    });
-  } catch {
-    // swallow — a form miss must never blank the report
-  }
+  const response = await fetchImpl(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  if (!response.ok) throw new Error("Survey delivery failed");
 }

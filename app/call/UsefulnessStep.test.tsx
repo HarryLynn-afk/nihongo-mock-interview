@@ -1,5 +1,5 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { UsefulnessStep } from "./UsefulnessStep";
 import { buildUsefulnessView } from "@/lib/content/survey";
@@ -19,12 +19,31 @@ async function pickAllFours(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("UsefulnessStep", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
+  const accepted = () => vi.fn().mockResolvedValue(true);
+
+  it("keeps answers open after failed delivery and finishes after retry", async () => {
+    const onSubmit = vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    const onFinished = vi.fn();
+    const user = userEvent.setup();
+    render(<UsefulnessStep view={view} onSubmit={onSubmit} onFinished={onFinished} />);
+
+    await pickAllFours(user);
+    const answer = screen.getAllByRole("textbox")[0];
+    await user.type(answer, "The rewrite.");
+    await user.click(screen.getByRole("button", { name: /submit/i }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onFinished).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(answer).toHaveValue("The rewrite.");
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /submit/i }));
+    await waitFor(() => expect(onFinished).toHaveBeenCalledWith("submitted"));
   });
 
   it("disables Submit until all 10 ratings are chosen", async () => {
-    render(<UsefulnessStep view={view} />);
+    render(<UsefulnessStep view={view} onSubmit={accepted()} />);
 
     const submit = screen.getByRole("button", { name: /submit/i });
     expect(submit).toBeDisabled();
@@ -41,43 +60,35 @@ describe("UsefulnessStep", () => {
     expect(submit).toBeEnabled();
   });
 
-  it("POSTs skipped when Skip is clicked", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 202 }));
-    vi.stubGlobal("fetch", fetchMock);
+  it("limits written answers to the server's accepted length", () => {
+    render(<UsefulnessStep view={view} onSubmit={accepted()} />);
+    for (const answer of screen.getAllByRole("textbox")) {
+      expect(answer).toHaveAttribute("maxLength", "1000");
+    }
+  });
 
-    render(<UsefulnessStep view={view} />);
+  it("passes a skipped answer to the submitter", async () => {
+    const onSubmit = accepted();
+    render(<UsefulnessStep view={view} onSubmit={onSubmit} />);
     await userEvent.setup().click(screen.getByRole("button", { name: /skip/i }));
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/survey",
-      expect.objectContaining({
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      }),
-    );
-    const body = JSON.parse(
-      (fetchMock.mock.calls[0][1] as RequestInit).body as string,
-    );
-    expect(body).toEqual({ skipped: true });
+    expect(onSubmit).toHaveBeenCalledWith({ skipped: true });
   });
 
   it("notifies the parent that Skip finished after POSTing skipped", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 202 }));
-    vi.stubGlobal("fetch", fetchMock);
+    const onSubmit = accepted();
     const onFinished = vi.fn();
 
-    render(<UsefulnessStep view={view} onFinished={onFinished} />);
+    render(<UsefulnessStep view={view} onSubmit={onSubmit} onFinished={onFinished} />);
     await userEvent.setup().click(screen.getByRole("button", { name: /skip/i }));
 
-    expect(fetchMock).toHaveBeenCalled();
-    expect(onFinished).toHaveBeenCalledWith("skipped");
+    expect(onSubmit).toHaveBeenCalledWith({ skipped: true });
+    await waitFor(() => expect(onFinished).toHaveBeenCalledWith("skipped"));
   });
 
-  it("POSTs all 10 ratings and the open-ended answers on Submit", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 202 }));
-    vi.stubGlobal("fetch", fetchMock);
+  it("passes all 10 ratings and the open-ended answers on Submit", async () => {
+    const onSubmit = accepted();
     const user = userEvent.setup();
-    render(<UsefulnessStep view={view} />);
+    render(<UsefulnessStep view={view} onSubmit={onSubmit} />);
 
     await pickAllFours(user);
     const openEnded = screen.getAllByRole("textbox");
@@ -85,9 +96,7 @@ describe("UsefulnessStep", () => {
     await user.type(openEnded[2], "More questions.");
     await user.click(screen.getByRole("button", { name: /submit/i }));
 
-    const body = JSON.parse(
-      (fetchMock.mock.calls[0][1] as RequestInit).body as string,
-    );
+    const body = onSubmit.mock.calls[0][0];
     expect(body.skipped).toBe(false);
     expect(body.ratings).toEqual({
       improveUnderstanding: 4,
@@ -109,24 +118,22 @@ describe("UsefulnessStep", () => {
   });
 
   it("notifies the parent that Submit finished after POSTing ratings", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 202 }));
-    vi.stubGlobal("fetch", fetchMock);
+    const onSubmit = accepted();
     const onFinished = vi.fn();
     const user = userEvent.setup();
 
-    render(<UsefulnessStep view={view} onFinished={onFinished} />);
+    render(<UsefulnessStep view={view} onSubmit={onSubmit} onFinished={onFinished} />);
     await pickAllFours(user);
     await user.click(screen.getByRole("button", { name: /submit/i }));
 
-    expect(onFinished).toHaveBeenCalledWith("submitted");
+    await waitFor(() => expect(onFinished).toHaveBeenCalledWith("submitted"));
   });
 
   it("is a dialog whose close dismisses without POSTing", async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
+    const onSubmit = accepted();
     const onFinished = vi.fn();
 
-    render(<UsefulnessStep view={view} onFinished={onFinished} />);
+    render(<UsefulnessStep view={view} onSubmit={onSubmit} onFinished={onFinished} />);
 
     const dialog = screen.getByRole("dialog", { name: /help the study/i });
     expect(dialog).toBeInTheDocument();
@@ -134,36 +141,34 @@ describe("UsefulnessStep", () => {
       .setup()
       .click(within(dialog).getByRole("button", { name: /close/i }));
 
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
     expect(onFinished).toHaveBeenCalledWith("dismissed");
   });
 
   it("dismisses without POSTing when Escape is pressed", async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
+    const onSubmit = accepted();
     const onFinished = vi.fn();
 
-    render(<UsefulnessStep view={view} onFinished={onFinished} />);
+    render(<UsefulnessStep view={view} onSubmit={onSubmit} onFinished={onFinished} />);
     await userEvent.setup().keyboard("{Escape}");
 
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
     expect(onFinished).toHaveBeenCalledWith("dismissed");
   });
 
   it("dismisses without POSTing when the backdrop is clicked", async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
+    const onSubmit = accepted();
     const onFinished = vi.fn();
 
-    render(<UsefulnessStep view={view} onFinished={onFinished} />);
+    render(<UsefulnessStep view={view} onSubmit={onSubmit} onFinished={onFinished} />);
     fireEvent.click(screen.getByTestId("usefulness-backdrop"));
 
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
     expect(onFinished).toHaveBeenCalledWith("dismissed");
   });
 
   it("shows the locked consent, scale, questions, and Skip copy", () => {
-    render(<UsefulnessStep view={view} />);
+    render(<UsefulnessStep view={view} onSubmit={accepted()} />);
 
     expect(screen.getByText(view.copy.consent.english)).toBeInTheDocument();
     expect(screen.queryByText(view.copy.consent.burmese)).not.toBeInTheDocument();
@@ -174,7 +179,7 @@ describe("UsefulnessStep", () => {
   });
 
   it("shows Burmese Help the study copy when MM is selected", () => {
-    render(<UsefulnessStep view={view} locale="my" />);
+    render(<UsefulnessStep view={view} locale="my" onSubmit={accepted()} />);
 
     expect(screen.getByText(view.copy.consent.burmese)).toBeInTheDocument();
     expect(screen.queryByText(view.copy.consent.english)).not.toBeInTheDocument();

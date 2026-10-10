@@ -276,14 +276,16 @@ export function CallScreen({
     displayPhase === "done" &&
     displayAnswers.length > 0 &&
     displayAnswers.every((answer) => answer.status === "skipped");
+  const surveyAvailable = formEnabled &&
+    (previewing || Boolean(attemptToken && studySave === "saved"));
   const topAction = reportTopAction({
     signedIn,
     sessionKind,
     hasSessionId: sessionId !== null,
-    formEnabled,
+    formEnabled: surveyAvailable,
   });
   const usefulnessView =
-    topAction === "help" ? buildUsefulnessView({ formEnabled }) : null;
+    topAction === "help" ? buildUsefulnessView({ formEnabled: surveyAvailable }) : null;
   const { open: usefulnessOpen, openNow: openUsefulness, close: closeUsefulness } =
     useUsefulnessNudge(Boolean(usefulnessView && revealDone));
   const askForFullSession =
@@ -485,6 +487,20 @@ export function CallScreen({
           <UsefulnessStep
             view={usefulnessView}
             locale={locale}
+            onSubmit={async (survey) => {
+              if (previewing) return true;
+              if (!attemptToken || studySave !== "saved") return false;
+              try {
+                const response = await fetch("/api/survey", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ attemptToken, survey }),
+                });
+                return response.ok;
+              } catch {
+                return false;
+              }
+            }}
             onFinished={(outcome) => {
               closeUsefulness();
               if (outcome === "submitted") setUsefulnessSubmitted(true);
