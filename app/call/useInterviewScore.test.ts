@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { useInterviewScore } from "./useInterviewScore";
 import type { GradeCollection } from "./useGradeAnswers";
 
@@ -108,6 +108,31 @@ describe("useInterviewScore", () => {
         body: JSON.stringify({ attemptToken: "attempt-token", answers: sessionAnswers }),
       }),
     );
+  });
+
+  it("retries only the save and keeps the graded report if the retry fails", async () => {
+    const originalReport = { total: 88, source: "grade" };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        report: originalReport, studySave: "retry", saveReceipt: "signed-receipt",
+      }), { status: 200 }))
+      .mockRejectedValueOnce(new Error("network down"));
+    vi.stubGlobal("fetch", fetchMock);
+    const { result } = renderHook(() => useInterviewScore(
+      { status: "ready", answers: [FIRST_ANSWER] },
+      { attemptToken: "attempt-token", sessionAnswers: [
+        { questionIndex: 0, questionId: 1, status: "answered", transcript: "はい。", pushbackCount: 0 },
+      ] },
+    ));
+
+    await waitFor(() => expect(result.current.studySave).toBe("retry"));
+    await act(async () => { await result.current.retrySave(); });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/study/save-report");
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ saveReceipt: "signed-receipt" });
+    expect(result.current.report).toEqual(originalReport);
+    expect(result.current.studySave).toBe("retry");
   });
 
   it("keeps the { report } JSON from /api/score, including a dual-fail banner", async () => {

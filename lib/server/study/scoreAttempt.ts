@@ -2,6 +2,58 @@ function signingMessage(userId: string, attemptId: string) {
   return new TextEncoder().encode(`study-score:${userId}:${attemptId}`);
 }
 
+export type StudySessionAnswer = {
+  questionIndex: number;
+  questionId: number;
+  status: "answered" | "skipped";
+  transcript: string;
+  pushbackCount: 0 | 1 | 2;
+  isFollowUp: boolean;
+};
+
+type SavePayload = {
+  userId: string;
+  attemptId: string;
+  report: import("@/lib/content/sampleReport").InterviewReport;
+  answers: StudySessionAnswer[];
+};
+
+function encode(bytes: Uint8Array): string {
+  return Buffer.from(bytes).toString("base64url");
+}
+
+function decode(value: string): Uint8Array<ArrayBuffer> {
+  return new Uint8Array(Buffer.from(value, "base64url"));
+}
+
+export async function createStudySaveReceipt(payload: SavePayload): Promise<string | null> {
+  const key = await signingKey();
+  if (!key) return null;
+  const encodedPayload = encode(new TextEncoder().encode(JSON.stringify(payload)));
+  const signature = new Uint8Array(await crypto.subtle.sign(
+    "HMAC", key, new TextEncoder().encode(`study-save:${encodedPayload}`),
+  ));
+  return `${encodedPayload}.${encode(signature)}`;
+}
+
+export async function readStudySaveReceipt(userId: string, receipt: string): Promise<SavePayload | null> {
+  const split = receipt.lastIndexOf(".");
+  const key = await signingKey();
+  if (split < 1 || !key) return null;
+  try {
+    const encodedPayload = receipt.slice(0, split);
+    const valid = await crypto.subtle.verify(
+      "HMAC", key, decode(receipt.slice(split + 1)),
+      new TextEncoder().encode(`study-save:${encodedPayload}`),
+    );
+    if (!valid) return null;
+    const payload = JSON.parse(new TextDecoder().decode(decode(encodedPayload))) as SavePayload;
+    return payload.userId === userId ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
 async function signingKey(): Promise<CryptoKey | null> {
   const secret = process.env.STUDY_VISIT_SIGNING_KEY;
   if (!secret) return null;

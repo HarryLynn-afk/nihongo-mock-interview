@@ -11,6 +11,7 @@ export function useInterviewScore(
   const [report, setReport] = useState<InterviewReport | null>(null);
   const [scoringFailed, setScoringFailed] = useState(false);
   const [studySave, setStudySave] = useState<"saved" | "retry" | null>(null);
+  const [saveReceipt, setSaveReceipt] = useState<string | null>(null);
 
   const submit = useCallback(async () => {
     if (collection.status !== "ready") return;
@@ -37,20 +38,39 @@ export function useInterviewScore(
       const data = (await res.json()) as {
         report?: InterviewReport | null;
         studySave?: "saved" | "retry";
+        saveReceipt?: string;
       };
       if (data.report) {
         setReport(data.report);
         setScoringFailed(false);
         setStudySave(participant ? data.studySave ?? "retry" : null);
+        setSaveReceipt(data.studySave === "retry" ? data.saveReceipt ?? null : null);
       } else {
         setReport(null);
         setScoringFailed(true);
       }
     } catch {
       setScoringFailed(true);
-      if (participant) setStudySave("retry");
     }
   }, [collection, participant]);
+
+  const retrySave = useCallback(async () => {
+    if (!saveReceipt) return;
+    try {
+      const res = await fetch("/api/study/save-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ saveReceipt }),
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as { report: InterviewReport; studySave: "saved" };
+      setReport(data.report);
+      setStudySave(data.studySave);
+      setSaveReceipt(null);
+    } catch {
+      // Keep the report and receipt available for another save attempt.
+    }
+  }, [saveReceipt]);
 
   useEffect(() => {
     if (collection.status !== "ready" || posted.current) return;
@@ -59,5 +79,5 @@ export function useInterviewScore(
     void Promise.resolve().then(submit);
   }, [collection, submit]);
 
-  return { report, scoringFailed, studySave, retrySave: submit };
+  return { report, scoringFailed, studySave, retrySave };
 }
