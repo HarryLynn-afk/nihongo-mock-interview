@@ -219,6 +219,7 @@ const en = {
     close: "Close",
     submit: "Submit",
     sendFailed: "Could not send your answers. Please try again.",
+    sendUncertain: "The form may have received your answers. Please do not submit again; ask study staff to check.",
   },
   micTrouble: {
     title: "We couldn't hear you",
@@ -465,6 +466,7 @@ const my: UiCopy = {
     close: "ပိတ်ရန်",
     submit: "ပို့ရန်",
     sendFailed: "အဖြေများ ပို့၍ မရပါ။ ထပ်ကြိုးစားပါ။",
+    sendUncertain: "သင့်အဖြေများကို ဖောင်က လက်ခံရရှိပြီး ဖြစ်နိုင်ပါသည်။ ထပ်မံ မပို့ပါနှင့်။ သုတေသန အဖွဲ့ကို မေးမြန်းပါ။",
   },
   micTrouble: {
     title: "သင့်အသံ မကြားရပါ",

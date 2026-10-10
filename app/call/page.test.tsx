@@ -141,8 +141,12 @@ describe("Call screen", () => {
     return within(screen.getByTestId("language-hud"));
   }
 
-  function mockLiveGradeAndSurvey(participantId?: string, studySave?: "saved" | "retry") {
-    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+  function mockLiveGradeAndSurvey(
+    participantId?: string,
+    studySave?: "saved" | "retry",
+    surveyPost?: { status: number; body: Record<string, string> },
+  ) {
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       if (String(input).includes("/api/study/auth")) {
         return Promise.resolve(
           new Response(JSON.stringify({ signedIn: Boolean(participantId) }), {
@@ -164,6 +168,7 @@ describe("Call screen", () => {
           new Response(
             JSON.stringify({
               studySave,
+              saveReceipt: studySave === "retry" ? "signed-receipt" : undefined,
               report: {
                 total: 88,
                 scores: {
@@ -192,6 +197,12 @@ describe("Call screen", () => {
         );
       }
       if (String(input).includes("/api/survey")) {
+        if (init?.method === "POST") {
+          return Promise.resolve(new Response(
+            surveyPost ? JSON.stringify(surveyPost.body) : null,
+            { status: surveyPost?.status ?? 202 },
+          ));
+        }
         return Promise.resolve(
           new Response(JSON.stringify({ enabled: true }), {
             status: 200,
@@ -1329,8 +1340,9 @@ describe("Call screen", () => {
     expect(screen.getByText(/could not save this interview/i)).toBeInTheDocument();
     await user.click(retry);
     await waitFor(() => {
-      expect(fetchMock.mock.calls.filter(([url]) => String(url) === "/api/score")).toHaveLength(2);
+      expect(fetchMock.mock.calls.filter(([url]) => String(url) === "/api/study/save-report")).toHaveLength(1);
     });
+    expect(fetchMock.mock.calls.filter(([url]) => String(url) === "/api/score")).toHaveLength(1);
   });
 
   it("gives a Guest the 3 locked Questions and does not draw the topic bank", async () => {
@@ -1570,6 +1582,22 @@ describe("Call screen", () => {
       attemptToken: "signed-attempt",
       survey: expect.objectContaining({ skipped: false }),
     });
+  });
+
+  it("keeps retry available when the survey route rejects before forwarding", async () => {
+    mockLiveGradeAndSurvey("P001", "saved", { status: 409, body: { error: "not saved" } });
+    const user = userEvent.setup();
+    render(<CallScreen homeHref="/" attemptToken="signed-attempt" />);
+    await completeLockedInterview(user);
+    await user.click(await screen.findByRole("button", { name: /help the study/i }));
+    for (const radio of screen.getAllByRole("radio")
+      .filter((el) => (el as HTMLInputElement).value === "4")) {
+      await user.click(radio);
+    }
+    await user.click(screen.getByRole("button", { name: /^submit$/i }));
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(/please try again/i));
+    expect(screen.getByRole("button", { name: /^submit$/i })).toBeEnabled();
   });
 
   it("keeps Help the study on a Skip interview sample report after Close", async () => {

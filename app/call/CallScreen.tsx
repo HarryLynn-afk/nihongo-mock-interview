@@ -488,17 +488,25 @@ export function CallScreen({
             view={usefulnessView}
             locale={locale}
             onSubmit={async (survey) => {
-              if (previewing) return true;
-              if (!attemptToken || studySave !== "saved") return false;
+              if (previewing) return "submitted";
+              if (!attemptToken || studySave !== "saved") return "retry";
               try {
                 const response = await fetch("/api/survey", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ attemptToken, survey }),
                 });
-                return response.ok;
+                if (response.status === 202) return "submitted";
+                if (response.status === 409) {
+                  const result = await response.json().catch(() => null);
+                  if (result?.error === "not saved") return "retry";
+                  setUsefulnessSubmitted(true);
+                  return "uncertain";
+                }
+                return "retry";
               } catch {
-                return false;
+                setUsefulnessSubmitted(true);
+                return "uncertain";
               }
             }}
             onFinished={(outcome) => {

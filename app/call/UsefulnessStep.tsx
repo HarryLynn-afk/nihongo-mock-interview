@@ -24,7 +24,7 @@ export function UsefulnessStep({
 }: {
   view: UsefulnessView;
   locale?: UiLocale;
-  onSubmit: (payload: SurveyPayload) => Promise<boolean>;
+  onSubmit: (payload: SurveyPayload) => Promise<"submitted" | "retry" | "uncertain">;
   onFinished?: (outcome: "skipped" | "submitted" | "dismissed") => void;
 }) {
   const chrome = uiCopy(locale);
@@ -36,14 +36,15 @@ export function UsefulnessStep({
   });
   const [sending, setSending] = useState(false);
   const [sendFailed, setSendFailed] = useState(false);
+  const [sendUncertain, setSendUncertain] = useState(false);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onFinished?.("dismissed");
+      if (event.key === "Escape" && !sending) onFinished?.("dismissed");
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onFinished]);
+  }, [onFinished, sending]);
 
   function pick(entry: { english: string; burmese: string }): string {
     return locale === "my" ? entry.burmese : entry.english;
@@ -52,14 +53,15 @@ export function UsefulnessStep({
   async function submit(payload: SurveyPayload) {
     setSending(true);
     setSendFailed(false);
-    let sent = false;
+    let outcome: "submitted" | "retry" | "uncertain" = "uncertain";
     try {
-      sent = await onSubmit(payload);
+      outcome = await onSubmit(payload);
     } catch {
-      // Keep the answers available for another attempt.
+      // A lost response cannot establish whether the form received the answers.
     }
     setSending(false);
-    if (sent) onFinished?.(payload.skipped ? "skipped" : "submitted");
+    if (outcome === "submitted") onFinished?.("submitted");
+    else if (outcome === "uncertain") setSendUncertain(true);
     else setSendFailed(true);
   }
 
@@ -69,7 +71,7 @@ export function UsefulnessStep({
     <div
       data-testid="usefulness-backdrop"
       className="fixed inset-0 z-50 flex items-center justify-center bg-eel/40 p-6"
-      onClick={() => onFinished?.("dismissed")}
+      onClick={() => { if (!sending) onFinished?.("dismissed"); }}
     >
       <section
         role="dialog"
@@ -84,6 +86,7 @@ export function UsefulnessStep({
           </h2>
           <button
             type="button"
+            disabled={sending}
             onClick={() => onFinished?.("dismissed")}
             className="rounded-full px-3 py-1 text-sm text-eel/90"
           >
@@ -139,11 +142,16 @@ export function UsefulnessStep({
             {chrome.usefulness.sendFailed}
           </p>
         ) : null}
+        {sendUncertain ? (
+          <p role="alert" className="text-sm text-red-700">
+            {chrome.usefulness.sendUncertain}
+          </p>
+        ) : null}
 
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            disabled={!complete || sending}
+            disabled={!complete || sending || sendUncertain}
             onClick={() => {
               if (!complete) return;
               void submit({
@@ -159,7 +167,7 @@ export function UsefulnessStep({
           <button
             type="button"
             disabled={sending}
-            onClick={() => void submit({ skipped: true })}
+            onClick={() => onFinished?.("skipped")}
             className="rounded-full bg-eel/10 px-6 py-3 font-medium text-eel"
             aria-label="Skip"
           >

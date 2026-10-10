@@ -19,10 +19,10 @@ async function pickAllFours(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("UsefulnessStep", () => {
-  const accepted = () => vi.fn().mockResolvedValue(true);
+  const accepted = () => vi.fn().mockResolvedValue("submitted");
 
   it("keeps answers open after failed delivery and finishes after retry", async () => {
-    const onSubmit = vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    const onSubmit = vi.fn().mockResolvedValueOnce("retry").mockResolvedValueOnce("submitted");
     const onFinished = vi.fn();
     const user = userEvent.setup();
     render(<UsefulnessStep view={view} onSubmit={onSubmit} onFinished={onFinished} />);
@@ -40,6 +40,42 @@ describe("UsefulnessStep", () => {
 
     await user.click(screen.getByRole("button", { name: /submit/i }));
     await waitFor(() => expect(onFinished).toHaveBeenCalledWith("submitted"));
+  });
+
+  it("keeps the dialog and typed answers while a submission is pending", async () => {
+    const onSubmit = vi.fn(() => new Promise<"submitted" | "retry" | "uncertain">(() => {}));
+    const onFinished = vi.fn();
+    const user = userEvent.setup();
+    render(<UsefulnessStep view={view} onSubmit={onSubmit} onFinished={onFinished} />);
+    await pickAllFours(user);
+    const answer = screen.getAllByRole("textbox")[0];
+    await user.type(answer, "The rewrite.");
+    await user.click(screen.getByRole("button", { name: /submit/i }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByRole("button", { name: /close/i }));
+    await user.keyboard("{Escape}");
+    fireEvent.click(screen.getByTestId("usefulness-backdrop"));
+
+    expect(onFinished).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(answer).toHaveValue("The rewrite.");
+  });
+
+  it("keeps answers visible and blocks resubmission when delivery is uncertain", async () => {
+    const onSubmit = vi.fn().mockResolvedValue("uncertain");
+    const onFinished = vi.fn();
+    const user = userEvent.setup();
+    render(<UsefulnessStep view={view} onSubmit={onSubmit} onFinished={onFinished} />);
+    await pickAllFours(user);
+    const answer = screen.getAllByRole("textbox")[0];
+    await user.type(answer, "The rewrite.");
+    await user.click(screen.getByRole("button", { name: /submit/i }));
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(/may have received/i));
+    expect(screen.getByRole("button", { name: /submit/i })).toBeDisabled();
+    expect(answer).toHaveValue("The rewrite.");
+    expect(onFinished).not.toHaveBeenCalled();
   });
 
   it("disables Submit until all 10 ratings are chosen", async () => {
@@ -67,22 +103,13 @@ describe("UsefulnessStep", () => {
     }
   });
 
-  it("passes a skipped answer to the submitter", async () => {
-    const onSubmit = accepted();
-    render(<UsefulnessStep view={view} onSubmit={onSubmit} />);
-    await userEvent.setup().click(screen.getByRole("button", { name: /skip/i }));
-    expect(onSubmit).toHaveBeenCalledWith({ skipped: true });
-  });
-
-  it("notifies the parent that Skip finished after POSTing skipped", async () => {
+  it("skips locally without creating a blank questionnaire row", async () => {
     const onSubmit = accepted();
     const onFinished = vi.fn();
-
     render(<UsefulnessStep view={view} onSubmit={onSubmit} onFinished={onFinished} />);
     await userEvent.setup().click(screen.getByRole("button", { name: /skip/i }));
-
-    expect(onSubmit).toHaveBeenCalledWith({ skipped: true });
-    await waitFor(() => expect(onFinished).toHaveBeenCalledWith("skipped"));
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(onFinished).toHaveBeenCalledWith("skipped");
   });
 
   it("passes all 10 ratings and the open-ended answers on Submit", async () => {

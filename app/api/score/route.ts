@@ -6,8 +6,9 @@ import { getDeepseekGradeKey } from "@/lib/server/env/deepseekGrade";
 import { getGroqGradeKey } from "@/lib/server/env/groqGrade";
 import { withApiGuard } from "@/lib/server/security/guard";
 import { createStudyAdminClient } from "@/lib/server/study/adminClients";
-import { readStudyAttemptToken } from "@/lib/server/study/scoreAttempt";
+import { createStudySaveReceipt, readStudyAttemptToken, type StudySessionAnswer } from "@/lib/server/study/scoreAttempt";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
+import { saveSessionReport } from "@/lib/server/study/saveSessionReport";
 import { hasVisitConsent, VISIT_CONSENT_COOKIE, VISIT_ID_COOKIE } from "@/lib/server/study/visitConsent";
 import { gradeInterview } from "../grade/gradeInterview";
 import { parseAnswers } from "../grade/parseAnswers";
@@ -17,19 +18,10 @@ import { runGroqGrade } from "../grade/runGroqGrade";
 /** Groq/DeepSeek grade can be slow; keep the route alive for in-process calls. */
 export const maxDuration = 60;
 
-type SessionAnswer = {
-  questionIndex: number;
-  questionId: number;
-  status: "answered" | "skipped";
-  transcript: string;
-  pushbackCount: 0 | 1 | 2;
-  isFollowUp: boolean;
-};
-
-function parseSessionAnswers(value: unknown): SessionAnswer[] | null {
+function parseSessionAnswers(value: unknown): StudySessionAnswer[] | null {
   if (!Array.isArray(value) || value.length === 0 || value.length > 13) return null;
-  const seen = new Set<number>();
-  const answers: SessionAnswer[] = [];
+  const seenQuestionIds = new Set<number>();
+  const answers: StudySessionAnswer[] = [];
   for (const item of value) {
     if (!item || typeof item !== "object") return null;
     const row = item as Record<string, unknown>;
@@ -42,15 +34,16 @@ function parseSessionAnswers(value: unknown): SessionAnswer[] | null {
       typeof row.transcript !== "string" ||
       row.transcript.length > 4000 ||
       (row.pushbackCount !== 0 && row.pushbackCount !== 1 && row.pushbackCount !== 2) ||
-      seen.has(row.questionIndex as number) ||
+      row.questionIndex !== answers.length ||
+      seenQuestionIds.has(row.questionId as number) ||
       !(getBankQuestionById(row.questionId as number) ??
         questions.find((question) => question.id === row.questionId))
     ) return null;
-    seen.add(row.questionIndex as number);
+    seenQuestionIds.add(row.questionId as number);
     answers.push({
       questionIndex: row.questionIndex as number,
       questionId: row.questionId as number,
-      status: row.status as SessionAnswer["status"],
+      status: row.status as StudySessionAnswer["status"],
       transcript: row.status === "answered" ? row.transcript as string : "",
       pushbackCount: row.status === "answered" ? row.pushbackCount as 0 | 1 | 2 : 0,
       isFollowUp: Boolean(getBankQuestionById(row.questionId as number)?.isFollowUp),
@@ -73,6 +66,7 @@ export const POST = withApiGuard(async (request) => {
   const attemptToken = payload.attemptToken;
   let participantId: string | null = null;
   let attemptId: string | null = null;
+  let userId: string | null = null;
   const admin = typeof attemptToken === "string" ? createStudyAdminClient() : null;
   if (typeof attemptToken === "string") {
     const supabase = await createStudyServerClient();
@@ -83,6 +77,7 @@ export const POST = withApiGuard(async (request) => {
       jar.get(VISIT_ID_COOKIE)?.value,
       jar.get(VISIT_CONSENT_COOKIE)?.value,
     ))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    userId = user.id;
     attemptId = await readStudyAttemptToken(user.id, attemptToken);
     if (!attemptId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     const participant = await admin.from("participants")
@@ -137,24 +132,14 @@ export const POST = withApiGuard(async (request) => {
   });
 
   if (!attemptId || !participantId || !report) return NextResponse.json({ report });
-  let saved = false;
-  try {
-    const { error } = await admin!.from("study_sessions").insert({
-      attempt_id: attemptId,
-      participant_id: participantId,
-      report,
-      total: report.total,
-      source: report.source,
-      answers: sessionAnswers,
-      scores: report.scores,
-      pushback_count: sessionAnswers!.reduce(
-        (sum, answer) => sum + (answer.status === "answered" ? answer.pushbackCount : 0), 0,
-      ),
-      follow_up_count: sessionAnswers!.filter((answer) => answer.isFollowUp).length,
-    });
-    saved = !error;
-  } catch {
-    // The report remains visible so the participant can retry the save.
-  }
-  return NextResponse.json({ report, studySave: saved ? "saved" : "retry" });
+  const saved = await saveSessionReport({
+    admin: admin!, attemptId, participantId, report, answers: sessionAnswers!,
+  });
+  const saveReceipt = saved ? undefined : await createStudySaveReceipt({
+    userId: userId!,
+    attemptId,
+    report,
+    answers: sessionAnswers!,
+  });
+  return NextResponse.json({ report, studySave: saved ? "saved" : "retry", ...(saveReceipt ? { saveReceipt } : {}) });
 }, "expensive");

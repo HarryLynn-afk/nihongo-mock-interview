@@ -1,6 +1,6 @@
 # NihonGo — Current grading system
 
-**Last updated:** 2026-10-02
+**Last updated:** 2026-10-09
 **Status:** Current. This replaces the earlier six-score verdict rubric (Ready / Almost Ready / Keep Practicing, 準備OK / もう少し / 要練習, fixed Motivation and Study plan weights, automatic-failure Gates, and the 75-point threshold).
 
 > AI-generated practice feedback. This is not an official admission assessment or a professional language evaluation.
@@ -93,7 +93,7 @@ The AI model proposes the 1–4 ratings from the transcript:
 
 1. **Groq** (`qwen/qwen3.8-27b`) is primary.
 2. **DeepSeek Flash** (thinking disabled) is the fallback on any Groq miss.
-3. If both miss, the app shows the sample practice report (`mocks/sample-report.json`) with a "Scoring unavailable — sample report." banner — never a blank screen.
+3. If both miss, the app shows a scoring-unavailable screen. The sample report (`mocks/sample-report.json`) is used only by the development-only **Skip interview** preview.
 
 The app itself does the weighting math; the model never decides the overall number. The model returns strict JSON:
 
@@ -127,13 +127,12 @@ The rubric follows the JF Standard's focus on **whether learners accomplish the 
 | Per-question coaching and Burmese templates | `lib/content/critiqueCopy.ts` |
 | Report view model | `app/call/buildReportView.ts` |
 | Report UI | `app/call/InterviewReportScreen.tsx` |
-| Fallback sample | `lib/content/sampleReport.ts`, `mocks/sample-report.json` |
+| Development preview sample | `lib/content/sampleReport.ts`, `mocks/sample-report.json` |
 | Prompt snapshot (test-enforced) | `docs/rubric-generated.md` |
-| Domain terms | `docs/ubiquitous-language.md` |
 
 ## Verification
 
-- Full test suite: **586/586 passing**
+- Full test suite: **612/612 passing**
 - TypeScript: **0 errors**
 - Lint: **0 errors / 0 warnings**
 - `docs/rubric-generated.md` regenerated and snapshot-locked to the prompt and scoring math.

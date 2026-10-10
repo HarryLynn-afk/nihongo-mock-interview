@@ -7,19 +7,17 @@
 
 This is not a hackathon or event-day demo. The 29 Aug Launch Pack rebuild is void.
 
-A student joins a mock admission interview with Tanaka-sensei (Tokyo Pathway Japanese School), answers **by voice**, and sees an **Interview Readiness** report on `/call` (no `/report` route). Typing is not offered.
+A student joins a mock Japanese language-school interview with Tanaka-sensei, answers **by voice**, and sees an **AI Interview Practice Feedback** report on `/call` (no `/report` route). Typing is not offered.
 
-- **Guest** (**Try as guest** on `/` → `/call?guest=1`): practice the three locked Questions. Not saved to study sessions.
+- **Guest** (**Try a short practice** on `/` → `/call?guest=1`): practice the three locked Questions. Not saved to study sessions.
 - **Participant** (`/` or a capped join link → Google sign-in → same landing → **Join interview** → consent → device setup → `/call`): invited tester after Google login and consent this visit. Their name and email appear on `/profile`; the classroom and report show `P001`… instead. Topic bank + follow-ups. Study N.
 - **Pitch mode** was removed. `/pitch` and `/call?pitch=1` show the not-found page.
 
 The [participant entry flow](docs/participant-entry-flow.md) records the landing, sign-in, profile, consent, and classroom sequence.
 
-The [lint cleanup checklist](docs/lint-cleanup.md) records the existing code-checker errors and warnings for later work.
+On `/call`, Tanaka-sensei plays committed `public/question-{id}.mp3`. The student speaks Japanese (Deepgram live captions, or browser SpeechRecognition if Deepgram is unset). **Hear again** replays the Question while idle or paused. **Answer again** allows one redo before Submit, per Question. Empty or no-kana answers get two more attempts, then the Question is skipped. Camera is optional; mic is required.
 
-On `/call`, Tanaka-sensei plays committed `public/question-{id}.mp3`. The student Speaks Japanese (Deepgram live captions, or browser SpeechRecognition if Deepgram is unset). **Hear again** (speaker left of the Japanese headline) replays the Question while idle or paused. **Answer again** (**1 retry**, left of the mic) is one content redo before Submit, per Question. Empty or no-kana takes get two more Speak attempts, then the Question is skipped. Camera is optional; mic is required.
-
-Do not print N5, JLPT, A1, Pass, or Fail on the splash, call, or report Headline.
+Do not print N5, JLPT, A1, Pass, or Fail on the splash, call, or report.
 
 ## Stack
 
@@ -27,7 +25,7 @@ Do not print N5, JLPT, A1, Pass, or Fail on the splash, call, or report Headline
 - **API:** Next.js Route Handlers (`app/api/*/route.ts`) — keys stay off the client
 - **Tests:** Vitest + `@testing-library/react` + `jsdom` (`npm test`)
 - **Host:** Netlify (`netlify.toml`) — not deployed yet
-- **Grading:** `POST /api/score` → Groq (`qwen/qwen3.8-27b`) → sample InterviewReport if Groq misses. No n8n.
+- **Grading:** `POST /api/score` → Groq (`qwen/qwen3.8-27b`) → optional DeepSeek fallback → scoring-unavailable screen if both fail.
 - **Database:** none for Guest. Optional **Supabase** (Postgres) for Participant login, consent, join-links, and full-session requests.
 
 There is no public sign-up. Guest answers are never auto-merged after login.
@@ -53,6 +51,7 @@ Fill `.env.local`. Each key is one purpose — do not reuse a Groq or ElevenLabs
 | --- | --- |
 | `ELEVENLABS_TTS_API_KEY` | Generate-time only (`scripts/generate-fallback-audio.ts`). Sensei plays committed `public/question-{id}.mp3` |
 | `DEEPGRAM_STT_API_KEY` | Live Japanese captions. Needs a Deepgram **Member** (or higher) key — usage-only keys cannot mint a listen JWT. Missing or 403 fail-opens to browser captions |
+| `DEEPSEEK_GRADE_API_KEY` | Optional grading fallback when Groq misses |
 | `RESEARCH_FORM_URL` | Help the study after the report (hidden if unset) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Study project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Study browser/server auth |
@@ -73,7 +72,7 @@ npm run lint
 
 Desktop browser only. Phone visitors see “Open on a computer.”
 
-- Practice: http://localhost:3000 (**Try as guest** → device check → 15s lobby popup → `/call?guest=1`)
+- Practice: http://localhost:3000 (**Try a short practice** → device check → 15s lobby popup → `/call?guest=1`)
 - Participant login: http://localhost:3000 (Login → allowlisted Google email → same landing with **Join interview**)
 - Unique join link: http://localhost:3000/join?from=CODE (valid capped invite code → Google → same landing with **Join interview**)
 
@@ -141,7 +140,7 @@ Without step 2, `/login` can still render, but nothing is stored and returning t
 
 Speech Delivery has been removed. Audio streams for live captions; answers retain transcripts and attempt metadata, without recorded clips or word timestamps.
 
-If Groq and DeepSeek both miss, the last screen is the locked sample practice report (`mocks/sample-report.json`) plus a scoring-unavailable banner.
+If Groq and DeepSeek both miss, `/call` shows a scoring-unavailable screen. The sample report is used only by the development-only **Skip interview** preview.
 
 Current rubric details: `docs/grading-system.md`. Prompt snapshot: `docs/rubric-generated.md`.
 
@@ -158,7 +157,7 @@ docs/                PRD, issues, ubiquitous language, rubric snapshot
 mocks/               sample-report.json (`banner` stays null)
 ```
 
-Product requirements: `docs/prd-nihongo.md`. Domain terms: `docs/ubiquitous-language.md`. Current grading: `docs/grading-system.md`.
+Current grading: `docs/grading-system.md`. Current development tasks: `claude2.md`.
 
 ## Deploy (Issue 15)
 

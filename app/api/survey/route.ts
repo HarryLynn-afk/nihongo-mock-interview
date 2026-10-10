@@ -23,7 +23,7 @@ import { postSurvey } from "./postSurvey";
 function parseSurvey(value: unknown): SurveyPayload | null {
   if (!value || typeof value !== "object") return null;
   const survey = value as Record<string, unknown>;
-  if (survey.skipped === true) return { skipped: true };
+  if (survey.skipped === true) return null;
   if (
     survey.skipped !== false ||
     !survey.ratings || typeof survey.ratings !== "object" ||
@@ -98,10 +98,34 @@ export const POST = withApiGuard(async (request) => {
   const survey = parseSurvey(input.survey);
   if (!survey) return NextResponse.json({ error: "Invalid survey" }, { status: 400 });
 
+  let claim;
+  try {
+    claim = await admin.from("survey_submissions").insert({
+      attempt_id: attemptId, status: "sending",
+    });
+  } catch {
+    return NextResponse.json({ status: "retry" }, { status: 503 });
+  }
+  if (claim.error) {
+    // shortcut: Google Forms has no idempotency key; reconcile uncertain claims before retrying.
+    const prior = await admin.from("survey_submissions")
+      .select("status").eq("attempt_id", attemptId).maybeSingle();
+    if (prior.data?.status === "submitted") {
+      return NextResponse.json({ status: "submitted" }, { status: 202 });
+    }
+    return NextResponse.json({ status: prior.data ? "uncertain" : "retry" },
+      { status: prior.data ? 409 : 503 });
+  }
+
   try {
     await postSurvey({ url, payload: survey, fetchImpl: fetch });
-    return new Response(null, { status: 202 });
+    const updated = await admin.from("survey_submissions")
+      .update({ status: "submitted" }).eq("attempt_id", attemptId);
+    if (updated.error) return NextResponse.json({ status: "uncertain" }, { status: 409 });
+    return NextResponse.json({ status: "submitted" }, { status: 202 });
   } catch {
-    return NextResponse.json({ error: "delivery failed" }, { status: 502 });
+    await admin.from("survey_submissions")
+      .update({ status: "uncertain" }).eq("attempt_id", attemptId);
+    return NextResponse.json({ status: "uncertain" }, { status: 409 });
   }
 }, "write");

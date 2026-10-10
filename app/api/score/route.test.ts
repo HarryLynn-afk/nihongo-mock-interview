@@ -250,6 +250,85 @@ describe("POST /api/score", () => {
     expect(study.row.value).toBeNull();
   });
 
+  it("saves the original report after a failed write without grading again", async () => {
+    process.env.STUDY_VISIT_SIGNING_KEY = "test-secret";
+    study.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+    const { createVisitConsentProof } = await import("@/lib/server/study/visitConsent");
+    study.visit.proof = (await createVisitConsentProof("user-1", study.visit.id))!;
+    const { createStudyAttemptToken } = await import("@/lib/server/study/scoreAttempt");
+    const attemptToken = (await createStudyAttemptToken("user-1", "attempt-retry"))!;
+    const answers = [{ questionIndex: 0, questionId: 1, status: "answered", transcript: "はじめまして。", pushbackCount: 0 }];
+    study.writes.mockImplementationOnce(() => { throw new Error("database offline"); });
+    const fetchMock = groqFetchMock();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { POST: grade } = await import("./route");
+    const first = await grade(new Request("http://localhost/api/score", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ attemptToken, answers }),
+    }));
+    const firstBody = await first.json();
+    expect(firstBody.studySave).toBe("retry");
+    expect(firstBody.saveReceipt).toEqual(expect.any(String));
+
+    const { POST: save } = await import("../study/save-report/route");
+    const retry = await save(new Request("http://localhost/api/study/save-report", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ saveReceipt: firstBody.saveReceipt }),
+    }));
+
+    expect(retry.status).toBe(200);
+    expect(await retry.json()).toEqual({ report: firstBody.report, studySave: "saved" });
+    expect(study.row.value?.report).toEqual(firstBody.report);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a participant session that repeats a question ID", async () => {
+    process.env.STUDY_VISIT_SIGNING_KEY = "test-secret";
+    study.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+    const { createVisitConsentProof } = await import("@/lib/server/study/visitConsent");
+    study.visit.proof = (await createVisitConsentProof("user-1", study.visit.id))!;
+    const { createStudyAttemptToken } = await import("@/lib/server/study/scoreAttempt");
+    const attemptToken = await createStudyAttemptToken("user-1", "duplicate-question");
+    const fetchMock = groqFetchMock();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { POST } = await import("./route");
+    const res = await POST(new Request("http://localhost/api/score", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ attemptToken, answers: [0, 1].map((questionIndex) => ({
+        questionIndex, questionId: 1, status: "answered", transcript: "はい。", pushbackCount: 0,
+      })) }),
+    }));
+
+    expect(res.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(study.writes).not.toHaveBeenCalled();
+  });
+
+  it("rejects a participant session with a missing question index", async () => {
+    process.env.STUDY_VISIT_SIGNING_KEY = "test-secret";
+    study.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+    const { createVisitConsentProof } = await import("@/lib/server/study/visitConsent");
+    study.visit.proof = (await createVisitConsentProof("user-1", study.visit.id))!;
+    const { createStudyAttemptToken } = await import("@/lib/server/study/scoreAttempt");
+    const attemptToken = await createStudyAttemptToken("user-1", "missing-index");
+    const fetchMock = groqFetchMock();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { POST } = await import("./route");
+    const res = await POST(new Request("http://localhost/api/score", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ attemptToken, answers: [
+        { questionIndex: 0, questionId: 1, status: "answered", transcript: "はい。", pushbackCount: 0 },
+        { questionIndex: 2, questionId: 2, status: "answered", transcript: "はい。", pushbackCount: 0 },
+      ] }),
+    }));
+
+    expect(res.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("does not call /api/grade", async () => {
     const fetchMock = groqFetchMock();
     vi.stubGlobal("fetch", fetchMock);
