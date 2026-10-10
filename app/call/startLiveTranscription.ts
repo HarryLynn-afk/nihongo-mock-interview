@@ -43,6 +43,7 @@ function waitForListenOpen(
 
 export async function startLiveTranscriptionSession({
   onEvent,
+  onUnavailable,
   fetchImpl = fetch,
   getUserMedia = () => navigator.mediaDevices.getUserMedia({ audio: true }),
   WebSocketImpl = globalThis.WebSocket,
@@ -51,6 +52,7 @@ export async function startLiveTranscriptionSession({
   ).AudioContext,
 }: {
   onEvent: (event: ParsedTranscriptionEvent) => void;
+  onUnavailable?: () => void;
   fetchImpl?: typeof fetch;
   getUserMedia?: () => Promise<MediaStream>;
   WebSocketImpl?: typeof WebSocket;
@@ -60,7 +62,12 @@ export async function startLiveTranscriptionSession({
     return null;
   }
 
-  const tokenRes = await fetchImpl("/api/deepgram-stt", { method: "POST" });
+  let tokenRes: Response;
+  try {
+    tokenRes = await fetchImpl("/api/deepgram-stt", { method: "POST" });
+  } catch {
+    return null;
+  }
   if (!tokenRes.ok) return null;
   let tokenBody: unknown;
   try {
@@ -80,6 +87,9 @@ export async function startLiveTranscriptionSession({
   const pendingAudio: ArrayBuffer[] = [];
   let paused = false;
   let stopped = false;
+  let ready = false;
+  let lost = false;
+  let committing = false;
   let keepAliveTimer: ReturnType<typeof setInterval> | undefined;
 
   function getTranscript(): string {
@@ -153,6 +163,16 @@ export async function startLiveTranscriptionSession({
       return null;
     }
 
+    const onLoss = () => {
+      if (stopped || committing) return;
+      lost = true;
+      if (!ready) return;
+      stopSession();
+      onUnavailable?.();
+    };
+    socket.addEventListener("error", onLoss);
+    socket.addEventListener("close", onLoss);
+
     socket.addEventListener("message", (event: MessageEvent<string | ArrayBuffer>) => {
       if (typeof event.data !== "string") return;
       let parsedJson: unknown;
@@ -173,7 +193,7 @@ export async function startLiveTranscriptionSession({
     });
 
     capture = await capturePromise;
-    if (!capture) {
+    if (!capture || lost) {
       stopSession();
       return null;
     }
@@ -183,9 +203,15 @@ export async function startLiveTranscriptionSession({
     }
     pendingAudio.length = 0;
 
+    if (lost) {
+      stopSession();
+      return null;
+    }
+
     maxTimer = setTimeout(() => {
       stopSession();
     }, MAX_LISTEN_MS);
+    ready = true;
   } catch {
     stopSession();
     return null;
@@ -196,6 +222,7 @@ export async function startLiveTranscriptionSession({
     setPaused,
     commit: () => {
       if (socket && socket.readyState === WebSocketImpl.OPEN) {
+        committing = true;
         socket.send(closeStreamMessage());
       }
     },

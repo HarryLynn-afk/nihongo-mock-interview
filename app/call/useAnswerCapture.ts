@@ -102,9 +102,19 @@ export function useAnswerCapture({
   // The live session lives for the whole Speak attempt; pause is forwarded,
   // so resuming never reconnects or loses audio.
   useEffect(() => {
-    if (!liveStt || !speakActive) return;
+    if (!liveStt || !speakActive || liveFailed) return;
     let cancelled = false;
     void startLiveTranscriptionSession({
+      onUnavailable: () => {
+        if (cancelled) return;
+        const transcript = liveSessionRef.current?.getTranscript();
+        if (transcript) {
+          transcriptBaseRef.current = transcript;
+          setSpokenCaption(transcript);
+        }
+        liveSessionRef.current = null;
+        setLiveFailed(true);
+      },
       onEvent: (event) => {
         if (event.kind === "delta") {
           setSpokenCaption(
@@ -136,7 +146,7 @@ export function useAnswerCapture({
       liveSessionRef.current?.stop();
       liveSessionRef.current = null;
     };
-  }, [liveStt, speakActive]);
+  }, [liveStt, speakActive, liveFailed]);
 
   useEffect(() => {
     speakPausedRef.current = speakPaused;

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import {
   SPEAK_IDLE_PAUSE_MS,
   useAnswerCapture,
@@ -10,6 +10,132 @@ describe("useAnswerCapture", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+
+  it("starts browser recognition when the Deepgram token request rejects", async () => {
+    const startBrowser = vi.fn();
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult = null;
+      onend = null;
+      onerror = null;
+      start = startBrowser;
+      stop = vi.fn();
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+    vi.stubGlobal("WebSocket", class {});
+    vi.stubGlobal("AudioContext", class {});
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+
+    const { result } = renderHook(() => useAnswerCapture({
+      active: true,
+      micOn: true,
+      liveStt: true,
+      onSubmit: vi.fn(),
+    }));
+    act(() => result.current.onSpeakAnswer());
+
+    await waitFor(() => expect(startBrowser).toHaveBeenCalledOnce());
+  });
+
+  it("keeps browser fallback and the live transcript after a socket loss and mic toggle", async () => {
+    const sockets: FakeSocket[] = [];
+    class FakeSocket {
+      static OPEN = 1;
+      readyState = 0;
+      binaryType = "";
+      listeners: Record<string, Array<(event?: { data: string }) => void>> = {};
+      constructor() {
+        sockets.push(this);
+        queueMicrotask(() => {
+          this.readyState = 1;
+          this.emit("open");
+        });
+      }
+      addEventListener(type: string, listener: (event?: { data: string }) => void) {
+        (this.listeners[type] ??= []).push(listener);
+      }
+      emit(type: string, data = "") {
+        this.listeners[type]?.forEach((listener) => listener({ data }));
+      }
+      send() {}
+      close() {
+        this.readyState = 3;
+        this.emit("close");
+      }
+    }
+    const browser: Array<{
+      start: ReturnType<typeof vi.fn>;
+      onresult: ((event: { results: unknown[] }) => void) | null;
+    }> = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      onend = null;
+      onerror = null;
+      start = vi.fn();
+      stop = vi.fn();
+      constructor() {
+        browser.push(this);
+      }
+    }
+    class FakeAudioContext {
+      sampleRate = 16000;
+      destination = {};
+      createMediaStreamSource() { return { connect() {} }; }
+      createScriptProcessor() { return { connect() {}, disconnect() {}, onaudioprocess: null }; }
+      createGain() { return { gain: { value: 1 }, connect() {} }; }
+      close() {}
+    }
+    vi.stubGlobal("WebSocket", FakeSocket);
+    vi.stubGlobal("AudioContext", FakeAudioContext);
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+    vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: async () => ({ getTracks: () => [] }) } });
+    const fetchToken = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ accessToken: "dg-jwt" }) });
+    vi.stubGlobal("fetch", fetchToken);
+
+    const onSubmit = vi.fn();
+    const { result, rerender } = renderHook(({ micOn }) => useAnswerCapture({
+      active: true,
+      micOn,
+      liveStt: true,
+      onSubmit,
+    }), { initialProps: { micOn: true } });
+    act(() => result.current.onSpeakAnswer());
+    await waitFor(() => expect(sockets[0]?.readyState).toBe(1));
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+
+    act(() => {
+      sockets[0]?.emit("message", JSON.stringify({
+        type: "Results",
+        is_final: true,
+        channel: { alternatives: [{ transcript: "こんにちは。" }] },
+      }));
+      sockets[0]?.emit("close");
+    });
+    await waitFor(() => expect(browser).toHaveLength(1));
+    expect(browser[0]?.start).toHaveBeenCalledOnce();
+    expect(result.current.liveCaption).toBe("こんにちは。");
+
+    rerender({ micOn: false });
+    rerender({ micOn: true });
+    expect(browser).toHaveLength(2);
+    expect(browser[1]?.start).toHaveBeenCalledOnce();
+    expect(fetchToken).toHaveBeenCalledOnce();
+
+    act(() => browser[1]?.onresult?.({
+      results: [Object.assign([{ transcript: "よろしくお願いします。" }], { isFinal: true })],
+    }));
+    act(() => result.current.onSubmitClick());
+    expect(onSubmit).toHaveBeenCalledWith({
+      status: "answered",
+      transcript: "こんにちは。よろしくお願いします。",
+      pushbackCount: 0,
+    });
   });
 
   it("auto-pauses Speak after idle silence with no new transcript", () => {

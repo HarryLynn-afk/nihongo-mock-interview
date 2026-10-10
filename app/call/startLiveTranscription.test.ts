@@ -101,7 +101,7 @@ function ControllableListenSocket({
 }: {
   onSend?: (data: ArrayBuffer | string) => void;
   onClose?: () => void;
-  onConstruct?: (socket: { open: () => void }) => void;
+  onConstruct?: (socket: { open: () => void; emit: (type: "error" | "close") => void }) => void;
 }) {
   return class {
     static OPEN = 1;
@@ -124,10 +124,63 @@ function ControllableListenSocket({
       this.readyState = 1;
       (this.listeners.open ?? []).forEach((listener) => listener());
     }
+    emit(type: "error" | "close") {
+      (this.listeners[type] ?? []).forEach((listener) => listener());
+    }
   } as unknown as typeof WebSocket;
 }
 
 describe("startLiveTranscriptionSession", () => {
+  it("does not report a committed stream closing as unavailable", async () => {
+    const onUnavailable = vi.fn();
+    let socket: { open: () => void; emit: (type: "error" | "close") => void } | null = null;
+    const sessionPromise = startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      onUnavailable,
+      fetchImpl: tokenFetch(true),
+      getUserMedia: emptyMic,
+      WebSocketImpl: ControllableListenSocket({
+        onConstruct: (instance) => { socket = instance; },
+      }),
+      AudioContextImpl: FakeAudioContext(),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    socket?.open();
+    const session = await sessionPromise;
+    expect(session).not.toBeNull();
+
+    session?.commit();
+    socket?.emit("close");
+    expect(onUnavailable).not.toHaveBeenCalled();
+    session?.stop();
+  });
+
+  it("reports a socket loss once after the session opens", async () => {
+    const onUnavailable = vi.fn();
+    let socket: { open: () => void; emit: (type: "error" | "close") => void } | null = null;
+    const sessionPromise = startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      onUnavailable,
+      fetchImpl: tokenFetch(true),
+      getUserMedia: emptyMic,
+      WebSocketImpl: ControllableListenSocket({
+        onConstruct: (instance) => { socket = instance; },
+      }),
+      AudioContextImpl: FakeAudioContext(),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    socket?.open();
+    const session = await sessionPromise;
+    expect(session).not.toBeNull();
+
+    socket?.emit("close");
+    socket?.emit("error");
+    expect(onUnavailable).toHaveBeenCalledOnce();
+    session?.stop();
+  });
+
   it("returns null when the Deepgram token route is unavailable", async () => {
     const session = await startLiveTranscriptionSession({
       onEvent: vi.fn(),
