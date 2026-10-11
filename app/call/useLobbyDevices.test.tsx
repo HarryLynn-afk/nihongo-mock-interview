@@ -51,6 +51,119 @@ describe("useLobbyDevices", () => {
     expect(getUserMedia).not.toHaveBeenCalled();
   });
 
+  it("stops a microphone request that resolves after unmount", async () => {
+    const stream = makeStream(["audio"]);
+    let resolve!: (stream: MediaStream) => void;
+    getUserMedia.mockReturnValue(new Promise<MediaStream>((done) => { resolve = done; }));
+    const { result, unmount } = renderHook(() => useLobbyDevices({ active: true }));
+    act(() => { result.current.toggleMic(); });
+    unmount();
+    await act(async () => { resolve(stream); });
+    expect(stream.getTracks()[0].stop).toHaveBeenCalledOnce();
+  });
+
+  it("stops a camera request that resolves after unmount", async () => {
+    const stream = makeStream(["video"]);
+    let resolve!: (stream: MediaStream) => void;
+    getUserMedia.mockReturnValue(new Promise<MediaStream>((done) => { resolve = done; }));
+    const { result, unmount } = renderHook(() => useLobbyDevices({ active: true }));
+    const video = document.createElement("video");
+    act(() => {
+      result.current.videoRef(video);
+      result.current.toggleCamera();
+    });
+    unmount();
+    await act(async () => { resolve(stream); });
+    expect(stream.getTracks()[0].stop).toHaveBeenCalledOnce();
+    expect(video.srcObject).not.toBe(stream);
+  });
+
+  it("keeps the newest microphone when an older request resolves after toggling", async () => {
+    const oldStream = makeStream(["audio"]);
+    const newStream = makeStream(["audio"]);
+    let resolve!: (stream: MediaStream) => void;
+    getUserMedia.mockReturnValueOnce(new Promise<MediaStream>((done) => { resolve = done; }))
+      .mockResolvedValueOnce(newStream);
+    const { result } = renderHook(() => useLobbyDevices({ active: true }));
+    act(() => {
+      result.current.toggleMic();
+      result.current.toggleMic();
+      result.current.toggleMic();
+    });
+    await waitFor(() => { expect(result.current.micStream).toBe(newStream); });
+    await act(async () => { resolve(oldStream); });
+    expect(oldStream.getTracks()[0].stop).toHaveBeenCalledOnce();
+    expect(newStream.getTracks()[0].stop).not.toHaveBeenCalled();
+    expect(result.current.micStream).toBe(newStream);
+  });
+
+  it("keeps the newest camera when an older request resolves after reset", async () => {
+    const oldStream = makeStream(["video"]);
+    const newStream = makeStream(["video"]);
+    let resolve!: (stream: MediaStream) => void;
+    getUserMedia.mockReturnValueOnce(new Promise<MediaStream>((done) => { resolve = done; }))
+      .mockResolvedValueOnce(newStream);
+    const { result } = renderHook(() => useLobbyDevices({ active: true }));
+    const video = document.createElement("video");
+    act(() => {
+      result.current.videoRef(video);
+      result.current.toggleCamera();
+      result.current.resetDevices();
+      result.current.toggleCamera();
+    });
+    await waitFor(() => { expect(video.srcObject).toBe(newStream); });
+    await act(async () => { resolve(oldStream); });
+    expect(oldStream.getTracks()[0].stop).toHaveBeenCalledOnce();
+    expect(newStream.getTracks()[0].stop).not.toHaveBeenCalled();
+    expect(video.srcObject).toBe(newStream);
+  });
+
+  it("ignores a microphone failure from before the lobby closed", async () => {
+    const newStream = makeStream(["audio"]);
+    let reject!: (error: unknown) => void;
+    getUserMedia.mockReturnValueOnce(new Promise<MediaStream>((_, fail) => { reject = fail; }))
+      .mockResolvedValueOnce(newStream);
+    const { result, rerender } = renderHook(({ active }) => useLobbyDevices({ active }),
+      { initialProps: { active: true } });
+    act(() => { result.current.toggleMic(); });
+    rerender({ active: false });
+    rerender({ active: true });
+    act(() => { result.current.toggleMic(); });
+    await waitFor(() => { expect(result.current.micStream).toBe(newStream); });
+    await act(async () => { reject(new DOMException("Denied", "NotAllowedError")); });
+    expect(newStream.getTracks()[0].stop).not.toHaveBeenCalled();
+    expect(result.current.micOn).toBe(true);
+    expect(result.current.micErrorName).toBeNull();
+    expect(result.current.micStream).toBe(newStream);
+  });
+
+  it("ignores a pending microphone permission check after reset", async () => {
+    let resolvePermission!: (state: { state: string }) => void;
+    const { result } = renderHook(() => useLobbyDevices({ active: true }));
+    await act(async () => {});
+    queryMicrophone.mockReturnValueOnce(new Promise<{ state: string }>((done) => { resolvePermission = done; }));
+    getUserMedia.mockRejectedValueOnce(new DOMException("Denied", "NotAllowedError"));
+    await act(async () => { result.current.toggleMic(); });
+    expect(result.current.micErrorName).toBe("NotAllowedError");
+    act(() => { result.current.resetDevices(); });
+    await act(async () => { resolvePermission({ state: "denied" }); });
+    expect(result.current.micBlocked).toBe(false);
+    expect(result.current.micErrorName).toBeNull();
+  });
+
+  it("ignores a pending microphone permission check after leaving the lobby", async () => {
+    let resolvePermission!: (state: { state: string }) => void;
+    const { result, rerender } = renderHook(({ active }) => useLobbyDevices({ active }),
+      { initialProps: { active: true } });
+    await act(async () => {});
+    queryMicrophone.mockReturnValueOnce(new Promise<{ state: string }>((done) => { resolvePermission = done; }));
+    getUserMedia.mockRejectedValueOnce(new DOMException("Denied", "NotAllowedError"));
+    await act(async () => { result.current.toggleMic(); });
+    rerender({ active: false });
+    await act(async () => { resolvePermission({ state: "denied" }); });
+    expect(result.current.micBlocked).toBe(false);
+  });
+
   it("exposes the live microphone stream while the mic is on", async () => {
     const audioStream = makeStream(["audio"]);
     getUserMedia.mockImplementation(async (constraints: MediaStreamConstraints) =>

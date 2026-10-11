@@ -75,7 +75,14 @@ export function useLobbyDevices({ active }: { active: boolean }) {
   const [micStream, setMicStream] = useState<MediaStream | null>(null);
   const cameraOnRef = useRef(false);
   const micOnRef = useRef(false);
+  const micRequestRef = useRef(0);
+  const cameraRequestRef = useRef(0);
   const micBlockedRef = useRef(false);
+
+  const invalidateDeviceRequests = useCallback(() => {
+    ++cameraRequestRef.current;
+    ++micRequestRef.current;
+  }, []);
 
   const attachPreview = useCallback((stream: MediaStream | null) => {
     const video = videoElRef.current;
@@ -131,6 +138,9 @@ export function useLobbyDevices({ active }: { active: boolean }) {
   useEffect(() => {
     if (active) {
       return () => {
+        invalidateDeviceRequests();
+        cameraOnRef.current = false;
+        micOnRef.current = false;
         stopStream(videoStreamRef.current);
         stopStream(audioStreamRef.current);
         videoStreamRef.current = null;
@@ -145,9 +155,10 @@ export function useLobbyDevices({ active }: { active: boolean }) {
     cameraOnRef.current = false;
     micOnRef.current = false;
     attachPreview(null);
-  }, [active, attachPreview]);
+  }, [active, attachPreview, invalidateDeviceRequests]);
 
   const resetDevices = useCallback(() => {
+    invalidateDeviceRequests();
     stopStream(videoStreamRef.current);
     stopStream(audioStreamRef.current);
     videoStreamRef.current = null;
@@ -162,9 +173,10 @@ export function useLobbyDevices({ active }: { active: boolean }) {
     setMicErrorName(null);
     setMicStream(null);
     attachPreview(null);
-  }, [attachPreview]);
+  }, [attachPreview, invalidateDeviceRequests]);
 
   const toggleCamera = useCallback(() => {
+    const request = ++cameraRequestRef.current;
     if (cameraOnRef.current) {
       cameraOnRef.current = false;
       setCameraOn(false);
@@ -180,7 +192,7 @@ export function useLobbyDevices({ active }: { active: boolean }) {
     setCameraOn(true);
 
     void openNavigatorCamera().then((result) => {
-      if (!cameraOnRef.current) {
+      if (!cameraOnRef.current || request !== cameraRequestRef.current) {
         if ("stream" in result) stopStream(result.stream);
         return;
       }
@@ -204,6 +216,7 @@ export function useLobbyDevices({ active }: { active: boolean }) {
   }, [attachPreview]);
 
   const toggleMic = useCallback(() => {
+    const request = ++micRequestRef.current;
     if (micOnRef.current) {
       micOnRef.current = false;
       setMicOn(false);
@@ -227,7 +240,7 @@ export function useLobbyDevices({ active }: { active: boolean }) {
     void navigator.mediaDevices
       .getUserMedia({ audio: true })
       .then((stream) => {
-        if (!micOnRef.current) {
+        if (!micOnRef.current || request !== micRequestRef.current) {
           stopStream(stream);
           return;
         }
@@ -238,6 +251,7 @@ export function useLobbyDevices({ active }: { active: boolean }) {
         setMicErrorName(null);
       })
       .catch(async (error: unknown) => {
+        if (!micOnRef.current || request !== micRequestRef.current) return;
         micOnRef.current = false;
         stopStream(audioStreamRef.current);
         audioStreamRef.current = null;
@@ -245,6 +259,7 @@ export function useLobbyDevices({ active }: { active: boolean }) {
         setMicOn(false);
         setMicErrorName(deviceErrorName(error));
         const state = await queryMicrophoneState();
+        if (request !== micRequestRef.current) return;
         if (state === "denied") setMicBlocked(true);
       });
   }, []);

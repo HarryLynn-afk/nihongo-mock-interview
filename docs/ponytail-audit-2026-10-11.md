@@ -4,7 +4,7 @@ What this repo does: NihonGo runs voice-only Japanese interview practice, grades
 
 Status: these 12 findings were open at audit time. This audit changed no application code.
 
-Follow-up: finding **1 is fixed** on 2026-10-11; findings 2–12 remain open. The fix passed all **652 tests** across 99 files, lint, and TypeScript checking. Real browser microphone behavior has not been checked.
+Follow-up: findings **1 and 2 are fixed** on 2026-10-11; findings 3–12 remain open. The fixes passed all **659 tests** across 99 files, lint, and TypeScript checking. Real browser microphone and camera behavior has not been checked.
 
 ## Relationship to the previous fixes
 
@@ -36,6 +36,7 @@ These are additional findings after the fixes for [the 2026-10-09 audit](ponytai
    - **Problem:** Start the microphone, navigate away, then let permission resolve. Cleanup stops existing streams but leaves the pending request marked active; its new stream is never stopped. The camera callback follows the same pattern.
    - **Fix:** Cancel pending device requests during cleanup and stop streams returned afterward. Test navigation while permission is pending.
    - **If we skip it:** Devices can remain active after their controls disappear.
+   - **Resolution (2026-10-11):** Independent microphone and camera request versions discard stale successes and failures. Reset and lobby cleanup invalidate pending requests; late streams are stopped, and delayed microphone permission checks cannot update state after reset or departure. Seven test-first regressions in [useLobbyDevices.test.tsx](../app/call/useLobbyDevices.test.tsx) cover these lifecycle races. Device requests still start directly from toggle clicks for Safari permissions.
 
 3. **Mic off/on drops the beginning of an answer when submitted** ([useAnswerCapture.ts:292](../app/call/useAnswerCapture.ts#L292)).
    - **What this is:** Submit chooses the transcript sent for grading.
