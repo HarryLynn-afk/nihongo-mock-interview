@@ -4,7 +4,7 @@ What this repo does: NihonGo runs voice-only Japanese interview practice, grades
 
 Status: these 12 findings were open at audit time. This audit changed no application code.
 
-Follow-up: findings **1–5 are fixed** on 2026-10-11; findings 6–12 remain open. The fixes passed all **666 tests** across 99 files, lint, and TypeScript checking. Real browser microphone, camera, and speech-recognition behavior has not been checked.
+Follow-up: findings **1–6 are fixed** on 2026-10-11; findings 7–12 remain open. The fixes passed all **671 tests** across 99 files, lint, and TypeScript checking. Real browser microphone, camera, and speech-recognition behavior has not been checked.
 
 ## Relationship to the previous fixes
 
@@ -64,6 +64,7 @@ These are additional findings after the fixes for [the 2026-10-09 audit](ponytai
    - **Problem:** Neither the browser token request nor the server's grant request has a timeout. With an unresolved request, no browser recognition starts—even after 30 seconds in the temporary check.
    - **Fix:** Bound both requests and return the existing unavailable result on timeout. Test a request that stays pending, separately from one that rejects.
    - **If we skip it:** A slow connection leaves students speaking without transcription.
+   - **Resolution (2026-10-11):** The browser token request aborts after 5s (including response parsing) and the server grant request after 3s, returning the existing unavailable result so browser fallback starts. Five test-first regressions cover pending, body-stalled, and rejecting requests in [startLiveTranscription.test.ts](../app/call/startLiveTranscription.test.ts) and [mintListenToken.test.ts](../app/api/deepgram-stt/mintListenToken.test.ts).
 
 7. **The documented database setup cannot run the current app** ([README.md:89](../README.md#L89), [migration-check instructions](supabase-migration-check.md), [migration-check query](supabase-migration-check.sql)).
    - **What this is:** Setup instructions tell a new maintainer which migrations to apply.

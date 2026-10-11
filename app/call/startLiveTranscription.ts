@@ -41,6 +41,29 @@ function waitForListenOpen(
   });
 }
 
+async function fetchListenToken(
+  fetchImpl: typeof fetch,
+  timeoutMs: number,
+): Promise<string | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetchImpl("/api/deepgram-stt", {
+      method: "POST",
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const body: unknown = await res.json();
+    if (typeof body !== "object" || body === null) return null;
+    const accessToken = (body as { accessToken?: unknown }).accessToken;
+    return typeof accessToken === "string" ? accessToken : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function startLiveTranscriptionSession({
   onEvent,
   onUnavailable,
@@ -50,6 +73,7 @@ export async function startLiveTranscriptionSession({
   AudioContextImpl = (
     globalThis as typeof globalThis & { AudioContext?: new () => PcmAudioContext }
   ).AudioContext,
+  tokenTimeoutMs = 5000,
 }: {
   onEvent: (event: ParsedTranscriptionEvent) => void;
   onUnavailable?: () => void;
@@ -57,27 +81,14 @@ export async function startLiveTranscriptionSession({
   getUserMedia?: () => Promise<MediaStream>;
   WebSocketImpl?: typeof WebSocket;
   AudioContextImpl?: new () => PcmAudioContext;
+  tokenTimeoutMs?: number;
 }): Promise<LiveTranscriptionSession | null> {
   if (typeof WebSocketImpl !== "function" || typeof AudioContextImpl !== "function") {
     return null;
   }
 
-  let tokenRes: Response;
-  try {
-    tokenRes = await fetchImpl("/api/deepgram-stt", { method: "POST" });
-  } catch {
-    return null;
-  }
-  if (!tokenRes.ok) return null;
-  let tokenBody: unknown;
-  try {
-    tokenBody = await tokenRes.json();
-  } catch {
-    return null;
-  }
-  if (typeof tokenBody !== "object" || tokenBody === null) return null;
-  const accessToken = (tokenBody as { accessToken?: unknown }).accessToken;
-  if (typeof accessToken !== "string") return null;
+  const accessToken = await fetchListenToken(fetchImpl, tokenTimeoutMs);
+  if (accessToken === null) return null;
 
   let finalized = "";
   let interim = "";

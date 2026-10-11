@@ -45,4 +45,34 @@ describe("mintDeepgramListenToken", () => {
       }),
     ).resolves.toBeNull();
   });
+
+  it("returns null when the grant request rejects", async () => {
+    const fetchImpl = vi.fn().mockRejectedValue(new TypeError("network"));
+
+    await expect(
+      mintDeepgramListenToken({
+        apiKey: "dg-x",
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      }),
+    ).resolves.toBeNull();
+  });
+
+  it("returns null when the grant request stays pending", async () => {
+    const fetchImpl = vi.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener("abort", () =>
+            reject(new DOMException("aborted", "AbortError")),
+          );
+        }),
+    );
+
+    await expect(
+      mintDeepgramListenToken({
+        apiKey: "dg-x",
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+        timeoutMs: 10,
+      }),
+    ).resolves.toBeNull();
+  });
 });

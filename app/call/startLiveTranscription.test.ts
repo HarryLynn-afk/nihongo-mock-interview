@@ -291,6 +291,64 @@ describe("startLiveTranscriptionSession", () => {
     expect(session).toBeNull();
   });
 
+  it("returns null when the Deepgram token request rejects", async () => {
+    const session = await startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      fetchImpl: vi
+        .fn()
+        .mockRejectedValue(new TypeError("network")) as unknown as typeof fetch,
+      WebSocketImpl: FakeListenSocket({ outcome: "open" }),
+      AudioContextImpl: FakeAudioContext(),
+    });
+
+    expect(session).toBeNull();
+  });
+
+  it("returns null when the Deepgram token request stays pending", async () => {
+    const fetchImpl = vi.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener("abort", () =>
+            reject(new DOMException("aborted", "AbortError")),
+          );
+        }),
+    );
+
+    const session = await startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      tokenTimeoutMs: 10,
+      WebSocketImpl: FakeListenSocket({ outcome: "open" }),
+      AudioContextImpl: FakeAudioContext(),
+    });
+
+    expect(session).toBeNull();
+  });
+
+  it("returns null when the Deepgram token response body stays pending", async () => {
+    const fetchImpl = vi.fn((_url: string, init: RequestInit) =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          new Promise((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () =>
+              reject(new DOMException("aborted", "AbortError")),
+            );
+          }),
+      }),
+    );
+
+    const session = await startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      tokenTimeoutMs: 10,
+      WebSocketImpl: FakeListenSocket({ outcome: "open" }),
+      AudioContextImpl: FakeAudioContext(),
+    });
+
+    expect(session).toBeNull();
+  });
+
   it("returns null when the listen socket errors before it opens", async () => {
     const session = await startLiveTranscriptionSession({
       onEvent: vi.fn(),
