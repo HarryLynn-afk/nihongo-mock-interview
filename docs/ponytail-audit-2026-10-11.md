@@ -4,7 +4,7 @@ What this repo does: NihonGo runs voice-only Japanese interview practice, grades
 
 Status: these 12 findings were open at audit time. This audit changed no application code.
 
-Follow-up: findings **1–3 are fixed** on 2026-10-11; findings 4–12 remain open. The fixes passed all **663 tests** across 99 files, lint, and TypeScript checking. Real browser microphone and camera behavior has not been checked.
+Follow-up: findings **1–4 are fixed** on 2026-10-11; findings 5–12 remain open. The fixes passed all **665 tests** across 99 files, lint, and TypeScript checking. Real browser microphone, camera, and speech-recognition behavior has not been checked.
 
 ## Relationship to the previous fixes
 
@@ -50,6 +50,7 @@ These are additional findings after the fixes for [the 2026-10-09 audit](ponytai
    - **Problem:** When one event finalizes two segments, the handler reads only the last one. The temporary check submitted sentence B and lost sentence A.
    - **Fix:** Process every changed result from `resultIndex`, preserving final text and replacing interim text. [MDN documents this event behavior](https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognitionEvent/resultIndex).
    - **If we skip it:** The fallback can quietly produce incomplete answers.
+   - **Resolution (2026-10-11):** Browser recognition appends final segments from `resultIndex` and rebuilds interim text from the complete current results list. Earlier final results are not appended again, and revised or removed interim text replaces the caption. Two test-first regressions in [useAnswerCapture.test.ts](../app/call/useAnswerCapture.test.ts) cover multiple final segments, partial interim updates, interim removal, finalization without duplication, and recognition restart.
 
 5. **Sponsor-job feedback becomes advice about the student's goals** ([critiqueCopy.ts:76](../lib/content/critiqueCopy.ts#L76)).
    - **What this is:** The report adds optional advice to answers needing no correction.

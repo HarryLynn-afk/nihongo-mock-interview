@@ -23,7 +23,10 @@ type SpeechRecognitionLike = {
   lang: string;
   interimResults: boolean;
   continuous: boolean;
-  onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null;
+  onresult: ((event: {
+    resultIndex?: number;
+    results: ArrayLike<{ 0: { transcript: string }; isFinal?: boolean }>;
+  }) => void) | null;
   onend: (() => void) | null;
   onerror: ((event: { error?: string }) => void) | null;
   start: () => void;
@@ -177,16 +180,19 @@ export function useAnswerCapture({
       recognition.interimResults = true;
       recognition.continuous = true;
       recognition.onresult = (event) => {
-        const last = event.results[event.results.length - 1];
-        const text = last[0].transcript;
-        const result = last as { isFinal?: boolean };
-        if (result.isFinal) {
-          transcriptBaseRef.current += text;
-          setSpokenCaption(transcriptBaseRef.current);
-        } else {
-          setSpokenCaption(transcriptBaseRef.current + text);
+        let interim = "";
+        let changedText = "";
+        const resultIndex = event.resultIndex ?? 0;
+        for (let i = 0; i < event.results.length; i++) {
+          const result = event.results[i];
+          const text = result[0].transcript;
+          if (result.isFinal) {
+            if (i >= resultIndex) transcriptBaseRef.current += text;
+          } else interim += text;
+          if (i >= resultIndex) changedText += text;
         }
-        if (text) setPushbackVisible(false);
+        setSpokenCaption(transcriptBaseRef.current + interim);
+        if (changedText) setPushbackVisible(false);
       };
       recognition.onerror = (event) => {
         const error = event.error ?? "unknown";

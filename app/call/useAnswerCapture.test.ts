@@ -50,10 +50,82 @@ function installLiveBrowser() {
   return sockets;
 }
 
+function installBrowserRecognition() {
+  const created: FakeSpeechRecognition[] = [];
+  class FakeSpeechRecognition {
+    lang = "";
+    interimResults = false;
+    continuous = false;
+    onresult: ((event: { resultIndex: number; results: unknown[] }) => void) | null = null;
+    onend: (() => void) | null = null;
+    onerror = null;
+    start = vi.fn();
+    stop = vi.fn();
+    constructor() { created.push(this); }
+  }
+  vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+  return created;
+}
+
+function speechResult(transcript: string, isFinal = true) {
+  return Object.assign([{ transcript }], { isFinal });
+}
+
 describe("useAnswerCapture", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+
+  it("submits every final segment from one browser recognition event", () => {
+    const browser = installBrowserRecognition();
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() => useAnswerCapture({ active: true, micOn: true, onSubmit }));
+    act(() => result.current.onSpeakAnswer());
+    act(() => browser[0].onresult?.({
+      resultIndex: 0,
+      results: [speechResult("こんにちは。"), speechResult("私は学生です。")],
+    }));
+    expect(result.current.liveCaption).toBe("こんにちは。私は学生です。");
+    act(() => result.current.onSubmitClick());
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      status: "answered", transcript: "こんにちは。私は学生です。", pushbackCount: 0,
+    });
+  });
+
+  it("replaces changed interim speech while keeping unchanged earlier segments", () => {
+    const browser = installBrowserRecognition();
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() => useAnswerCapture({ active: true, micOn: true, onSubmit }));
+    act(() => result.current.onSpeakAnswer());
+    act(() => browser[0].onresult?.({
+      resultIndex: 0,
+      results: [speechResult("こんにちは。"), speechResult("私は", false), speechResult("がく", false)],
+    }));
+    expect(result.current.liveCaption).toBe("こんにちは。私はがく");
+    act(() => browser[0].onresult?.({
+      resultIndex: 2,
+      results: [speechResult("こんにちは。"), speechResult("私は", false), speechResult("学生です。", false)],
+    }));
+    expect(result.current.liveCaption).toBe("こんにちは。私は学生です。");
+    act(() => browser[0].onresult?.({
+      resultIndex: 2,
+      results: [speechResult("こんにちは。"), speechResult("私は", false)],
+    }));
+    expect(result.current.liveCaption).toBe("こんにちは。私は");
+    const finalResults = [speechResult("こんにちは。"), speechResult("私は学生です。")];
+    act(() => browser[0].onresult?.({ resultIndex: 1, results: finalResults }));
+    act(() => browser[0].onresult?.({ resultIndex: 2, results: finalResults }));
+    expect(result.current.liveCaption).toBe("こんにちは。私は学生です。");
+    act(() => browser[0].onend?.());
+    expect(browser[0].start).toHaveBeenCalledTimes(2);
+    act(() => browser[0].onresult?.({
+      resultIndex: 0, results: [speechResult("よろしくお願いします。")],
+    }));
+    act(() => result.current.onSubmitClick());
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      status: "answered", transcript: "こんにちは。私は学生です。よろしくお願いします。", pushbackCount: 0,
+    });
   });
 
   it("submits both live sessions exactly once after microphone off/on", async () => {
