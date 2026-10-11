@@ -15,19 +15,3 @@ export async function lookupJoinLink(code: string): Promise<JoinLinkRecord | nul
     maxSignups: data.max_signups as number,
   };
 }
-
-export async function consumeInviteSlot(code: string): Promise<boolean> {
-  const admin = createStudyAdminClient();
-  if (!admin) return false;
-  const { data, error } = await admin.rpc("consume_invite_slot", {
-    invite_code: code,
-  });
-  if (error) return false;
-  return data === true;
-}
-
-export async function addInvitedEmail(email: string): Promise<void> {
-  const admin = createStudyAdminClient();
-  if (!admin) return;
-  await admin.from("invited_emails").upsert({ email }, { onConflict: "email" });
-}

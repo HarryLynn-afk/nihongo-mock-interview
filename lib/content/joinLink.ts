@@ -18,10 +18,6 @@ export type JoinPageView = {
   showGoogle: boolean;
 };
 
-export type JoinClaimResult =
-  | { ok: true; consumeSlot: boolean }
-  | { ok: false; status: "full" | "unknown" };
-
 export function readJoinFrom(search: string): string | null {
   const query = search.startsWith("?") ? search.slice(1) : search;
   const from = new URLSearchParams(query).get("from")?.trim();
@@ -39,21 +35,6 @@ export function joinPageView(
     return { status: "full", showGoogle: false };
   }
   return { status: "open", showGoogle: true };
-}
-
-export function joinClaimResult(
-  from: string | null | undefined,
-  link: JoinLinkRecord | null,
-  alreadyParticipant: boolean,
-): JoinClaimResult {
-  if (alreadyParticipant) {
-    return { ok: true, consumeSlot: false };
-  }
-  const view = joinPageView(from, link);
-  if (view.status === "open") {
-    return { ok: true, consumeSlot: true };
-  }
-  return { ok: false, status: view.status };
 }
 
 export async function startJoinGoogle({
@@ -76,34 +57,4 @@ export async function startJoinGoogle({
     `${origin}/auth/callback?from=${encodeURIComponent(from)}`,
   );
   return { url };
-}
-
-export async function applyJoinClaim({
-  from,
-  email,
-  alreadyParticipant,
-  lookup,
-  addToWaitlist,
-  consumeSlot,
-}: {
-  from: string | null;
-  email: string;
-  alreadyParticipant: boolean;
-  lookup: (code: string) => Promise<JoinLinkRecord | null>;
-  addToWaitlist: (email: string) => Promise<void>;
-  consumeSlot: (code: string) => Promise<boolean>;
-}): Promise<JoinClaimResult> {
-  const link = from ? await lookup(from) : null;
-  const result = joinClaimResult(from, link, alreadyParticipant);
-  if (!result.ok || !from) {
-    return result;
-  }
-  if (result.consumeSlot) {
-    const consumed = await consumeSlot(from);
-    if (!consumed) {
-      return { ok: false, status: "full" };
-    }
-    await addToWaitlist(email);
-  }
-  return result;
 }
