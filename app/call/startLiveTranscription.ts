@@ -87,6 +87,7 @@ export async function startLiveTranscriptionSession({
   const pendingAudio: ArrayBuffer[] = [];
   let paused = false;
   let stopped = false;
+  let captureVersion = 0;
   let ready = false;
   let lost = false;
   let committing = false;
@@ -109,11 +110,12 @@ export async function startLiveTranscriptionSession({
     socket = null;
   }
 
-  function startCapture(): Promise<PcmCapture | null> {
+  function startCapture(version = captureVersion): Promise<PcmCapture | null> {
     return startPcmCapture({
       getUserMedia,
       AudioContextImpl,
       onChunk: (samples, sampleRate) => {
+        if (stopped || paused || version !== captureVersion) return;
         const pcm = floatToLinear16(downsampleTo16k(samples, sampleRate));
         if (!socket || socket.readyState !== WebSocketImpl.OPEN) {
           pendingAudio.push(pcm);
@@ -125,8 +127,9 @@ export async function startLiveTranscriptionSession({
   }
 
   function setPaused(next: boolean) {
-    if (next === paused) return;
+    if (stopped || next === paused) return;
     paused = next;
+    const version = ++captureVersion;
     if (paused) {
       capture?.stop();
       capture = null;
@@ -141,8 +144,8 @@ export async function startLiveTranscriptionSession({
       clearInterval(keepAliveTimer);
       keepAliveTimer = undefined;
     }
-    void startCapture().then((resumed) => {
-      if (stopped) {
+    void startCapture(version).then((resumed) => {
+      if (stopped || paused || version !== captureVersion) {
         resumed?.stop();
         return;
       }

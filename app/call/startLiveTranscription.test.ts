@@ -131,6 +131,105 @@ function ControllableListenSocket({
 }
 
 describe("startLiveTranscriptionSession", () => {
+  it("stops pending capture and ignores pause changes after Stop", async () => {
+    const stopTrack = vi.fn();
+    let resolveMic!: (stream: MediaStream) => void;
+    const pendingMic = new Promise<MediaStream>((resolve) => { resolveMic = resolve; });
+    const getUserMedia = vi.fn().mockImplementationOnce(emptyMic).mockReturnValue(pendingMic);
+    const session = await startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      fetchImpl: tokenFetch(true),
+      getUserMedia,
+      WebSocketImpl: FakeListenSocket({ outcome: "open" }),
+      AudioContextImpl: FakeAudioContext(),
+    });
+    expect(session).not.toBeNull();
+    try {
+      session!.setPaused(true);
+      session!.setPaused(false);
+      session!.stop();
+      session!.setPaused(true);
+      session!.setPaused(false);
+      resolveMic({ getTracks: () => [{ stop: stopTrack }] } as unknown as MediaStream);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(getUserMedia).toHaveBeenCalledTimes(2);
+      expect(stopTrack).toHaveBeenCalledOnce();
+    } finally {
+      session?.stop();
+    }
+  });
+
+  it("keeps the newest resume when older microphone requests finish later", async () => {
+    const staleStop = vi.fn();
+    const newestStop = vi.fn();
+    let resolveStale!: (stream: MediaStream) => void;
+    let resolveNewest!: (stream: MediaStream) => void;
+    const staleMic = new Promise<MediaStream>((resolve) => { resolveStale = resolve; });
+    const newestMic = new Promise<MediaStream>((resolve) => { resolveNewest = resolve; });
+    const created: Array<{ processor: FakeProcessor; gain: FakeGain; destination: object }> = [];
+    const send = vi.fn();
+    const session = await startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      fetchImpl: tokenFetch(true),
+      getUserMedia: vi.fn().mockImplementationOnce(emptyMic)
+        .mockReturnValueOnce(staleMic).mockReturnValueOnce(newestMic),
+      WebSocketImpl: ControllableListenSocket({
+        onConstruct: (socket) => { queueMicrotask(() => socket.open()); },
+        onSend: send,
+      }),
+      AudioContextImpl: FakeAudioContext(undefined, created),
+    });
+    expect(session).not.toBeNull();
+    try {
+      session!.setPaused(true);
+      session!.setPaused(false);
+      session!.setPaused(true);
+      session!.setPaused(false);
+      resolveNewest({ getTracks: () => [{ stop: newestStop }] } as unknown as MediaStream);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      resolveStale({ getTracks: () => [{ stop: staleStop }] } as unknown as MediaStream);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(staleStop).toHaveBeenCalledOnce();
+      const audioEvent = { inputBuffer: { getChannelData: () => new Float32Array([0.25]) } };
+      created[2].processor.onaudioprocess?.(audioEvent);
+      expect(send).not.toHaveBeenCalled();
+      const queuedNewestAudio = created[1].processor.onaudioprocess!;
+      queuedNewestAudio(audioEvent);
+      expect(send).toHaveBeenCalledOnce();
+      session!.setPaused(true);
+      expect(newestStop).toHaveBeenCalledOnce();
+      queuedNewestAudio(audioEvent);
+      expect(send).toHaveBeenCalledOnce();
+    } finally {
+      session?.stop();
+    }
+  });
+
+  it("stops a resumed microphone that finishes opening after Pause", async () => {
+    const stopTrack = vi.fn();
+    let resolveMic!: (stream: MediaStream) => void;
+    const pendingMic = new Promise<MediaStream>((resolve) => { resolveMic = resolve; });
+    const getUserMedia = vi.fn().mockImplementationOnce(emptyMic).mockReturnValueOnce(pendingMic);
+    const session = await startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      fetchImpl: tokenFetch(true),
+      getUserMedia,
+      WebSocketImpl: FakeListenSocket({ outcome: "open" }),
+      AudioContextImpl: FakeAudioContext(),
+    });
+    expect(session).not.toBeNull();
+    try {
+      session!.setPaused(true);
+      session!.setPaused(false);
+      session!.setPaused(true);
+      resolveMic({ getTracks: () => [{ stop: stopTrack }] } as unknown as MediaStream);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(stopTrack).toHaveBeenCalledOnce();
+    } finally {
+      session?.stop();
+    }
+  });
+
   it("does not report a committed stream closing as unavailable", async () => {
     const onUnavailable = vi.fn();
     let socket: { open: () => void; emit: (type: "error" | "close") => void } | null = null;
