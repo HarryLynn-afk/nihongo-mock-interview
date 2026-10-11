@@ -43,14 +43,14 @@ vi.mock("next/headers", () => ({
   }),
 }));
 
-vi.mock("@/lib/server/study/serverClient", () => ({
-  createStudyServerClient: vi.fn(async () => ({
+vi.mock("@supabase/ssr", () => ({
+  createServerClient: vi.fn(() => ({
     auth: { getUser },
   })),
 }));
 
-vi.mock("@/lib/server/study/adminClients", () => ({
-  createStudyAdminClient: () => ({
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: () => ({
     rpc,
     from: (table: string) => {
       if (table === "invite_links") {
@@ -192,19 +192,39 @@ describe("POST /api/study/consent join link", () => {
     const body = (await res.json()) as { participantId?: string };
     expect(res.status).toBe(200);
     expect(body.participantId).toBe("P001");
-    expect(rpc).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith("enroll_allowlisted_participant", {
+      google_user_id: "user-1",
+      google_email: "classmate@school.org",
+      version: "2026-09-08",
+    });
+    expect(insertParticipant).not.toHaveBeenCalled();
+    expect(res.cookies.get("nihongo_visit_consented")).toBeDefined();
     expect(upsert).not.toHaveBeenCalled();
   });
 
   it("rejects Google login when the email is not in invited_emails", async () => {
     joinCookie.value = undefined;
-    invitedMaybeSingle.mockResolvedValue({ data: null, error: null });
+    rpc.mockResolvedValue({ data: { status: "not_invited" }, error: null });
     vi.resetModules();
     const { POST } = await import("./route");
     const res = await POST();
     const body = (await res.json()) as { error?: string };
     expect(res.status).toBe(403);
     expect(body.error).toBe("not_invited");
+    expect(res.cookies.get("nihongo_visit_consented")).toBeUndefined();
+    expect(insertParticipant).not.toHaveBeenCalled();
+  });
+
+  it("does not grant allowlisted consent when enrollment fails", async () => {
+    joinCookie.value = undefined;
+    rpc.mockResolvedValue({ data: null, error: { message: "database unavailable" } });
+    vi.resetModules();
+    const { POST } = await import("./route");
+    const res = await POST();
+
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "unavailable" });
+    expect(res.cookies.get("nihongo_visit_consented")).toBeUndefined();
     expect(insertParticipant).not.toHaveBeenCalled();
   });
 

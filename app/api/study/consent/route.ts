@@ -5,7 +5,6 @@ import {
   CONSENT_GATE_COOKIE,
   CONSENT_VERSION,
   consentGateIsOpen,
-  nextParticipantId,
 } from "@/lib/content/studyAuth";
 import { createStudyAdminClient } from "@/lib/server/study/adminClients";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
@@ -93,29 +92,18 @@ export async function POST() {
     return consentResponse(enrollment.participant_id, proof);
   }
 
-  const listed = await admin
-    .from("invited_emails")
-    .select("email")
-    .eq("email", email)
-    .maybeSingle();
-  if (!listed.data) {
-    return NextResponse.json({ error: "not_invited" }, { status: 403 });
-  }
-
-  const { data: rows } = await admin.from("participants").select("participant_id");
-  const participantId = nextParticipantId(
-    (rows ?? []).map((row) => row.participant_id as string),
+  const { data: enrollment, error } = await admin.rpc(
+    "enroll_allowlisted_participant",
+    { google_user_id: user.id, google_email: email, version: CONSENT_VERSION },
   );
-
-  const { error } = await admin.from("participants").insert({
-    id: user.id,
-    email,
-    participant_id: participantId,
-    consent_version: CONSENT_VERSION,
-    consent_at: new Date().toISOString(),
-  });
   if (error) {
     return NextResponse.json({ error: "unavailable" }, { status: 503 });
   }
-  return consentResponse(participantId, proof);
+  if (enrollment?.status === "not_invited") {
+    return NextResponse.json({ error: "not_invited" }, { status: 403 });
+  }
+  if (enrollment?.status !== "ok" || typeof enrollment.participant_id !== "string") {
+    return NextResponse.json({ error: "unavailable" }, { status: 503 });
+  }
+  return consentResponse(enrollment.participant_id, proof);
 }

@@ -103,15 +103,6 @@ export function shouldRewriteAuthCallback(pathname: string, search: string): boo
   return !params.get("code") && !params.get("token_hash");
 }
 
-export function nextParticipantId(existing: readonly string[]): string {
-  let max = 0;
-  for (const id of existing) {
-    const match = /^P(\d+)$/.exec(id);
-    if (match) max = Math.max(max, Number(match[1]));
-  }
-  return `P${String(max + 1).padStart(3, "0")}`;
-}
-
 /** Allowlisted Participant Google: callback has no join `from`. */
 export async function startLoginGoogle({
   origin,

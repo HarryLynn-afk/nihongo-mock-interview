@@ -4,7 +4,6 @@ import {
   CONSENT_GATE_COOKIE,
   consentGateCookie,
   consentGateIsOpen,
-  nextParticipantId,
   normalizeEmail,
   readAuthCallback,
   shouldRewriteAuthCallback,
@@ -13,11 +12,6 @@ import {
 } from "./studyAuth";
 
 describe("studyAuth", () => {
-  it("assigns sequential participant ids starting at P001", () => {
-    expect(nextParticipantId([])).toBe("P001");
-    expect(nextParticipantId(["P001", "P007"])).toBe("P008");
-  });
-
   it("normalizes email for allowlist lookup", () => {
     expect(normalizeEmail("Ada@Example.COM")).toBe("ada@example.com");
   });
