@@ -1,6 +1,7 @@
 import type { RubricCategoryKey } from "./rubric";
 import type { QuotedCritique } from "./parseQuotedCritiques";
 import type { UiLocale } from "./locale";
+import type { QuestionTopicKey } from "./questionBank";
 import { uiCopy } from "./uiCopy";
 
 const CORRECTIVE_MY: Record<RubricCategoryKey, string> = {
@@ -77,8 +78,9 @@ function contentStretch(
   category: RubricCategoryKey,
   transcript: string,
   locale: UiLocale,
+  topic: QuestionTopicKey | null,
 ): string {
-  if (category !== "contentCompleteness") {
+  if (category !== "contentCompleteness" || topic !== "futurePlan") {
     return STRETCH[locale][category];
   }
   const specificity = futureGoalSpecificity(transcript);
@@ -107,6 +109,7 @@ export function buildNextStep({
   explanation,
   rewrite,
   locale,
+  topic,
 }: {
   affirming: boolean;
   raw: number;
@@ -116,6 +119,7 @@ export function buildNextStep({
   explanation: string;
   rewrite: string;
   locale: UiLocale;
+  topic: QuestionTopicKey | null;
 }): NextStepView {
   const copy = uiCopy(locale);
   if (!affirming) {
@@ -127,7 +131,7 @@ export function buildNextStep({
     };
   }
 
-  const stretch = contentStretch(category, transcript, locale);
+  const stretch = contentStretch(category, transcript, locale, topic);
   if (raw >= 4) {
     return {
       heading: copy.report.optionalEnhancement,

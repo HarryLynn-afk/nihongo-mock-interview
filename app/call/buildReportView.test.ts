@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { InterviewReport } from "@/lib/content/sampleReport";
 import { questions } from "@/lib/content/questions";
+import { getBankQuestionById } from "@/lib/content/questionBank";
 import { buildReportView } from "./buildReportView";
 
 const report: InterviewReport = {
@@ -33,6 +34,50 @@ const voiceAnswers = [
 ];
 
 describe("buildReportView", () => {
+  it("limits goal-specific advice to future-plan questions in both languages", () => {
+    const generic = {
+      en: "add one or two concrete details (a reason, a place, or a next step) so the answer feels complete.",
+      my: "အကြောင်းရင်း၊ နေရာ သို့မဟုတ် နောက်တစ်ဆင့်ကဲ့သို့ အတိအကျ အချက်အလက် တစ်ခုနှစ်ခု ထည့်ပြောပါ။",
+    };
+    const cases = [
+      { id: 183, transcript: "父はITエンジニアです。", expected: generic },
+      { id: 9999, transcript: "将来ITエンジニアになりたいです。", expected: generic },
+      {
+        id: 172, transcript: "将来ITエンジニアになりたいです。",
+        expected: {
+          en: "connect this goal more directly to your choice of Japanese language school.",
+          my: "ဤရည်မှန်းချက်ကို ဂျပန်ဘာသာစကားကျောင်း ရွေးချယ်မှုနှင့် ပိုမိုတိုက်ရိုက် ချိတ်ဆက်ပါ။",
+        },
+      },
+      {
+        id: 172, transcript: "将来働きたいです。",
+        expected: {
+          en: "make your future goal more specific.",
+          my: "သင့်အနာဂတ် ရည်မှန်းချက်ကို ပိုမိုတိကျအောင် ဖော်ပြပါ။",
+        },
+      },
+    ];
+    for (const { id, transcript, expected } of cases) {
+      for (const locale of ["en", "my"] as const) {
+        const view = buildReportView({
+          report: {
+            ...report,
+            critiques: [{
+              questionIndex: 0, quote: transcript, rewrite: transcript,
+              explanation: "Complete answer.", category: "contentCompleteness",
+            }],
+          },
+          answers: [{ questionIndex: 0, status: "answered", transcript }],
+          sessionQuestions: [getBankQuestionById(id) ?? { ...questions[0], id }],
+          locale,
+        });
+        expect(view.questions[0].affirming).toBe(true);
+        expect(view.questions[0].improvement).toContain(expected[locale]);
+        expect(view.questions[0].rewrite).toBe(transcript);
+      }
+    }
+  });
+
   it("exposes the practice progress total and five criterion rows without a verdict", () => {
     const view = buildReportView({
       report,

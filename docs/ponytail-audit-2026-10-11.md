@@ -4,7 +4,7 @@ What this repo does: NihonGo runs voice-only Japanese interview practice, grades
 
 Status: these 12 findings were open at audit time. This audit changed no application code.
 
-Follow-up: findings **1–4 are fixed** on 2026-10-11; findings 5–12 remain open. The fixes passed all **665 tests** across 99 files, lint, and TypeScript checking. Real browser microphone, camera, and speech-recognition behavior has not been checked.
+Follow-up: findings **1–5 are fixed** on 2026-10-11; findings 6–12 remain open. The fixes passed all **666 tests** across 99 files, lint, and TypeScript checking. Real browser microphone, camera, and speech-recognition behavior has not been checked.
 
 ## Relationship to the previous fixes
 
@@ -57,6 +57,7 @@ These are additional findings after the fixes for [the 2026-10-09 audit](ponytai
    - **Problem:** Answering “父はITエンジニアです。” to “What work does your sponsor do?” produces advice to connect “this goal” to the choice of Japanese school. The helper treats the father's profession as the student's goal.
    - **Fix:** Pass the question topic into this helper and restrict goal advice to questions that ask about goals. Test the financial-support example through the report builder.
    - **If we skip it:** Correct financial-support answers receive unrelated coaching.
+   - **Resolution (2026-10-11):** The report passes its question-bank topic into `buildNextStep`. Goal-specific advice requires both the `futurePlan` topic and the `contentCompleteness` category; other or unknown topics use generic advice. A test-first regression in [buildReportView.test.ts](../app/call/buildReportView.test.ts) checks sponsor-job answers, unknown topics, and specific/vague future goals in English and Burmese.
 
 6. **A stalled token request never activates browser fallback** ([startLiveTranscription.ts:67](../app/call/startLiveTranscription.ts#L67), [mintListenToken.ts:14](../app/api/deepgram-stt/mintListenToken.ts#L14)).
    - **What this is:** Speak requests a Deepgram token before starting capture.

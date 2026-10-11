@@ -133,6 +133,7 @@ export function buildReportView({
               explanation: formatted.explanation,
               rewrite: formatted.rewrite,
               locale,
+              topic: bank?.topic ?? null,
             })
           : null;
       return {
