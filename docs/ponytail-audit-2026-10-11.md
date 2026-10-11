@@ -4,7 +4,7 @@ What this repo does: NihonGo runs voice-only Japanese interview practice, grades
 
 Status: these 12 findings were open at audit time. This audit changed no application code.
 
-Follow-up: findings **1 and 2 are fixed** on 2026-10-11; findings 3–12 remain open. The fixes passed all **659 tests** across 99 files, lint, and TypeScript checking. Real browser microphone and camera behavior has not been checked.
+Follow-up: findings **1–3 are fixed** on 2026-10-11; findings 4–12 remain open. The fixes passed all **663 tests** across 99 files, lint, and TypeScript checking. Real browser microphone and camera behavior has not been checked.
 
 ## Relationship to the previous fixes
 
@@ -43,6 +43,7 @@ These are additional findings after the fixes for [the 2026-10-09 audit](ponytai
    - **Problem:** Speak sentence A, turn the mic off/on, then speak sentence B. The caption shows A+B, but Submit takes the new Deepgram session's transcript: B only.
    - **Fix:** Preserve the transcript across sessions and combine it with the current session once. Test the submitted text, beyond checking the caption.
    - **If we skip it:** Feedback and saved research data omit words the student saw on screen.
+   - **Resolution (2026-10-11):** Each live session keeps a snapshot of earlier sessions' text. Cleanup preserves its final and interim transcript, while Submit and browser fallback combine the prefix with the current session exactly once. Cancelled sessions cannot update a later answer. Four test-first regressions in [useAnswerCapture.test.ts](../app/call/useAnswerCapture.test.ts) cover submission after toggling, repeated toggles with interim speech, turn reset with late events, and provider failure after session replacement.
 
 4. **Browser fallback drops earlier speech segments** ([useAnswerCapture.ts:171](../app/call/useAnswerCapture.ts#L171)).
    - **What this is:** Browser speech recognition handles Deepgram failures.

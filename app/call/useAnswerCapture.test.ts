@@ -6,10 +6,170 @@ import {
 } from "./useAnswerCapture";
 import * as liveTranscription from "./startLiveTranscription";
 
+function installLiveBrowser() {
+  const sockets: FakeSocket[] = [];
+  class FakeSocket {
+    static OPEN = 1;
+    readyState = 0;
+    binaryType = "";
+    listeners: Record<string, Array<(event: { data: string }) => void>> = {};
+    constructor() {
+      sockets.push(this);
+      queueMicrotask(() => {
+        this.readyState = 1;
+        this.emit("open");
+      });
+    }
+    addEventListener(type: string, listener: (event: { data: string }) => void) {
+      (this.listeners[type] ??= []).push(listener);
+    }
+    emit(type: string, data = "") {
+      this.listeners[type]?.forEach((listener) => listener({ data }));
+    }
+    speech(transcript: string, final = true) {
+      this.emit("message", JSON.stringify({
+        type: "Results", is_final: final,
+        channel: { alternatives: [{ transcript }] },
+      }));
+    }
+    send() {}
+    close() { this.readyState = 3; this.emit("close"); }
+  }
+  class FakeAudioContext {
+    sampleRate = 16000;
+    destination = {};
+    createMediaStreamSource() { return { connect() {} }; }
+    createScriptProcessor() { return { connect() {}, disconnect() {}, onaudioprocess: null }; }
+    createGain() { return { gain: { value: 1 }, connect() {} }; }
+    close() {}
+  }
+  vi.stubGlobal("WebSocket", FakeSocket);
+  vi.stubGlobal("AudioContext", FakeAudioContext);
+  vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: async () => ({ getTracks: () => [] }) } });
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ accessToken: "dg-jwt" }) }));
+  return sockets;
+}
+
 describe("useAnswerCapture", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+
+  it("submits both live sessions exactly once after microphone off/on", async () => {
+    vi.useFakeTimers();
+    const sockets = installLiveBrowser();
+    const onSubmit = vi.fn();
+    const { result, rerender } = renderHook(({ micOn }) => useAnswerCapture({
+      active: true, micOn, liveStt: true, onSubmit,
+    }), { initialProps: { micOn: true } });
+    act(() => result.current.onSpeakAnswer());
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    act(() => sockets[0].speech("こんにちは。"));
+    rerender({ micOn: false });
+    rerender({ micOn: true });
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    act(() => sockets[1].speech("よろしくお願いします。", false));
+    expect(result.current.liveCaption).toBe("こんにちは。よろしくお願いします。");
+    act(() => result.current.onSubmitClick());
+    act(() => sockets[1].speech("よろしくお願いします。"));
+    await act(async () => { await vi.advanceTimersByTimeAsync(800); });
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      status: "answered", transcript: "こんにちは。よろしくお願いします。", pushbackCount: 0,
+    });
+  });
+
+  it("preserves interim speech across repeated microphone toggles", async () => {
+    vi.useFakeTimers();
+    const sockets = installLiveBrowser();
+    const onSubmit = vi.fn();
+    const { result, rerender } = renderHook(({ micOn }) => useAnswerCapture({
+      active: true, micOn, liveStt: true, onSubmit,
+    }), { initialProps: { micOn: true } });
+    act(() => result.current.onSpeakAnswer());
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    act(() => {
+      sockets[0].speech("こんにちは。");
+      sockets[0].speech("私は学生です。", false);
+    });
+    rerender({ micOn: false });
+    rerender({ micOn: true });
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    act(() => sockets[1].speech("日本語を勉強します。"));
+    rerender({ micOn: false });
+    rerender({ micOn: true });
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    act(() => sockets[2].speech("よろしくお願いします。", false));
+    expect(result.current.liveCaption).toBe("こんにちは。私は学生です。日本語を勉強します。よろしくお願いします。");
+    act(() => result.current.onSubmitClick());
+    await act(async () => { await vi.advanceTimersByTimeAsync(800); });
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      status: "answered", transcript: "こんにちは。私は学生です。日本語を勉強します。よろしくお願いします。", pushbackCount: 0,
+    });
+  });
+
+  it("starts the next turn without the previous live answer", async () => {
+    vi.useFakeTimers();
+    const sockets = installLiveBrowser();
+    const onSubmit = vi.fn();
+    const { result, rerender } = renderHook(({ active }) => useAnswerCapture({
+      active, micOn: true, liveStt: true, onSubmit,
+    }), { initialProps: { active: true } });
+    act(() => result.current.onSpeakAnswer());
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    act(() => sockets[0].speech("こんにちは。"));
+    rerender({ active: false });
+    rerender({ active: true });
+    act(() => result.current.onSpeakAnswer());
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    act(() => sockets[1].speech("私は学生です。"));
+    act(() => sockets[0].speech("古い回答です。"));
+    expect(result.current.liveCaption).toBe("私は学生です。");
+    act(() => result.current.onSubmitClick());
+    await act(async () => { await vi.advanceTimersByTimeAsync(800); });
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      status: "answered", transcript: "私は学生です。", pushbackCount: 0,
+    });
+  });
+
+  it("preserves earlier sessions when the current live session falls back to the browser", async () => {
+    vi.useFakeTimers();
+    const sockets = installLiveBrowser();
+    const browser: FakeSpeechRecognition[] = [];
+    class FakeSpeechRecognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: { results: unknown[] }) => void) | null = null;
+      onend = null;
+      onerror = null;
+      start() {}
+      stop() {}
+      constructor() { browser.push(this); }
+    }
+    vi.stubGlobal("SpeechRecognition", FakeSpeechRecognition);
+    const onSubmit = vi.fn();
+    const { result, rerender } = renderHook(({ micOn }) => useAnswerCapture({
+      active: true, micOn, liveStt: true, onSubmit,
+    }), { initialProps: { micOn: true } });
+    act(() => result.current.onSpeakAnswer());
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    act(() => sockets[0].speech("こんにちは。"));
+    rerender({ micOn: false });
+    rerender({ micOn: true });
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    act(() => {
+      sockets[1].speech("私は学生です。", false);
+      sockets[1].emit("error");
+    });
+    expect(result.current.liveCaption).toBe("こんにちは。私は学生です。");
+    act(() => browser[0].onresult?.({
+      results: [Object.assign([{ transcript: "よろしくお願いします。" }], { isFinal: true })],
+    }));
+    act(() => result.current.onSubmitClick());
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      status: "answered", transcript: "こんにちは。私は学生です。よろしくお願いします。", pushbackCount: 0,
+    });
   });
 
   it("starts browser recognition when the Deepgram token request rejects", async () => {

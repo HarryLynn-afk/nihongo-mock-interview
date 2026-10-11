@@ -53,6 +53,7 @@ export function useAnswerCapture({
   const [pushbackVisible, setPushbackVisible] = useState(false);
   const [submitPending, setSubmitPending] = useState(false);
   const transcriptBaseRef = useRef("");
+  const liveTranscriptPrefixRef = useRef("");
   const attemptCountRef = useRef(0);
   const liveSessionRef = useRef<LiveTranscriptionSession | null>(null);
   const speakPausedRef = useRef(false);
@@ -103,11 +104,13 @@ export function useAnswerCapture({
   // so resuming never reconnects or loses audio.
   useEffect(() => {
     if (!liveStt || !speakActive || liveFailed) return;
+    const prefix = transcriptBaseRef.current;
+    liveTranscriptPrefixRef.current = prefix;
     let cancelled = false;
     void startLiveTranscriptionSession({
       onUnavailable: () => {
         if (cancelled) return;
-        const transcript = liveSessionRef.current?.getTranscript();
+        const transcript = joinJapanese(prefix, liveSessionRef.current?.getTranscript() ?? "");
         if (transcript) {
           transcriptBaseRef.current = transcript;
           setSpokenCaption(transcript);
@@ -116,6 +119,7 @@ export function useAnswerCapture({
         setLiveFailed(true);
       },
       onEvent: (event) => {
+        if (cancelled) return;
         if (event.kind === "delta") {
           setSpokenCaption(
             joinJapanese(transcriptBaseRef.current, event.delta),
@@ -143,7 +147,11 @@ export function useAnswerCapture({
     });
     return () => {
       cancelled = true;
-      liveSessionRef.current?.stop();
+      const live = liveSessionRef.current;
+      if (live) {
+        transcriptBaseRef.current = joinJapanese(prefix, live.getTranscript());
+        live.stop();
+      }
       liveSessionRef.current = null;
     };
   }, [liveStt, speakActive, liveFailed]);
@@ -284,12 +292,13 @@ export function useAnswerCapture({
 
     const live = liveSessionRef.current;
     if (live) {
+      const prefix = liveTranscriptPrefixRef.current;
       void (async () => {
         live.commit();
         await new Promise((resolve) => {
           window.setTimeout(resolve, 800);
         });
-        const committed = live.getTranscript();
+        const committed = joinJapanese(prefix, live.getTranscript());
         live.stop();
         liveSessionRef.current = null;
         submitVoice(committed || spokenCaption || "");
