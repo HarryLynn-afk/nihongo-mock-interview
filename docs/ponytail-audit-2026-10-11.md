@@ -6,7 +6,7 @@ Status: these 12 findings were open at audit time. This audit changed no applica
 
 Follow-up: findings **1–6 are fixed** on 2026-10-11; findings 7–12 remain open. The fixes passed all **671 tests** across 99 files, lint, and TypeScript checking. Real browser microphone, camera, and speech-recognition behavior has not been checked.
 
-Follow-up (2026-10-12): findings **7–11 are fixed**; finding 12 remains open.
+Follow-up (2026-10-12): findings **7–12 are fixed** — the 2026-10-11 audit is fully closed.
 
 ## Relationship to the previous fixes
 
@@ -112,6 +112,7 @@ These are additional findings after the fixes for [the 2026-10-09 audit](ponytai
     - **Problem:** Whole-tree searches found no runtime caller for either. The card's fixture and tests maintain a screen that was removed.
     - **Fix:** Delete the card, fixture, their two tests, and the unused client export.
     - **If we skip it:** Maintainers keep reading and testing retired behavior.
+    - **Resolution (2026-10-12):** Deleted `ProfileCard.tsx`, `ProfileCard.test.tsx`, `lib/content/profile.ts`, `lib/content/profile.test.ts`, and the unused `createStudyAnonClient` export, including the magic-link test's dead client mocks. Each removal step failed only its own test before that test was deleted, proving no hidden dependents; `tsc` and 686 tests across 98 files pass. The fixture stays recoverable from git history.
 
 **Verdict:** Fix microphone privacy and transcript loss first; complete deployment safeguards before opening the public site. Keep the fixes from the previous audit.
 

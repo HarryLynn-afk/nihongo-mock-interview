@@ -47,7 +47,7 @@ Friends (about 10–15 later) trying the live Interview for a smooth demo. The s
 
 ## Open Questions
 - Whether to delete Pitch-mode last-screen swap (`selectDisplayedReport`) so a weak live Headline always shows. Out of this PRD unless we reopen it.
-- Whether to delete `ProfileCard` and `lib/content/profile.ts` entirely, or leave unused fixtures.
+- Whether to delete `ProfileCard` and `lib/content/profile.ts` entirely, or leave unused fixtures. **Resolved 2026-10-12: deleted, with their tests and the unused `createStudyAnonClient` export (audit finding 12).**
 - Exact `profileName` string on Groq reports (`""` vs `"Student"`).
 
 ## Success Criteria
