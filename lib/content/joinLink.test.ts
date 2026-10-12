@@ -63,6 +63,17 @@ describe("startJoinGoogle", () => {
     expect(result).toEqual({ reason: "unknown" });
   });
 
+  it("reports an OAuth failure when the provider URL cannot be built", async () => {
+    const result = await startJoinGoogle({
+      from: "T1",
+      origin: "http://localhost:3000",
+      lookup: async () => ({ signupCount: 0, maxSignups: 10 }),
+      createOAuthUrl: async () => null,
+    });
+
+    expect(result).toEqual({ reason: "oauth_failed" });
+  });
+
   it("starts Google with the join from on the auth callback URL", async () => {
     const createOAuthUrl = vi.fn().mockResolvedValue("https://accounts.google.com/oauth");
     const result = await startJoinGoogle({

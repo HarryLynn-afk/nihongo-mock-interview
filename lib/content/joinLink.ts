@@ -39,7 +39,7 @@ export function joinPageView(
 
 export type JoinStartResult =
   | { url: string }
-  | { reason: "full" | "unknown" | "not_configured" };
+  | { reason: "full" | "unknown" | "oauth_failed" };
 
 export async function startJoinGoogle({
   from,
@@ -60,5 +60,5 @@ export async function startJoinGoogle({
   const url = await createOAuthUrl(
     `${origin}/auth/callback?from=${encodeURIComponent(from)}`,
   );
-  return url ? { url } : { reason: "not_configured" };
+  return url ? { url } : { reason: "oauth_failed" };
 }

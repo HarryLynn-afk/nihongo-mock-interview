@@ -102,4 +102,35 @@ describe("POST /api/auth/join-google", () => {
     expect(setCookie).toContain(`${DEVICE_INVITE_COOKIE}=T1`);
     expect(setCookie.toLowerCase()).toContain("httponly");
   });
+
+  it("reports an OAuth failure when Google start errors", async () => {
+    vi.resetModules();
+    process.env = {
+      ...ORIGINAL_ENV,
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
+      SUPABASE_SERVICE_ROLE_KEY: "service",
+    };
+    lookupSingle.mockResolvedValue({
+      data: { signup_count: 0, max_signups: 10 },
+      error: null,
+    });
+    signInWithOAuth.mockResolvedValue({
+      data: { url: null },
+      error: { message: "temporary provider failure" },
+    });
+    signOut.mockResolvedValue({ error: null });
+
+    const { POST } = await import("./route");
+    const res = await POST(
+      new Request("http://localhost/api/auth/join-google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from: "T1" }),
+      }),
+    );
+    const body = (await res.json()) as { reason?: string };
+    expect(res.status).toBe(200);
+    expect(body.reason).toBe("oauth_failed");
+  });
 });

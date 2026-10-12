@@ -119,9 +119,36 @@ describe("Home invite landing", () => {
     ).toBeInTheDocument();
   });
 
+  it("clears a previous error when the sign-in dialog is reopened", async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error("offline"));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(
+      <Home
+        view={view({ origin: "/join?from=T1", invite: "open", from: "T1" })}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Login" }));
+    await user.click(screen.getByRole("button", { name: "Continue with Google" }));
+    await screen.findByText(
+      "Could not start Google sign-in. Check your connection and try again.",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    await user.click(screen.getByRole("button", { name: "Login" }));
+
+    expect(
+      screen.queryByText(
+        "Could not start Google sign-in. Check your connection and try again.",
+      ),
+    ).not.toBeInTheDocument();
+  });
+
   it.each([
     ["not_configured", "Sign-in is not configured."],
     ["unknown", "This sign-up link isn't available."],
+    ["oauth_failed", "Could not start Google sign-in. Check your connection and try again."],
   ])("explains a %s result", async (reason, text) => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

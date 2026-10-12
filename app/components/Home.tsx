@@ -115,7 +115,10 @@ function InviteLogin({ from }: { from: string }) {
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setMessage(null);
+          setOpen(true);
+        }}
         className={HEADER_PILL}
       >
         {copy.joinLink.login}
