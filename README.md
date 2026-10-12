@@ -80,19 +80,19 @@ Desktop browser only. Phone visitors see “Open on a computer.”
 
 Guest practice does **not** need this. Run it only if you want Participant Google login, consent, capped join-links, and saved `study_sessions`.
 
-Env vars alone are not enough. The app does **not** create tables. `npm run dev` and Netlify do **not** apply `supabase/migrations/001_study.sql`. You paste that file once in the Supabase SQL editor.
+Env vars alone are not enough. The app does **not** create tables. `npm run dev` and Netlify do **not** apply the files in `supabase/migrations/`. You paste them once in the Supabase SQL editor, in order — see step 2.
 
 ### 1. Confirm you have a project
 
 `.env.local` should have `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` for that same project. Add a separate random `STUDY_VISIT_SIGNING_KEY` (for example, generated with `openssl rand -hex 32`). Configure the same key in the deployment environment. Changing it signs out all active Participant visits.
 
-### 2. Paste the migration
+### 2. Paste the migrations
 
 1. Open [Supabase Dashboard](https://supabase.com/dashboard) and select that project.
 2. Left sidebar → **SQL Editor** → **New query**.
-3. Open `supabase/migrations/001_study.sql` in this repo, copy the entire file, paste into the editor.
-4. Click **Run**. Success looks like “Success. No rows returned.”
-5. Left sidebar → **Table Editor**. You should see `invited_emails`, `participants`, and `study_sessions`.
+3. Paste each file in `supabase/migrations/` **in order**, clicking **Run** after each: `001_study.sql`, `002_invite_links.sql`, `003_full_session_requests.sql`, `004_atomic_join_enrollment.sql`, `005_score_attempts.sql`, `006_survey_submissions.sql`, `007_atomic_allowlist_enrollment.sql`.
+4. Success looks like “Success. No rows returned.”
+5. Left sidebar → **Table Editor**. You should see `invited_emails`, `participants`, `study_sessions` (with `attempt_id` and `report`), `invite_links`, `full_session_requests`, and `survey_submissions`.
 
 Safe to run once. The `create table if not exists` statements will not wipe data. Do not re-run blindly after you have added custom policies of your own.
 
@@ -109,7 +109,7 @@ values ('tester@gmail.com');
 
 Use the real Google address, lowercase. Public sign-up is not supported.
 
-For classmates you have not listed yet, use a capped join link instead. Paste `supabase/migrations/002_invite_links.sql` and then `supabase/migrations/004_atomic_join_enrollment.sql` into the SQL editor, in that order. Then create a code:
+For classmates you have not listed yet, use a capped join link instead (step 2 already applied the migrations this path needs). Then create a code:
 
 ```sql
 insert into invite_links (code, max_signups)

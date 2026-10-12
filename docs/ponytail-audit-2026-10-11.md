@@ -6,6 +6,8 @@ Status: these 12 findings were open at audit time. This audit changed no applica
 
 Follow-up: findings **1–6 are fixed** on 2026-10-11; findings 7–12 remain open. The fixes passed all **671 tests** across 99 files, lint, and TypeScript checking. Real browser microphone, camera, and speech-recognition behavior has not been checked.
 
+Follow-up (2026-10-12): finding **7 is fixed**; findings 8–12 remain open.
+
 ## Relationship to the previous fixes
 
 These are additional findings after the fixes for [the 2026-10-09 audit](ponytail-audit-2026-10-09.md). They do not mean those fixes should be reverted.
@@ -71,6 +73,7 @@ These are additional findings after the fixes for [the 2026-10-09 audit](ponytai
    - **Problem:** The README omits required migrations `005`–`007`. Following it leaves allowlist consent without its enrollment function, report saving without required columns, and surveys without their status table. The migration-check documents also stop at `004`.
    - **Fix:** Document migrations `001`–`007` in order and update the check query to verify the current schema.
    - **If we skip it:** Fresh installations fail despite following the instructions.
+   - **Resolution (2026-10-12):** The README setup step lists migrations `001`–`007` in order and the Table Editor check covers all six study tables. The migration-check query verifies the current schema — `study_sessions.attempt_id`/`report`, `survey_submissions` and its RLS, and both enrollment functions — and was replayed against a scratch PostgreSQL database with `001`–`007` applied; all 17 rows returned `t`.
 
 8. **The build precheck ignores `.env.local`** ([check-env.mjs:7](../scripts/check-env.mjs#L7)).
    - **What this is:** `npm run build` checks required configuration before starting Next.js.
