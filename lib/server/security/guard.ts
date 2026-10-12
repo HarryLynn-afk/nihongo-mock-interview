@@ -78,17 +78,19 @@ export function withApiGuard(
 
     const key = `${preset}:${clientIp(request)}`;
 
-    const shared = sharedLimiterFor(preset);
-    if (shared) {
-      try {
-        if (!(await shared(key))) {
-          return NextResponse.json({ error: "rate_limited" }, { status: 429 });
-        }
-        return handler(request);
-      } catch {
-        // Store outage fails open to the per-instance limit; provider
-        // spend caps remain the backstop.
+    let shared: ((key: string) => Promise<boolean>) | null = null;
+    try {
+      shared = sharedLimiterFor(preset);
+      if (shared && !(await shared(key))) {
+        return NextResponse.json({ error: "rate_limited" }, { status: 429 });
       }
+    } catch {
+      // Store or configuration problems fall through to the per-instance
+      // limit; provider spend caps remain the backstop.
+      shared = null;
+    }
+    if (shared) {
+      return handler(request);
     }
 
     const now = Date.now();

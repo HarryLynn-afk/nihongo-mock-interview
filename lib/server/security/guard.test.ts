@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { __resetGuard, withApiGuard } from "./guard";
 
-const { limitMock, slidingWindowMock } = vi.hoisted(() => ({
+const { fromEnvMock, limitMock, slidingWindowMock } = vi.hoisted(() => ({
+  fromEnvMock: vi.fn(() => ({})),
   limitMock: vi.fn(),
   slidingWindowMock: vi.fn(),
 }));
@@ -15,7 +16,7 @@ vi.mock("@upstash/ratelimit", () => {
 });
 
 vi.mock("@upstash/redis", () => ({
-  Redis: { fromEnv: () => ({}) },
+  Redis: { fromEnv: fromEnvMock },
 }));
 
 function post(headers: Record<string, string>) {
@@ -64,6 +65,7 @@ describe("withApiGuard", () => {
 
 describe("withApiGuard with a shared store", () => {
   beforeEach(() => {
+    fromEnvMock.mockClear();
     limitMock.mockClear();
     slidingWindowMock.mockClear();
     vi.stubEnv("UPSTASH_REDIS_REST_URL", "https://rate.example.upstash.io");
@@ -95,6 +97,35 @@ describe("withApiGuard with a shared store", () => {
 
     const res = await guarded(
       post({ origin: "http://localhost", "x-forwarded-for": "8.8.8.8" }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(handler).toHaveBeenCalled();
+  });
+
+  it("runs the handler exactly once when it throws after a shared allow", async () => {
+    limitMock.mockResolvedValue({ success: true });
+    const handler = vi.fn(() => {
+      throw new Error("handler boom");
+    });
+    const guarded = withApiGuard(handler, "expensive");
+
+    await expect(
+      guarded(post({ origin: "http://localhost", "x-forwarded-for": "5.5.5.5" })),
+    ).rejects.toThrow("handler boom");
+
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses the local limit when the Redis client cannot be constructed", async () => {
+    fromEnvMock.mockImplementationOnce(() => {
+      throw new Error("invalid UPSTASH_REDIS_REST_URL");
+    });
+    const handler = vi.fn(ok);
+    const guarded = withApiGuard(handler, "expensive");
+
+    const res = await guarded(
+      post({ origin: "http://localhost", "x-forwarded-for": "4.4.4.4" }),
     );
 
     expect(res.status).toBe(200);
