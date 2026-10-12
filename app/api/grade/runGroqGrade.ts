@@ -2,6 +2,7 @@ import { getRubricPrompt, parseRawScores, scoreReport } from "@/lib/content/rubr
 import { parseQuotedCritiques } from "@/lib/content/parseQuotedCritiques";
 import type { QuestionTopicKey } from "@/lib/content/questionBank";
 import type { InterviewReport } from "@/lib/content/sampleReport";
+import { parseGradeJson } from "./parseGradeJson";
 import {
   isGroqCapacityLimit,
   noteGroqCapacityLimit,
@@ -21,34 +22,6 @@ export type GradeAnswer = {
   transcript: string;
   pushbackCount: 0 | 1 | 2;
 };
-
-function parseGroqGradeJson(text: string): {
-  scores?: unknown;
-  critiques?: unknown;
-} | null {
-  const withoutThink = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-  const unfenced = withoutThink
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/, "")
-    .trim();
-  const candidates = [unfenced];
-  const start = unfenced.indexOf("{");
-  const end = unfenced.lastIndexOf("}");
-  if (start !== -1 && end > start) {
-    candidates.push(unfenced.slice(start, end + 1));
-  }
-  for (const candidate of candidates) {
-    try {
-      return JSON.parse(candidate) as {
-        scores?: unknown;
-        critiques?: unknown;
-      };
-    } catch {
-      continue;
-    }
-  }
-  return null;
-}
 
 export async function runGroqGrade({
   answers,
@@ -95,7 +68,7 @@ export async function runGroqGrade({
     };
     const text = data.choices?.[0]?.message?.content?.trim();
     if (!text) return null;
-    const parsed = parseGroqGradeJson(text);
+    const parsed = parseGradeJson(text);
     if (!parsed) return null;
     const scored = scoreReport(parseRawScores(parsed.scores));
     const critiques = parseQuotedCritiques(parsed.critiques, answers);

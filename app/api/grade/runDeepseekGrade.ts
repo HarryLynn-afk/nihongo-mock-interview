@@ -1,38 +1,11 @@
 import { getRubricPrompt, parseRawScores, scoreReport } from "@/lib/content/rubric";
 import { parseQuotedCritiques } from "@/lib/content/parseQuotedCritiques";
 import type { InterviewReport } from "@/lib/content/sampleReport";
+import { parseGradeJson } from "./parseGradeJson";
 import type { GradeAnswer } from "./runGroqGrade";
 
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 const DEEPSEEK_GRADE_MODEL = "deepseek-flash";
-
-function parseGradeJson(text: string): {
-  scores?: unknown;
-  critiques?: unknown;
-} | null {
-  const withoutThink = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-  const unfenced = withoutThink
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/, "")
-    .trim();
-  const candidates = [unfenced];
-  const start = unfenced.indexOf("{");
-  const end = unfenced.lastIndexOf("}");
-  if (start !== -1 && end > start) {
-    candidates.push(unfenced.slice(start, end + 1));
-  }
-  for (const candidate of candidates) {
-    try {
-      return JSON.parse(candidate) as {
-        scores?: unknown;
-        critiques?: unknown;
-      };
-    } catch {
-      continue;
-    }
-  }
-  return null;
-}
 
 export async function runDeepseekGrade({
   answers,

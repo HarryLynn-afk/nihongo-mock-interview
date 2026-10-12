@@ -6,7 +6,7 @@ Status: these 12 findings were open at audit time. This audit changed no applica
 
 Follow-up: findings **1–6 are fixed** on 2026-10-11; findings 7–12 remain open. The fixes passed all **671 tests** across 99 files, lint, and TypeScript checking. Real browser microphone, camera, and speech-recognition behavior has not been checked.
 
-Follow-up (2026-10-12): findings **7–10 are fixed**; findings 11–12 remain open.
+Follow-up (2026-10-12): findings **7–11 are fixed**; finding 12 remains open.
 
 ## Relationship to the previous fixes
 
@@ -103,6 +103,7 @@ These are additional findings after the fixes for [the 2026-10-09 audit](ponytai
     - **Problem:** The same 27-line implementation exists twice. Every response-format fix requires two edits.
     - **Fix:** Keep one shared parser and retain both providers' request and error handling.
     - **If we skip it:** Provider parsing can drift during later fixes.
+    - **Resolution (2026-10-12):** The parser now lives once in [parseGradeJson.ts](../app/api/grade/parseGradeJson.ts); both graders import it and the two private copies are deleted. A focused test file pins the think-block, fence, and brace-extraction rules, and both provider suites pass unchanged. Each provider keeps its own request shape, capacity handling, and error paths.
 
 ## Nice to have
 
