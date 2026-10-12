@@ -1,3 +1,5 @@
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
 
 type Preset = "expensive" | "write" | "auth";
@@ -9,13 +11,33 @@ const PRESETS: Record<Preset, { limit: number; windowMs: number }> = {
   auth: { limit: 8, windowMs: 60_000 },
 };
 
-// ponytail: in-memory store, per instance. Swap for Redis if running
-// serverless with more than one instance — the interface stays the same.
+// ponytail: in-memory store, per instance. Without UPSTASH_* env vars this is
+// the only store; with them the shared store below takes over.
 const hits = new Map<string, number[]>();
 
-/** Test-only: clear the window store between tests. */
+const sharedLimiters = new Map<Preset, (key: string) => Promise<boolean>>();
+
+/** Shared store when UPSTASH_REDIS_REST_URL/TOKEN are configured, else null. */
+function sharedLimiterFor(preset: Preset) {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return null;
+  }
+  const cached = sharedLimiters.get(preset);
+  if (cached) return cached;
+  const { limit, windowMs } = PRESETS[preset];
+  const ratelimit = new Ratelimit({
+    redis: Redis.fromEnv(),
+    limiter: Ratelimit.slidingWindow(limit, `${windowMs} ms`),
+  });
+  const check = async (key: string) => (await ratelimit.limit(key)).success;
+  sharedLimiters.set(preset, check);
+  return check;
+}
+
+/** Test-only: clear the window store and cached shared limiters between tests. */
 export function __resetGuard() {
   hits.clear();
+  sharedLimiters.clear();
 }
 
 function clientIp(request: Request): string {
@@ -55,6 +77,20 @@ export function withApiGuard(
     }
 
     const key = `${preset}:${clientIp(request)}`;
+
+    const shared = sharedLimiterFor(preset);
+    if (shared) {
+      try {
+        if (!(await shared(key))) {
+          return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+        }
+        return handler(request);
+      } catch {
+        // Store outage fails open to the per-instance limit; provider
+        // spend caps remain the backstop.
+      }
+    }
+
     const now = Date.now();
     const recent = (hits.get(key) ?? []).filter((at) => now - at < windowMs);
     if (recent.length >= limit) {

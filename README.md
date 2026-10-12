@@ -57,6 +57,7 @@ Fill `.env.local`. Each key is one purpose — do not reuse a Groq or ElevenLabs
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Study browser/server auth |
 | `SUPABASE_SERVICE_ROLE_KEY` | Study server writes. Never expose to the client |
 | `STUDY_VISIT_SIGNING_KEY` | Server-only key for consent during this sign-in visit; required when Participant login is enabled |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Shared rate-limit store for guarded APIs on serverless. Unset keeps per-instance in-memory limits (fine locally) |
 
 Guest Join works with no Supabase vars.
 

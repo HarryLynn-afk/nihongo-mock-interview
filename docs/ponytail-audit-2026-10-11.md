@@ -6,7 +6,7 @@ Status: these 12 findings were open at audit time. This audit changed no applica
 
 Follow-up: findings **1–6 are fixed** on 2026-10-11; findings 7–12 remain open. The fixes passed all **671 tests** across 99 files, lint, and TypeScript checking. Real browser microphone, camera, and speech-recognition behavior has not been checked.
 
-Follow-up (2026-10-12): findings **7 and 8 are fixed**; findings 9–12 remain open.
+Follow-up (2026-10-12): findings **7–9 are fixed**; findings 10–12 remain open.
 
 ## Relationship to the previous fixes
 
@@ -87,6 +87,7 @@ These are additional findings after the fixes for [the 2026-10-09 audit](ponytai
    - **Problem:** Each process owns its own counters. Two instances can each accept 20 requests from the same IP; a replacement instance starts empty. This is an acknowledged shortcut, but the planned serverless deployment crosses its stated limit. [Netlify describes functions as stateless](https://www.netlify.com/blog/intro-to-serverless-functions/).
    - **Fix:** Complete the documented shared rate-limit store before public deployment. Keep the existing guard interface and presets.
    - **If we skip it:** The configured limits will not reliably control provider usage.
+   - **Resolution (2026-10-12):** `withApiGuard` uses an Upstash Redis sliding-window store when `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` are configured, falls back to the in-memory store when they are absent, and fails open to it on store errors. Interface and presets unchanged. Seven tests in [guard.test.ts](../lib/server/security/guard.test.ts) cover the shared deny/allow paths, outage fallback, preset mapping, and partial configuration. Deploy step: create the Upstash database and set both env vars — documented in `.env.example`, README, and [notes-security-followups.md](notes-security-followups.md).
 
 10. **Join-link sign-in failures show no explanation** ([Home.tsx:82](../app/components/Home.tsx#L82)).
     - **What this is:** Continue with Google starts sign-in from an invite.
