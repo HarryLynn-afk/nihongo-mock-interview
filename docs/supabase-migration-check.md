@@ -5,10 +5,10 @@ are pasted into the Supabase SQL Editor, not run by `npm run dev`, Netlify, or
 the Supabase CLI. So there is no migration ledger to read; verify the schema by
 querying it.
 
-Run this in **Supabase → SQL Editor**. Every row should read `PASS`.
+Run this in **Supabase → SQL Editor**. Every row should read `t`.
 
 ```sql
--- NihonGo migration check: every row must read PASS.
+-- NihonGo migration check: every row must read true (ok = t).
 select 'table: ' || t as check, to_regclass('public.' || t) is not null as ok
 from unnest(array[
   'invited_emails', 'participants', 'study_sessions',
@@ -49,7 +49,7 @@ from unnest(array[
 order by 1;
 ```
 
-Expected (all `PASS`):
+Expected (all `t`):
 
 | check                                                     | ok |
 | --------------------------------------------------------- | -- |
@@ -95,8 +95,10 @@ you have customized that policy.
 
 Schema aside, prove the wiring end to end:
 
-- Sign in with an allowlisted Google account → `GET /api/study/me` returns
-  `state: "ready"` with a `participant_id`.
+- Sign in with an allowlisted Google account, then **Join interview** → tick the
+  consent box → **Agree and continue** → `GET /api/study/me` returns
+  `state: "ready"` with a `participant_id`. Before that consent it returns
+  `consentRequired`, which is expected, not a failed migration.
 - Open `/join?from=<code>` → a `P...` participant id is assigned.
 
 If both work, `001`–`007` are effectively in place.
