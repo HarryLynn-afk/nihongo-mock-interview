@@ -45,10 +45,12 @@ export async function startPcmCapture({
     globalThis as typeof globalThis & { AudioContext?: new () => PcmAudioContext }
   ).AudioContext,
   onChunk,
+  signal,
 }: {
   getUserMedia?: () => Promise<MediaStream>;
   AudioContextImpl?: new () => PcmAudioContext;
   onChunk: (samples: Float32Array, sampleRate: number) => void;
+  signal?: AbortSignal;
 }): Promise<PcmCapture | null> {
   if (typeof AudioContextImpl !== "function") return null;
 
@@ -64,11 +66,21 @@ export async function startPcmCapture({
     stream?.getTracks().forEach((track) => track.stop());
     stream = null;
   }
+  // Abort must release an acquired stream without waiting for init to finish.
+  signal?.addEventListener("abort", teardown, { once: true });
 
   try {
     stream = await getUserMedia();
+    if (signal?.aborted) {
+      teardown();
+      return null;
+    }
     context = new AudioContextImpl();
     await context.resume?.();
+    if (signal?.aborted) {
+      teardown();
+      return null;
+    }
     const sampleRate = context.sampleRate;
     const source = context.createMediaStreamSource(stream);
     // ScriptProcessorNode is deprecated; AudioWorklet is later technical debt.

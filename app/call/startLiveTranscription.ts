@@ -44,9 +44,11 @@ function waitForListenOpen(
 async function fetchListenToken(
   fetchImpl: typeof fetch,
   timeoutMs: number,
+  signal?: AbortSignal,
 ): Promise<string | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  signal?.addEventListener("abort", () => controller.abort(), { once: true });
   try {
     const res = await fetchImpl("/api/deepgram-stt", {
       method: "POST",
@@ -73,6 +75,8 @@ export async function startLiveTranscriptionSession({
   AudioContextImpl = (
     globalThis as typeof globalThis & { AudioContext?: new () => PcmAudioContext }
   ).AudioContext,
+  getControlState = () => ({ paused: false, pauseVersion: 0 }),
+  signal,
   tokenTimeoutMs = 5000,
 }: {
   onEvent: (event: ParsedTranscriptionEvent) => void;
@@ -81,14 +85,21 @@ export async function startLiveTranscriptionSession({
   getUserMedia?: () => Promise<MediaStream>;
   WebSocketImpl?: typeof WebSocket;
   AudioContextImpl?: new () => PcmAudioContext;
+  /**
+   * `pauseVersion` counts the caller's pauses: startup drops unsent audio
+   * buffered before the current version.
+   */
+  getControlState?: () => { paused: boolean; pauseVersion: number };
+  signal?: AbortSignal;
   tokenTimeoutMs?: number;
 }): Promise<LiveTranscriptionSession | null> {
   if (typeof WebSocketImpl !== "function" || typeof AudioContextImpl !== "function") {
     return null;
   }
 
-  const accessToken = await fetchListenToken(fetchImpl, tokenTimeoutMs);
+  const accessToken = await fetchListenToken(fetchImpl, tokenTimeoutMs, signal);
   if (accessToken === null) return null;
+  if (signal?.aborted) return null;
 
   let finalized = "";
   let interim = "";
@@ -96,6 +107,7 @@ export async function startLiveTranscriptionSession({
   let socket: WebSocket | null = null;
   let maxTimer: ReturnType<typeof setTimeout> | undefined;
   const pendingAudio: ArrayBuffer[] = [];
+  let bufferPauseVersion = 0;
   let paused = false;
   let stopped = false;
   let captureVersion = 0;
@@ -125,8 +137,16 @@ export async function startLiveTranscriptionSession({
     return startPcmCapture({
       getUserMedia,
       AudioContextImpl,
+      signal,
       onChunk: (samples, sampleRate) => {
         if (stopped || paused || version !== captureVersion) return;
+        const control = getControlState();
+        if (control.paused || control.pauseVersion !== bufferPauseVersion) {
+          // Unsent audio buffered before a pause is stale; never flush it later.
+          pendingAudio.length = 0;
+          bufferPauseVersion = control.pauseVersion;
+          if (control.paused) return;
+        }
         const pcm = floatToLinear16(downsampleTo16k(samples, sampleRate));
         if (!socket || socket.readyState !== WebSocketImpl.OPEN) {
           pendingAudio.push(pcm);
@@ -164,12 +184,24 @@ export async function startLiveTranscriptionSession({
     });
   }
 
+  let capturePromise: Promise<PcmCapture | null> | null = null;
+  const stopForAbort = () => {
+    stopSession();
+    void capturePromise?.then((pending) => pending?.stop());
+  };
+  signal?.addEventListener("abort", stopForAbort, { once: true });
+
   try {
     // Two protocols: a space in one string is an invalid Sec-WebSocket-Protocol.
     socket = new WebSocketImpl(deepgramListenUrl(), ["bearer", accessToken]);
     socket.binaryType = "arraybuffer";
     // Start the mic now: speech during the handshake must not be lost.
-    const capturePromise = startCapture();
+    // Paused before startup: connect the socket, but wait for resume to capture.
+    const control = getControlState();
+    if (control.paused) setPaused(true);
+    bufferPauseVersion = control.pauseVersion;
+    const wantsCapture = !paused;
+    capturePromise = wantsCapture ? startCapture() : Promise.resolve(null);
     const opened = await waitForListenOpen(socket, WebSocketImpl);
     if (!opened) {
       void capturePromise.then((pending) => pending?.stop());
@@ -207,13 +239,17 @@ export async function startLiveTranscriptionSession({
     });
 
     capture = await capturePromise;
-    if (!capture || lost) {
+    if ((wantsCapture && !capture) || lost || signal?.aborted) {
       stopSession();
       return null;
     }
-    // Flush speech captured during the handshake, in order.
-    for (const pcm of pendingAudio) {
-      socket.send(pcm);
+    // Flush speech captured during the handshake, in order. Chunks buffered
+    // before a pause are stale and are dropped instead.
+    const current = getControlState();
+    if (!current.paused && current.pauseVersion === bufferPauseVersion) {
+      for (const pcm of pendingAudio) {
+        socket.send(pcm);
+      }
     }
     pendingAudio.length = 0;
 

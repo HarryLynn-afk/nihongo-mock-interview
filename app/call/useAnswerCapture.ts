@@ -60,6 +60,7 @@ export function useAnswerCapture({
   const attemptCountRef = useRef(0);
   const liveSessionRef = useRef<LiveTranscriptionSession | null>(null);
   const speakPausedRef = useRef(false);
+  const pauseVersionRef = useRef(0);
   const submitPendingRef = useRef(false);
   const [liveFailed, setLiveFailed] = useState(false);
   const [autoSpeakUsed, setAutoSpeakUsed] = useState(false);
@@ -110,7 +111,15 @@ export function useAnswerCapture({
     const prefix = transcriptBaseRef.current;
     liveTranscriptPrefixRef.current = prefix;
     let cancelled = false;
+    const controller = new AbortController();
     void startLiveTranscriptionSession({
+      // Startup must see Pause and Mic off before the hook receives the
+      // session handle.
+      signal: controller.signal,
+      getControlState: () => ({
+        paused: speakPausedRef.current,
+        pauseVersion: pauseVersionRef.current,
+      }),
       onUnavailable: () => {
         if (cancelled) return;
         const transcript = joinJapanese(prefix, liveSessionRef.current?.getTranscript() ?? "");
@@ -150,6 +159,7 @@ export function useAnswerCapture({
     });
     return () => {
       cancelled = true;
+      controller.abort();
       const live = liveSessionRef.current;
       if (live) {
         transcriptBaseRef.current = joinJapanese(prefix, live.getTranscript());
@@ -161,6 +171,8 @@ export function useAnswerCapture({
 
   useEffect(() => {
     speakPausedRef.current = speakPaused;
+    // Startup drops unsent audio buffered before this version.
+    if (speakPaused) pauseVersionRef.current += 1;
     liveSessionRef.current?.setPaused(speakPaused);
   }, [speakPaused]);
 

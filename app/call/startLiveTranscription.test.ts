@@ -575,4 +575,346 @@ describe("startLiveTranscriptionSession", () => {
     vi.useRealTimers();
   });
 
+  it("does not open the microphone while paused at startup", async () => {
+    const state = { paused: true, pauseVersion: 0 };
+    const getUserMedia = vi.fn().mockImplementation(emptyMic);
+
+    const session = await startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      getControlState: () => state,
+      fetchImpl: tokenFetch(true),
+      getUserMedia,
+      WebSocketImpl: FakeListenSocket({ outcome: "open" }),
+      AudioContextImpl: FakeAudioContext(),
+    });
+
+    expect(session).not.toBeNull();
+    expect(getUserMedia).not.toHaveBeenCalled();
+
+    state.paused = false;
+    session!.setPaused(false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(getUserMedia).toHaveBeenCalledOnce();
+
+    session!.stop();
+  });
+
+  it("does not transmit audio while paused during startup, and resumes on the same socket", async () => {
+    const state = { paused: false, pauseVersion: 0 };
+    const sent: Array<ArrayBuffer | string> = [];
+    let socket: { open: () => void } | null = null;
+    const created: Array<{
+      processor: FakeProcessor;
+      gain: FakeGain;
+      destination: object;
+    }> = [];
+
+    const sessionPromise = startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      getControlState: () => state,
+      fetchImpl: tokenFetch(true),
+      getUserMedia: emptyMic,
+      WebSocketImpl: ControllableListenSocket({
+        onSend: (data) => sent.push(data),
+        onConstruct: (instance) => {
+          socket = instance;
+        },
+      }),
+      AudioContextImpl: FakeAudioContext(undefined, created),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    socket?.open();
+    const session = await sessionPromise;
+    expect(session).not.toBeNull();
+    expect(created[0]).toBeDefined();
+
+    state.paused = true;
+    const tone = new Float32Array([0.5]);
+    created[0]?.processor.onaudioprocess?.({
+      inputBuffer: { getChannelData: () => tone },
+    });
+    expect(sent).toHaveLength(0);
+
+    state.paused = false;
+    created[0]?.processor.onaudioprocess?.({
+      inputBuffer: { getChannelData: () => tone },
+    });
+    expect(sent).toHaveLength(1);
+
+    session!.stop();
+  });
+
+  it("drops audio buffered before a pause during startup", async () => {
+    const state = { paused: false, pauseVersion: 0 };
+    const sent: Array<ArrayBuffer | string> = [];
+    let socket: { open: () => void } | null = null;
+    const created: Array<{
+      processor: FakeProcessor;
+      gain: FakeGain;
+      destination: object;
+    }> = [];
+
+    const sessionPromise = startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      getControlState: () => state,
+      fetchImpl: tokenFetch(true),
+      getUserMedia: emptyMic,
+      WebSocketImpl: ControllableListenSocket({
+        onSend: (data) => sent.push(data),
+        onConstruct: (instance) => {
+          socket = instance;
+        },
+      }),
+      AudioContextImpl: FakeAudioContext(undefined, created),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    created[0]?.processor.onaudioprocess?.({
+      inputBuffer: { getChannelData: () => new Float32Array([0.5]) },
+    });
+    expect(sent).toHaveLength(0);
+
+    state.paused = true;
+    socket?.open();
+    const session = await sessionPromise;
+    expect(session).not.toBeNull();
+    expect(sent).toHaveLength(0);
+
+    session!.stop();
+  });
+
+  it("stops the microphone and returns null when startup is aborted", async () => {
+    const stopTrack = vi.fn();
+    const onUnavailable = vi.fn();
+    const controller = new AbortController();
+    let socket: { open: () => void } | null = null;
+
+    const sessionPromise = startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      onUnavailable,
+      signal: controller.signal,
+      fetchImpl: tokenFetch(true),
+      getUserMedia: vi
+        .fn()
+        .mockResolvedValue({ getTracks: () => [{ stop: stopTrack }] }),
+      WebSocketImpl: ControllableListenSocket({
+        onConstruct: (instance) => {
+          socket = instance;
+        },
+      }),
+      AudioContextImpl: FakeAudioContext(),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    controller.abort();
+    socket?.open();
+    const session = await sessionPromise;
+
+    expect(session).toBeNull();
+    expect(stopTrack).toHaveBeenCalledOnce();
+    expect(onUnavailable).not.toHaveBeenCalled();
+  });
+
+  it("does not open the socket or microphone when startup is aborted during the token request", async () => {
+    const controller = new AbortController();
+    const getUserMedia = vi.fn().mockImplementation(emptyMic);
+    const onConstruct = vi.fn();
+    const fetchImpl = vi.fn((_url: string, init: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init.signal?.addEventListener("abort", () =>
+          reject(new DOMException("aborted", "AbortError")),
+        );
+      }),
+    );
+
+    const sessionPromise = startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      signal: controller.signal,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      getUserMedia,
+      WebSocketImpl: FakeListenSocket({ outcome: "open", onConstruct }),
+      AudioContextImpl: FakeAudioContext(),
+    });
+
+    controller.abort();
+    const session = await sessionPromise;
+
+    expect(session).toBeNull();
+    expect(getUserMedia).not.toHaveBeenCalled();
+    expect(onConstruct).not.toHaveBeenCalled();
+  });
+
+  it("releases a pending microphone when startup is aborted", async () => {
+    const stopTrack = vi.fn();
+    const onUnavailable = vi.fn();
+    const onClose = vi.fn();
+    let resolveMic!: (stream: MediaStream) => void;
+    const pendingMic = new Promise<MediaStream>((resolve) => {
+      resolveMic = resolve;
+    });
+    const controller = new AbortController();
+    let socket: { emit: (type: "error" | "close") => void } | null = null;
+
+    const sessionPromise = startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      onUnavailable,
+      signal: controller.signal,
+      fetchImpl: tokenFetch(true),
+      getUserMedia: vi.fn().mockReturnValue(pendingMic),
+      WebSocketImpl: ControllableListenSocket({
+        onClose,
+        onConstruct: (instance) => {
+          socket = instance;
+        },
+      }),
+      AudioContextImpl: FakeAudioContext(),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    controller.abort();
+    expect(onClose).toHaveBeenCalled();
+
+    resolveMic({ getTracks: () => [{ stop: stopTrack }] });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(stopTrack).toHaveBeenCalledOnce();
+    expect(onUnavailable).not.toHaveBeenCalled();
+
+    socket?.emit("error");
+    await expect(sessionPromise).resolves.toBeNull();
+  });
+
+  it("drops audio buffered before a pause that is resumed during startup", async () => {
+    const state = { paused: false, pauseVersion: 0 };
+    const sent: Array<ArrayBuffer | string> = [];
+    let socket: { open: () => void } | null = null;
+    const created: Array<{
+      processor: FakeProcessor;
+      gain: FakeGain;
+      destination: object;
+    }> = [];
+
+    const sessionPromise = startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      getControlState: () => state,
+      fetchImpl: tokenFetch(true),
+      getUserMedia: emptyMic,
+      WebSocketImpl: ControllableListenSocket({
+        onSend: (data) => sent.push(data),
+        onConstruct: (instance) => {
+          socket = instance;
+        },
+      }),
+      AudioContextImpl: FakeAudioContext(undefined, created),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    created[0]?.processor.onaudioprocess?.({
+      inputBuffer: { getChannelData: () => new Float32Array([0.5]) },
+    });
+    expect(sent).toHaveLength(0);
+
+    // The student pauses and resumes before the socket opens; the hook bumps
+    // the version on every pause.
+    state.paused = true;
+    state.pauseVersion += 1;
+    state.paused = false;
+
+    socket?.open();
+    const session = await sessionPromise;
+    expect(session).not.toBeNull();
+    expect(sent).toHaveLength(0);
+
+    session!.stop();
+  });
+
+  it("releases the microphone when startup is aborted before capture initializes", async () => {
+    const stopTrack = vi.fn();
+    const onUnavailable = vi.fn();
+    let resolveResume!: () => void;
+    const pendingResume = new Promise<void>((resolve) => {
+      resolveResume = resolve;
+    });
+    const controller = new AbortController();
+    let socket: { emit: (type: "error" | "close") => void } | null = null;
+
+    const sessionPromise = startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      onUnavailable,
+      signal: controller.signal,
+      fetchImpl: tokenFetch(true),
+      getUserMedia: vi.fn().mockResolvedValue({
+        getTracks: () => [{ stop: stopTrack }],
+      }),
+      WebSocketImpl: ControllableListenSocket({
+        onConstruct: (instance) => {
+          socket = instance;
+        },
+      }),
+      AudioContextImpl: FakeAudioContext(() => pendingResume),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    controller.abort();
+    expect(stopTrack).toHaveBeenCalledOnce();
+
+    resolveResume();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(stopTrack).toHaveBeenCalledOnce();
+
+    socket?.emit("error");
+    await expect(sessionPromise).resolves.toBeNull();
+    expect(onUnavailable).not.toHaveBeenCalled();
+  });
+
+  it("keeps speech buffered after resume and drops the pre-pause buffer", async () => {
+    const state = { paused: false, pauseVersion: 0 };
+    const sent: Array<ArrayBuffer | string> = [];
+    let socket: { open: () => void } | null = null;
+    const created: Array<{
+      processor: FakeProcessor;
+      gain: FakeGain;
+      destination: object;
+    }> = [];
+
+    const sessionPromise = startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      getControlState: () => state,
+      fetchImpl: tokenFetch(true),
+      getUserMedia: emptyMic,
+      WebSocketImpl: ControllableListenSocket({
+        onSend: (data) => sent.push(data),
+        onConstruct: (instance) => {
+          socket = instance;
+        },
+      }),
+      AudioContextImpl: FakeAudioContext(undefined, created),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    created[0]?.processor.onaudioprocess?.({
+      inputBuffer: { getChannelData: () => new Float32Array([0.5]) },
+    });
+    expect(sent).toHaveLength(0);
+
+    state.paused = true;
+    state.pauseVersion += 1;
+    state.paused = false;
+
+    created[0]?.processor.onaudioprocess?.({
+      inputBuffer: { getChannelData: () => new Float32Array([-0.5]) },
+    });
+
+    socket?.open();
+    const session = await sessionPromise;
+    expect(session).not.toBeNull();
+    const binary = sent.filter(
+      (item): item is ArrayBuffer => typeof item !== "string",
+    );
+    expect(binary).toHaveLength(1);
+    expect(new DataView(binary[0]!).getInt16(0, true)).toBe(-16384);
+
+    session!.stop();
+  });
+
 });

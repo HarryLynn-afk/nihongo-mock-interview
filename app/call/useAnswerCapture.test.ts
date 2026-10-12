@@ -1349,4 +1349,44 @@ describe("useAnswerCapture", () => {
     startLive.mockRestore();
     vi.useRealTimers();
   });
+
+  it("passes the pause and cancellation state into the live startup", async () => {
+    let args:
+      | Parameters<typeof liveTranscription.startLiveTranscriptionSession>[0]
+      | undefined;
+    const startLive = vi
+      .spyOn(liveTranscription, "startLiveTranscriptionSession")
+      .mockImplementation((a) => {
+        args = a;
+        return new Promise<never>(() => {});
+      });
+
+    const { result, rerender } = renderHook(
+      ({ micOn }: { micOn: boolean }) =>
+        useAnswerCapture({
+          active: true,
+          micOn,
+          liveStt: true,
+          onSubmit: vi.fn(),
+        }),
+      { initialProps: { micOn: true } },
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(args?.getControlState?.()).toEqual({ paused: false, pauseVersion: 0 });
+    expect(args?.signal?.aborted).toBe(false);
+
+    act(() => result.current.onToggleSpeakPause());
+    expect(args?.getControlState?.()).toEqual({ paused: true, pauseVersion: 1 });
+    expect(args?.signal?.aborted).toBe(false);
+
+    rerender({ micOn: false });
+    expect(args?.signal?.aborted).toBe(true);
+
+    startLive.mockRestore();
+  });
 });
