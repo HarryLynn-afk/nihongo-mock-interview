@@ -99,7 +99,8 @@ Schema aside, prove the wiring end to end:
   consent box → **Agree and continue** → `GET /api/study/me` returns
   `state: "ready"` with a `participant_id`. Before that consent it returns
   `consentRequired`, which is expected, not a failed migration.
-- Open `/join?from=<code>` → a `P...` participant id is assigned.
+- Open `/join?from=<code>`, sign in with Google, and complete consent → a `P...`
+  participant id is assigned.
 
 If both work, `001`–`007` are effectively in place.
 
