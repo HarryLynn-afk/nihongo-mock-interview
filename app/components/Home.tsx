@@ -78,16 +78,36 @@ const HEADER_PILL =
 function InviteLogin({ from }: { from: string }) {
   const { copy } = useCopy();
   const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   async function startGoogle() {
-    const res = await fetch("/api/auth/join-google", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ from }),
-    });
-    const data = (await res.json()) as { url?: string | null };
-    if (data.url) {
-      window.location.assign(data.url);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/auth/join-google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from }),
+      });
+      const data = (await res.json()) as { url?: string; reason?: string };
+      if (data.url) {
+        window.location.assign(data.url);
+        return;
+      }
+      if (data.reason === "full") {
+        setMessage(copy.joinLink.full);
+        return;
+      }
+      if (data.reason === "unknown") {
+        setMessage(copy.joinLink.unknown);
+        return;
+      }
+      if (data.reason === "not_configured") {
+        setMessage(copy.auth.notConfigured);
+        return;
+      }
+      setMessage(copy.login.startFailed);
+    } catch {
+      setMessage(copy.login.startFailed);
     }
   }
 
@@ -104,6 +124,7 @@ function InviteLogin({ from }: { from: string }) {
         <GoogleSignInDialog
           title={copy.joinLink.title}
           body={copy.login.body}
+          message={message}
           onClose={() => setOpen(false)}
           onContinue={startGoogle}
         />

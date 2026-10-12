@@ -15,7 +15,7 @@ const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 12;
 
 export const POST = withApiGuard(async (request) => {
   if (!isSupabaseConfigured()) {
-    return NextResponse.json({ url: null });
+    return NextResponse.json({ reason: "not_configured" });
   }
 
   const body = (await request.json().catch(() => null)) as { from?: unknown } | null;
@@ -56,8 +56,8 @@ export const POST = withApiGuard(async (request) => {
     },
   });
 
-  const response = NextResponse.json({ url: result.url });
-  if (result.url && from) {
+  const response = NextResponse.json(result);
+  if ("url" in result && from) {
     response.cookies.set(JOIN_FROM_COOKIE, from, {
       httpOnly: true,
       sameSite: "lax",

@@ -48,8 +48,19 @@ describe("startJoinGoogle", () => {
       createOAuthUrl,
     });
 
-    expect(result.url).toBeNull();
+    expect(result).toEqual({ reason: "full" });
     expect(createOAuthUrl).not.toHaveBeenCalled();
+  });
+
+  it("reports an unknown link when the code is not stored", async () => {
+    const result = await startJoinGoogle({
+      from: "not-a-code",
+      origin: "http://localhost:3000",
+      lookup: async () => null,
+      createOAuthUrl: vi.fn(),
+    });
+
+    expect(result).toEqual({ reason: "unknown" });
   });
 
   it("starts Google with the join from on the auth callback URL", async () => {
@@ -64,6 +75,6 @@ describe("startJoinGoogle", () => {
     expect(createOAuthUrl).toHaveBeenCalledWith(
       "http://localhost:3000/auth/callback?from=T1",
     );
-    expect(result.url).toBe("https://accounts.google.com/oauth");
+    expect(result).toEqual({ url: "https://accounts.google.com/oauth" });
   });
 });

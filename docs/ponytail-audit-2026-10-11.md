@@ -6,7 +6,7 @@ Status: these 12 findings were open at audit time. This audit changed no applica
 
 Follow-up: findings **1–6 are fixed** on 2026-10-11; findings 7–12 remain open. The fixes passed all **671 tests** across 99 files, lint, and TypeScript checking. Real browser microphone, camera, and speech-recognition behavior has not been checked.
 
-Follow-up (2026-10-12): findings **7–9 are fixed**; findings 10–12 remain open.
+Follow-up (2026-10-12): findings **7–10 are fixed**; findings 11–12 remain open.
 
 ## Relationship to the previous fixes
 
@@ -94,6 +94,7 @@ These are additional findings after the fixes for [the 2026-10-09 audit](ponytai
     - **Problem:** If the link fills after the page loads, the endpoint returns `{url:null}` and clicking Continue appears to do nothing. Network failures also have no visible error.
     - **Fix:** Handle failed responses and missing URLs, and use the dialog's existing message field to explain the failure. Test both outcomes.
     - **If we skip it:** Testers cannot tell whether to retry or request another invite.
+    - **Resolution (2026-10-12):** `startJoinGoogle` returns a discriminated union — `{ url }` or `{ reason: "full" | "unknown" | "not_configured" }` — and the join-google route forwards it. The invite dialog maps `full` to "This sign-up link is full.", `unknown` to unavailable, `not_configured` to sign-in-not-configured, and maps network or unexpected responses to a new localized `login.startFailed` retry message (EN + MY). Test-first regressions in [joinLink.test.ts](../lib/content/joinLink.test.ts), [route.test.ts](../app/api/auth/join-google/route.test.ts), and [Home.invite.test.tsx](../app/components/Home.invite.test.tsx) cover the reasons and both user-visible outcomes: a link that filled after load, and a network failure.
 
 ## Should fix
 

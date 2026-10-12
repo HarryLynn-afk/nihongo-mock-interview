@@ -37,6 +37,10 @@ export function joinPageView(
   return { status: "open", showGoogle: true };
 }
 
+export type JoinStartResult =
+  | { url: string }
+  | { reason: "full" | "unknown" | "not_configured" };
+
 export async function startJoinGoogle({
   from,
   origin,
@@ -47,14 +51,14 @@ export async function startJoinGoogle({
   origin: string;
   lookup: (code: string) => Promise<JoinLinkRecord | null>;
   createOAuthUrl: (redirectTo: string) => Promise<string | null>;
-}): Promise<{ url: string | null }> {
+}): Promise<JoinStartResult> {
   const link = from ? await lookup(from) : null;
   const view = joinPageView(from, link);
   if (!from || !view.showGoogle) {
-    return { url: null };
+    return { reason: view.status === "full" ? "full" : "unknown" };
   }
   const url = await createOAuthUrl(
     `${origin}/auth/callback?from=${encodeURIComponent(from)}`,
   );
-  return { url };
+  return url ? { url } : { reason: "not_configured" };
 }

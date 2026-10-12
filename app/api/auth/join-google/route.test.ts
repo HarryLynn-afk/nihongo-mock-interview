@@ -39,7 +39,7 @@ describe("POST /api/auth/join-google", () => {
     signOut.mockResolvedValue({ error: null });
   });
 
-  it("returns no Google URL when Supabase is unset", async () => {
+  it("reports a configuration gap when Supabase is unset", async () => {
     vi.resetModules();
     process.env = { ...ORIGINAL_ENV };
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -54,9 +54,9 @@ describe("POST /api/auth/join-google", () => {
         body: JSON.stringify({ from: "T1" }),
       }),
     );
-    const body = (await res.json()) as { url: string | null };
+    const body = (await res.json()) as { reason?: string; url?: string };
     expect(res.status).toBe(200);
-    expect(body.url).toBeNull();
+    expect(body.reason).toBe("not_configured");
   });
 
   it("returns the Google URL and an HttpOnly from cookie when the join link is open", async () => {

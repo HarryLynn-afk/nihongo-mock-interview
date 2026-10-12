@@ -36,6 +36,7 @@ const en = {
     close: "Close",
     linkSent: "If this email is eligible, a sign-in link has been sent.",
     errorNotInvited: "This Google account is not in the invited-tester list.",
+    startFailed: "Could not start Google sign-in. Check your connection and try again.",
     requestInvite: "Request an invite",
   },
   account: {
@@ -284,6 +285,7 @@ const my: UiCopy = {
     close: "ပိတ်ရန်",
     linkSent: "ဤအီးမေးလ် ပါဝင်ခွင့်ရှိပါက ဆိုင်းအင်လင့်ခ် ပို့ပြီးဖြစ်သည်။",
     errorNotInvited: "ဤ Google အကောင့်သည် ဖိတ်ကြားစာရင်းတွင် မရှိပါ။",
+    startFailed: "Google ဆိုင်းအင်ကို မစတင်နိုင်ပါ။ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်မံကြိုးစားပါ။",
     requestInvite: "ဖိတ်ကြားရန် တောင်းဆိုပါ",
   },
   account: {

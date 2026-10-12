@@ -78,6 +78,69 @@ describe("Home invite landing", () => {
     });
   });
 
+  it("explains a link that filled after the page loaded", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ reason: "full" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(
+      <Home
+        view={view({ origin: "/join?from=T1", invite: "open", from: "T1" })}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Login" }));
+    await user.click(screen.getByRole("button", { name: "Continue with Google" }));
+
+    expect(
+      await screen.findByText("This sign-up link is full."),
+    ).toBeInTheDocument();
+  });
+
+  it("explains a network failure instead of doing nothing", async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error("offline"));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(
+      <Home
+        view={view({ origin: "/join?from=T1", invite: "open", from: "T1" })}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Login" }));
+    await user.click(screen.getByRole("button", { name: "Continue with Google" }));
+
+    expect(
+      await screen.findByText(
+        "Could not start Google sign-in. Check your connection and try again.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    ["not_configured", "Sign-in is not configured."],
+    ["unknown", "This sign-up link isn't available."],
+  ])("explains a %s result", async (reason, text) => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ reason }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(
+      <Home
+        view={view({ origin: "/join?from=T1", invite: "open", from: "T1" })}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Login" }));
+    await user.click(screen.getByRole("button", { name: "Continue with Google" }));
+
+    expect(await screen.findByText(text)).toBeInTheDocument();
+  });
+
   it("keeps the unique link as the profile return destination", () => {
     render(
       <Home
