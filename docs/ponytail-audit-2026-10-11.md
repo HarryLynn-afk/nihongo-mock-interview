@@ -6,7 +6,7 @@ Status: these 12 findings were open at audit time. This audit changed no applica
 
 Follow-up: findings **1–6 are fixed** on 2026-10-11; findings 7–12 remain open. The fixes passed all **671 tests** across 99 files, lint, and TypeScript checking. Real browser microphone, camera, and speech-recognition behavior has not been checked.
 
-Follow-up (2026-10-12): finding **7 is fixed**; findings 8–12 remain open.
+Follow-up (2026-10-12): findings **7 and 8 are fixed**; findings 9–12 remain open.
 
 ## Relationship to the previous fixes
 
@@ -80,6 +80,7 @@ These are additional findings after the fixes for [the 2026-10-09 audit](ponytai
    - **Problem:** The script reads only exported environment variables. A temporary directory containing a valid dummy key in `.env.local` still failed; the normal build stopped at the same precheck.
    - **Fix:** Load Next.js environment files before checking, using its [documented environment loader](https://nextjs.org/docs/app/guides/environment-variables#loading-environment-variables-with-nextenv). Test configuration supplied only through an environment file.
    - **If we skip it:** The documented local setup cannot build unless users separately export the key.
+   - **Resolution (2026-10-12):** The precheck loads env files with Next's own `@next/env` loader (`loadEnvConfig(process.cwd(), false)`), so it sees `.env.production.local`, `.env.local`, `.env.production`, and `.env` exactly as `next build` does; `@next/env` 16.3.8 is a declared devDependency. A test-first regression in [check-env.test.ts](../scripts/check-env.test.ts) covers a key supplied only through `.env.local`, and every script test now spawns in an isolated temp working directory so a developer's real env file cannot mask failures. `npm run prebuild` passes with the repo's `.env.local`; 672 tests across 99 files and lint pass.
 
 9. **Rate limits do not hold across Netlify instances** ([guard.ts:14](../lib/server/security/guard.ts#L14)).
    - **What this is:** The guard limits requests to paid providers.

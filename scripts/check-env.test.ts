@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 
 const SCRIPT_PATH = path.resolve(__dirname, "check-env.mjs");
 
-function runCheckEnv(env: Record<string, string | undefined>) {
+function runCheckEnv(
+  env: Record<string, string | undefined>,
+  cwd = mkdtempSync(path.join(tmpdir(), "check-env-")),
+) {
   return spawnSync("node", [SCRIPT_PATH], {
     encoding: "utf-8",
+    cwd,
     env: { PATH: process.env.PATH, ...env },
   });
 }
@@ -30,6 +36,15 @@ describe("scripts/check-env.mjs", () => {
 
   it("exits zero when all required keys are present", () => {
     const result = runCheckEnv(ALL_REQUIRED_ENV);
+
+    expect(result.status).toBe(0);
+  });
+
+  it("exits zero when the key is supplied only through .env.local", () => {
+    const cwd = mkdtempSync(path.join(tmpdir(), "check-env-file-"));
+    writeFileSync(path.join(cwd, ".env.local"), "GROQ_GRADE_API_KEY=file-key\n");
+
+    const result = runCheckEnv({}, cwd);
 
     expect(result.status).toBe(0);
   });
