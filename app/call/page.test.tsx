@@ -324,6 +324,24 @@ describe("Call screen", () => {
     });
   });
 
+  it("does not request devices until saved preferences load", async () => {
+    sessionStorage.setItem(
+      "nmi-device-prefs",
+      JSON.stringify({ cameraOn: false, micOn: false }),
+    );
+
+    render(<CallScreen homeHref="/" />);
+    await act(async () => {});
+
+    expect(getUserMedia).not.toHaveBeenCalled();
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /mic/i }));
+    await waitFor(() => {
+      expect(getUserMedia).toHaveBeenCalled();
+    });
+  });
+
   it("on mount, starts playing Q1 audio without a join dialog and does not warm n8n", async () => {
     render(<CallScreen homeHref="/" />);
 

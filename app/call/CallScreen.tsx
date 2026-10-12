@@ -49,10 +49,9 @@ import { LanguageToggle } from "../components/LanguageToggle";
 import { useCopy } from "../components/useUiLocale";
 import { helperLinesForLocale } from "@/lib/content/locale";
 
-const DEFAULT_DEVICE_PREFS: DevicePrefs = { cameraOn: true, micOn: true };
-
 /** Temporary local preview — remove before Issue 15 deploy. */
 const SHOW_SKIP_INTERVIEW = process.env.NODE_ENV !== "production";
+
 const DEBUG_PREVIEW_TRANSCRIPTS = [
   "アウン・ミン・タントです",
   "この学校で日本語を勉強したいです",
@@ -76,7 +75,9 @@ export function CallScreen({
   homeHref?: string;
   attemptToken?: string;
 }) {
-  const [devicePrefs, setDevicePrefs] = useState(DEFAULT_DEVICE_PREFS);
+  // Null until the mount effect loads the lobby's saved choices: device
+  // acquisition waits, so a device saved as off is never requested.
+  const [devicePrefs, setDevicePrefs] = useState<DevicePrefs | null>(null);
   const [sessionKind, setSessionKind] = useState<CallSessionKind>("participant");
   const [sessionQuestions, setSessionQuestions] = useState<
     readonly InterviewQuestion[] | null
@@ -149,9 +150,11 @@ export function CallScreen({
   }, []);
 
   const { cameraState, toggleCamera, videoRef, cameraErrorName } = useCameraStream({
-    startOn: devicePrefs.cameraOn,
+    startOn: devicePrefs?.cameraOn ?? false,
   });
-  const { micOn, toggleMic, micErrorName } = useMicToggle({ initialOn: devicePrefs.micOn });
+  const { micOn, toggleMic, micErrorName } = useMicToggle({
+    initialOn: devicePrefs?.micOn ?? false,
+  });
   const { phase, currentQuestion, answers, sessionQuestions: flowQuestions, endSenseiTurn, submitAnswer } =
     useQuestionFlow(sessionQuestions, {
       enableFollowUps:
