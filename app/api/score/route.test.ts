@@ -42,7 +42,8 @@ vi.mock("@/lib/server/study/adminClients", () => ({
             }),
           }),
           insert: async (row: Record<string, unknown>) => {
-            study.writes(row);
+            const result = study.writes(row) as { code?: string } | undefined;
+            if (result?.code) return { error: result };
             study.row.value = row;
             return { error: null };
           },
@@ -219,6 +220,63 @@ describe("POST /api/score", () => {
     expect(study.row.value?.report).toEqual(firstBody.report);
     expect(await second.json()).toEqual(firstBody);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns the winning saved report when a concurrent request wins the save", async () => {
+    process.env.STUDY_VISIT_SIGNING_KEY = "test-secret";
+    study.getUser.mockResolvedValue({
+      data: { user: { id: "user-1", email: "tester@example.com" } },
+    });
+    const { createVisitConsentProof } = await import("@/lib/server/study/visitConsent");
+    study.visit.proof = (await createVisitConsentProof("user-1", study.visit.id))!;
+    const { createStudyAttemptToken } = await import("@/lib/server/study/scoreAttempt");
+    const attemptToken = await createStudyAttemptToken("user-1", "attempt-race");
+    const winnerReport = { source: "grade", total: 80 };
+    // The winner's insert lands between this request's empty check and its save.
+    study.writes.mockImplementationOnce(() => {
+      study.row.value = { participant_id: "P001", report: winnerReport };
+      return { code: "23505" };
+    });
+    vi.stubGlobal("fetch", groqFetchMock());
+
+    const { POST } = await import("./route");
+    const res = await POST(new Request("http://localhost/api/score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        attemptToken,
+        answers: [{ questionIndex: 0, questionId: 1, status: "answered", transcript: "はじめまして。", pushbackCount: 0 }],
+      }),
+    }));
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.report).toEqual(winnerReport);
+    expect(body.studySave).toBe("saved");
+    expect(body.saveReceipt).toBeUndefined();
+  });
+
+  it("returns 503 when the winning report cannot be read after a save conflict", async () => {
+    process.env.STUDY_VISIT_SIGNING_KEY = "test-secret";
+    study.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+    const { createVisitConsentProof } = await import("@/lib/server/study/visitConsent");
+    study.visit.proof = (await createVisitConsentProof("user-1", study.visit.id))!;
+    const { createStudyAttemptToken } = await import("@/lib/server/study/scoreAttempt");
+    const attemptToken = await createStudyAttemptToken("user-1", "attempt-race-unreadable");
+    study.writes.mockImplementationOnce(() => ({ code: "23505" }));
+    vi.stubGlobal("fetch", groqFetchMock());
+
+    const { POST } = await import("./route");
+    const res = await POST(new Request("http://localhost/api/score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        attemptToken,
+        answers: [{ questionIndex: 0, questionId: 1, status: "answered", transcript: "はじめまして。", pushbackCount: 0 }],
+      }),
+    }));
+
+    expect(res.status).toBe(503);
   });
 
   it("returns the report with a retry state when the database request throws", async () => {

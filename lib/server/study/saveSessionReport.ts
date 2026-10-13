@@ -2,6 +2,8 @@ import type { InterviewReport } from "@/lib/content/sampleReport";
 import type { StudySessionAnswer } from "./scoreAttempt";
 import type { createStudyAdminClient } from "./adminClients";
 
+export type SaveSessionResult = "saved" | "conflict" | "failed";
+
 export async function saveSessionReport({
   admin, attemptId, participantId, report, answers,
 }: {
@@ -10,7 +12,7 @@ export async function saveSessionReport({
   participantId: string;
   report: InterviewReport;
   answers: StudySessionAnswer[];
-}): Promise<boolean> {
+}): Promise<SaveSessionResult> {
   try {
     const { error } = await admin.from("study_sessions").insert({
       attempt_id: attemptId,
@@ -25,8 +27,10 @@ export async function saveSessionReport({
       ),
       follow_up_count: answers.filter((answer) => answer.isFollowUp).length,
     });
-    return !error;
+    if (!error) return "saved";
+    // 23505: another request for this attempt saved first.
+    return (error as { code?: string }).code === "23505" ? "conflict" : "failed";
   } catch {
-    return false;
+    return "failed";
   }
 }

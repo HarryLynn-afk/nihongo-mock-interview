@@ -135,11 +135,28 @@ export const POST = withApiGuard(async (request) => {
   const saved = await saveSessionReport({
     admin: admin!, attemptId, participantId, report, answers: sessionAnswers!,
   });
-  const saveReceipt = saved ? undefined : await createStudySaveReceipt({
-    userId: userId!,
-    attemptId,
-    report,
-    answers: sessionAnswers!,
-  });
-  return NextResponse.json({ report, studySave: saved ? "saved" : "retry", ...(saveReceipt ? { saveReceipt } : {}) });
+  if (saved === "conflict") {
+    // Another request won the save race; never return a conflicting report.
+    // shortcut: the loser already graded, so overlapping requests still spend
+    // two provider calls; claim the attempt atomically if that matters.
+    const winner = await admin!.from("study_sessions")
+      .select("participant_id, report").eq("attempt_id", attemptId).maybeSingle();
+    if (winner.error || !winner.data) {
+      return NextResponse.json({ error: "unavailable" }, { status: 503 });
+    }
+    if (winner.data.participant_id !== participantId) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ report: winner.data.report, studySave: "saved" });
+  }
+  if (saved === "failed") {
+    const saveReceipt = await createStudySaveReceipt({
+      userId: userId!,
+      attemptId,
+      report,
+      answers: sessionAnswers!,
+    });
+    return NextResponse.json({ report, studySave: "retry", ...(saveReceipt ? { saveReceipt } : {}) });
+  }
+  return NextResponse.json({ report, studySave: "saved" });
 }, "expensive");

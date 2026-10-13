@@ -43,7 +43,9 @@ export const POST = withApiGuard(async (request) => {
   const saved = await saveSessionReport({
     admin, attemptId: payload.attemptId, participantId, report, answers,
   });
-  if (!saved) {
+  // "conflict" means another writer won; the next retry returns its report
+  // through the existing check above.
+  if (saved !== "saved") {
     return NextResponse.json({ error: "unavailable" }, { status: 503 });
   }
   return NextResponse.json({ report, studySave: "saved" });
