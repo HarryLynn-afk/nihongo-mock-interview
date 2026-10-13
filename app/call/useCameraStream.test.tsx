@@ -47,6 +47,34 @@ describe("useCameraStream", () => {
     expect(getUserMedia).not.toHaveBeenCalled();
   });
 
+  it("releases a manually enabled camera when the session goes inactive", async () => {
+    const stream = makeStream();
+    const tracks = stream.getTracks();
+    getUserMedia.mockResolvedValue(stream);
+
+    const { result, rerender } = renderHook(
+      ({ active }: { active: boolean }) =>
+        useCameraStream({ startOn: false, active }),
+      { initialProps: { active: true } },
+    );
+
+    act(() => {
+      result.current.toggleCamera();
+    });
+    expect(result.current.cameraState).toBe("on");
+    await waitFor(() => {
+      expect(getUserMedia).toHaveBeenCalled();
+    });
+
+    rerender({ active: false });
+    expect(result.current.cameraState).toBe("off");
+    await waitFor(() => {
+      for (const track of tracks) {
+        expect(track.stop).toHaveBeenCalled();
+      }
+    });
+  });
+
   it("settles to 'on' once getUserMedia resolves with a stream", async () => {
     getUserMedia.mockResolvedValue({} as MediaStream);
 

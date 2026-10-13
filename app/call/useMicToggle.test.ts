@@ -112,4 +112,32 @@ describe("useMicToggle", () => {
       }
     });
   });
+
+  it("releases a manually enabled mic when the session goes inactive", async () => {
+    const stream = makeStream();
+    const tracks = stream.getTracks();
+    getUserMedia.mockResolvedValue(stream);
+
+    const { result, rerender } = renderHook(
+      ({ active }: { active: boolean }) =>
+        useMicToggle({ initialOn: false, active }),
+      { initialProps: { active: true } },
+    );
+
+    act(() => {
+      result.current.toggleMic();
+    });
+    expect(result.current.micOn).toBe(true);
+    await waitFor(() => {
+      expect(getUserMedia).toHaveBeenCalled();
+    });
+
+    rerender({ active: false });
+    expect(result.current.micOn).toBe(false);
+    await waitFor(() => {
+      for (const track of tracks) {
+        expect(track.stop).toHaveBeenCalled();
+      }
+    });
+  });
 });

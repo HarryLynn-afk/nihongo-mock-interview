@@ -149,12 +149,6 @@ export function CallScreen({
       .catch(() => {});
   }, []);
 
-  const { cameraState, toggleCamera, videoRef, cameraErrorName } = useCameraStream({
-    startOn: devicePrefs?.cameraOn ?? false,
-  });
-  const { micOn, toggleMic, micErrorName } = useMicToggle({
-    initialOn: devicePrefs?.micOn ?? false,
-  });
   const { phase, currentQuestion, answers, sessionQuestions: flowQuestions, endSenseiTurn, submitAnswer } =
     useQuestionFlow(sessionQuestions, {
       enableFollowUps:
@@ -173,6 +167,18 @@ export function CallScreen({
   const displayAnswers = previewing ? DEBUG_PREVIEW_ANSWERS : answers;
   const displayQuestions = previewing ? questions : flowQuestions;
   const displayPhase = previewing ? "done" : phase;
+
+  // `active` releases both streams on every done screen (report, grading,
+  // failure), even for devices switched on during the interview.
+  const interviewOver = displayPhase === "done";
+  const { cameraState, toggleCamera, videoRef, cameraErrorName } = useCameraStream({
+    startOn: devicePrefs?.cameraOn ?? false,
+    active: !interviewOver,
+  });
+  const { micOn, toggleMic, micErrorName } = useMicToggle({
+    initialOn: devicePrefs?.micOn ?? false,
+    active: !interviewOver,
+  });
 
   if (report && studyReady && sessionId === null) {
     setSessionId(createSessionId(participantId ? "participant" : "guest"));

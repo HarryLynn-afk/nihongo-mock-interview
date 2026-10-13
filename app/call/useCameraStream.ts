@@ -41,18 +41,23 @@ function playPreview(video: HTMLVideoElement, stream: MediaStream | null) {
   video.onloadedmetadata = start;
 }
 
-export function useCameraStream({ startOn = true }: { startOn?: boolean } = {}) {
+export function useCameraStream({
+  startOn = true,
+  active = true,
+}: { startOn?: boolean; active?: boolean } = {}) {
   const [cameraState, setCameraState] = useState<CameraState>(
-    startOn ? "on" : "off",
+    startOn && active ? "on" : "off",
   );
   const [cameraErrorName, setCameraErrorName] = useState<string | null>(null);
   const [prevStartOn, setPrevStartOn] = useState(startOn);
+  const [prevActive, setPrevActive] = useState(active);
   const videoElRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  if (startOn !== prevStartOn) {
+  if (startOn !== prevStartOn || active !== prevActive) {
     setPrevStartOn(startOn);
-    setCameraState(startOn ? "on" : "off");
+    setPrevActive(active);
+    setCameraState(startOn && active ? "on" : "off");
   }
 
   const videoRef: RefCallback<HTMLVideoElement> = useCallback((node) => {

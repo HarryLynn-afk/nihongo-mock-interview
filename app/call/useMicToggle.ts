@@ -11,15 +11,18 @@ import { useEffect, useRef, useState } from "react";
  */
 export function useMicToggle({
   initialOn = true,
-}: { initialOn?: boolean } = {}) {
-  const [micOn, setMicOn] = useState(initialOn);
+  active = true,
+}: { initialOn?: boolean; active?: boolean } = {}) {
+  const [micOn, setMicOn] = useState(initialOn && active);
   const [micErrorName, setMicErrorName] = useState<string | null>(null);
   const [prevInitialOn, setPrevInitialOn] = useState(initialOn);
+  const [prevActive, setPrevActive] = useState(active);
   const streamRef = useRef<MediaStream | null>(null);
 
-  if (initialOn !== prevInitialOn) {
+  if (initialOn !== prevInitialOn || active !== prevActive) {
     setPrevInitialOn(initialOn);
-    setMicOn(initialOn);
+    setPrevActive(active);
+    setMicOn(initialOn && active);
   }
 
   useEffect(() => {

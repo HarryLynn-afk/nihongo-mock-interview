@@ -1011,6 +1011,93 @@ describe("Call screen", () => {
     expect(screen.queryByTestId("interview-report")).not.toBeInTheDocument();
   });
 
+  it("releases camera and microphone streams on the grading screen", async () => {
+    const cameraTrack = { stop: vi.fn() };
+    const micTrack = { stop: vi.fn() };
+    getUserMedia.mockImplementation(
+      async (constraints: MediaStreamConstraints) =>
+        constraints.video
+          ? ({ getTracks: () => [cameraTrack] } as unknown as MediaStream)
+          : ({ getTracks: () => [micTrack] } as unknown as MediaStream),
+    );
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      if (String(input).includes("/api/score")) {
+        return new Promise(() => {});
+      }
+      return Promise.resolve(new Response(null, { status: 202 }));
+    });
+
+    const user = userEvent.setup();
+    render(<CallScreen homeHref="/" />);
+    await completeLockedInterview(user);
+
+    expect(await screen.findByTestId("grading-screen")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(cameraTrack.stop).toHaveBeenCalled();
+      expect(micTrack.stop).toHaveBeenCalled();
+    });
+  });
+
+  it("releases camera and microphone streams on the report screen", async () => {
+    const cameraTrack = { stop: vi.fn() };
+    const micTrack = { stop: vi.fn() };
+    getUserMedia.mockImplementation(
+      async (constraints: MediaStreamConstraints) =>
+        constraints.video
+          ? ({ getTracks: () => [cameraTrack] } as unknown as MediaStream)
+          : ({ getTracks: () => [micTrack] } as unknown as MediaStream),
+    );
+    mockLiveGradeAndSurvey();
+
+    const user = userEvent.setup();
+    render(<CallScreen homeHref="/" />);
+    await completeLockedInterview(user);
+
+    expect(await screen.findByTestId("interview-report")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(cameraTrack.stop).toHaveBeenCalled();
+      expect(micTrack.stop).toHaveBeenCalled();
+    });
+  });
+
+  it("releases devices enabled during the interview when it ends", async () => {
+    sessionStorage.setItem(
+      "nmi-device-prefs",
+      JSON.stringify({ cameraOn: false, micOn: false }),
+    );
+    const cameraTrack = { stop: vi.fn() };
+    const micTrack = { stop: vi.fn() };
+    getUserMedia.mockImplementation(
+      async (constraints: MediaStreamConstraints) =>
+        constraints.video
+          ? ({ getTracks: () => [cameraTrack] } as unknown as MediaStream)
+          : ({ getTracks: () => [micTrack] } as unknown as MediaStream),
+    );
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      if (String(input).includes("/api/score")) {
+        return new Promise(() => {});
+      }
+      return Promise.resolve(new Response(null, { status: 202 }));
+    });
+
+    const user = userEvent.setup();
+    render(<CallScreen homeHref="/" />);
+
+    await user.click(screen.getByRole("button", { name: /camera/i }));
+    await user.click(screen.getByRole("button", { name: /mic/i }));
+    await waitFor(() => {
+      expect(getUserMedia).toHaveBeenCalledTimes(2);
+    });
+
+    await completeLockedInterview(user);
+
+    expect(await screen.findByTestId("grading-screen")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(cameraTrack.stop).toHaveBeenCalled();
+      expect(micTrack.stop).toHaveBeenCalled();
+    });
+  });
+
   it("shows the same grading state for a guest run", async () => {
     window.history.replaceState({}, "", "/call?guest=1");
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
