@@ -55,6 +55,57 @@ describe("parseQuotedCritiques", () => {
     ).toBeNull();
   });
 
+  it("rejects a differing rewrite without Japanese kana", () => {
+    expect(
+      parseQuotedCritiques(
+        [
+          {
+            questionIndex: 0,
+            quote: "はじめまして。",
+            explanation: "Add a polite closing.",
+            rewrite: "Hello, nice to meet you.",
+            category: "grammarPoliteness",
+          },
+        ],
+        [{ questionIndex: 0, transcript: "はじめまして。" }],
+      ),
+    ).toBeNull();
+  });
+
+  it("rejects a blank explanation", () => {
+    expect(
+      parseQuotedCritiques(
+        [
+          {
+            questionIndex: 0,
+            quote: "はじめまして。",
+            explanation: "",
+            rewrite: "はじめまして。アウン・ミン・タントです。",
+            category: "contentCompleteness",
+          },
+        ],
+        [{ questionIndex: 0, transcript: "はじめまして。" }],
+      ),
+    ).toBeNull();
+  });
+
+  it("rejects a whitespace-only rewrite", () => {
+    expect(
+      parseQuotedCritiques(
+        [
+          {
+            questionIndex: 0,
+            quote: "はじめまして。",
+            explanation: "Add your name.",
+            rewrite: "   ",
+            category: "contentCompleteness",
+          },
+        ],
+        [{ questionIndex: 0, transcript: "はじめまして。" }],
+      ),
+    ).toBeNull();
+  });
+
   it("allows （無言） only when the stored transcript is empty after trim", () => {
     expect(
       parseQuotedCritiques(

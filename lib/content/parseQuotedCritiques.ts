@@ -2,6 +2,7 @@ import {
   RUBRIC_CATEGORY_KEYS,
   type RubricCategoryKey,
 } from "./rubric";
+import { hasJapaneseKana } from "./pushbackCheck";
 
 const SILENT_QUOTE = "（無言）";
 
@@ -59,8 +60,12 @@ export function parseQuotedCritiques(
     if (seen.has(row.questionIndex)) return null;
     seen.add(row.questionIndex);
     if (typeof row.quote !== "string") return null;
-    if (typeof row.explanation !== "string") return null;
-    if (typeof row.rewrite !== "string") return null;
+    if (typeof row.explanation !== "string" || row.explanation.trim() === "") {
+      return null;
+    }
+    if (typeof row.rewrite !== "string" || row.rewrite.trim() === "") {
+      return null;
+    }
     if (
       typeof row.category !== "string" ||
       !RUBRIC_CATEGORY_KEYS.includes(row.category as RubricCategoryKey)
@@ -77,6 +82,9 @@ export function parseQuotedCritiques(
       return null;
     }
     if (row.rewrite === SILENT_QUOTE) return null;
+    // A changed rewrite is new coaching text, so it must be Japanese; an
+    // unchanged quote keeps the student's own phrase as-is.
+    if (row.rewrite !== row.quote && !hasJapaneseKana(row.rewrite)) return null;
     const coaching = `${row.explanation}\n${row.rewrite}`;
     if (
       hasEligibilityClaim(row.explanation) || hasEligibilityClaim(row.rewrite) ||
