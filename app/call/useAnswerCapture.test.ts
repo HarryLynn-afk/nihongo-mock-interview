@@ -128,6 +128,74 @@ describe("useAnswerCapture", () => {
     });
   });
 
+  it("keeps unfinished browser speech through a pause and resume", () => {
+    const browser = installBrowserRecognition();
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() => useAnswerCapture({ active: true, micOn: true, onSubmit }));
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => {
+      browser[0].onresult?.({
+        resultIndex: 0,
+        results: [speechResult("こんにちは。"), speechResult("私は", false)],
+      });
+    });
+    expect(result.current.liveCaption).toBe("こんにちは。私は");
+
+    act(() => result.current.onToggleSpeakPause());
+    act(() => result.current.onToggleSpeakPause());
+
+    act(() => {
+      browser[1].onresult?.({
+        resultIndex: 0,
+        results: [speechResult("学生です。", false)],
+      });
+    });
+    expect(result.current.liveCaption).toBe("こんにちは。私は学生です。");
+
+    act(() => result.current.onSubmitClick());
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      status: "answered",
+      transcript: "こんにちは。私は学生です。",
+      pushbackCount: 0,
+    });
+  });
+
+  it("keeps unfinished browser speech through a microphone off/on", () => {
+    const browser = installBrowserRecognition();
+    const onSubmit = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ micOn }) => useAnswerCapture({ active: true, micOn, onSubmit }),
+      { initialProps: { micOn: true } },
+    );
+
+    act(() => result.current.onSpeakAnswer());
+    act(() => {
+      browser[0].onresult?.({
+        resultIndex: 0,
+        results: [speechResult("こんにちは。"), speechResult("私は", false)],
+      });
+    });
+
+    rerender({ micOn: false });
+    rerender({ micOn: true });
+
+    act(() => {
+      browser[1].onresult?.({
+        resultIndex: 0,
+        results: [speechResult("学生です。", false)],
+      });
+    });
+    expect(result.current.liveCaption).toBe("こんにちは。私は学生です。");
+
+    act(() => result.current.onSubmitClick());
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      status: "answered",
+      transcript: "こんにちは。私は学生です。",
+      pushbackCount: 0,
+    });
+  });
+
   it("submits both live sessions exactly once after microphone off/on", async () => {
     vi.useFakeTimers();
     const sockets = installLiveBrowser();

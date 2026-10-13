@@ -185,6 +185,7 @@ export function useAnswerCapture({
     let recognition: SpeechRecognitionLike | undefined;
     let allowRecognitionRestart = true;
     let cancelled = false;
+    let pendingInterim = "";
     function startBrowserRecognition() {
       if (!Ctor) return;
       recognition = new Ctor();
@@ -203,6 +204,7 @@ export function useAnswerCapture({
           } else interim += text;
           if (i >= resultIndex) changedText += text;
         }
+        pendingInterim = interim;
         setSpokenCaption(transcriptBaseRef.current + interim);
         if (changedText) setPushbackVisible(false);
       };
@@ -237,6 +239,9 @@ export function useAnswerCapture({
         recognition.onerror = null;
         recognition.stop();
       }
+      // The session is gone: its unfinished words stay in the answer so the
+      // caption and Submit do not lose them across pause or mic toggling.
+      if (pendingInterim) transcriptBaseRef.current += pendingInterim;
     };
   }, [liveStt, liveFailed, listening]);
 
