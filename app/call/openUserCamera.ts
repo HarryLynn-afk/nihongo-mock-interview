@@ -35,6 +35,17 @@ async function tryListedCameras(
   return { lastName };
 }
 
+async function tryEnumerateDevices(
+  enumerateDevices: () => Promise<MediaDeviceInfo[]>,
+): Promise<MediaDeviceInfo[]> {
+  try {
+    return await enumerateDevices();
+  } catch {
+    // A failed listing must stay inside the documented error result.
+    return [];
+  }
+}
+
 export async function openUserCamera({
   getUserMedia,
   enumerateDevices,
@@ -68,7 +79,7 @@ export async function openUserCamera({
 
     const firstList = await tryListedCameras(
       getUserMedia,
-      await enumerateDevices(),
+      await tryEnumerateDevices(enumerateDevices),
     );
     if ("stream" in firstList) return firstList;
     if ("lastName" in firstList && firstList.lastName) lastName = firstList.lastName;
@@ -76,7 +87,7 @@ export async function openUserCamera({
     await delay(settleMs);
     const secondList = await tryListedCameras(
       getUserMedia,
-      await enumerateDevices(),
+      await tryEnumerateDevices(enumerateDevices),
     );
     if ("stream" in secondList) return secondList;
     if ("lastName" in secondList && secondList.lastName) lastName = secondList.lastName;

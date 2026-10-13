@@ -44,6 +44,23 @@ describe("openUserCamera", () => {
     expect(result).toEqual({ stream: fallback });
   });
 
+  it("returns the last camera error when device enumeration rejects", async () => {
+    const getUserMedia = vi.fn(async (constraints: MediaStreamConstraints) => {
+      if (constraints.video === true) {
+        throw Object.assign(new Error("over"), { name: "OverconstrainedError" });
+      }
+      throw Object.assign(new Error("missing"), { name: "NotFoundError" });
+    });
+    const enumerateDevices = vi.fn(async () => {
+      throw Object.assign(new Error("denied"), { name: "SecurityError" });
+    });
+
+    const result = await openUserCamera({ getUserMedia, enumerateDevices });
+
+    expect(result).toEqual({ errorName: "NotFoundError" });
+    expect(enumerateDevices).toHaveBeenCalledTimes(2);
+  });
+
   it("does not try other cameras when the site is not allowed to use the camera", async () => {
     const getUserMedia = vi.fn(async () => {
       throw Object.assign(new Error("denied"), { name: "NotAllowedError" });
