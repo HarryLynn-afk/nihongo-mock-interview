@@ -104,6 +104,8 @@ export async function startLiveTranscriptionSession({
   let finalized = "";
   let interim = "";
   let capture: PcmCapture | null = null;
+  /** Cancels whichever capture attempt is still initializing. */
+  let activeAttempt: AbortController | null = null;
   let socket: WebSocket | null = null;
   let maxTimer: ReturnType<typeof setTimeout> | undefined;
   const pendingAudio: ArrayBuffer[] = [];
@@ -125,6 +127,8 @@ export async function startLiveTranscriptionSession({
     if (keepAliveTimer) clearInterval(keepAliveTimer);
     keepAliveTimer = undefined;
     stopped = true;
+    activeAttempt?.abort();
+    activeAttempt = null;
     capture?.stop();
     capture = null;
     if (socket) {
@@ -134,10 +138,12 @@ export async function startLiveTranscriptionSession({
   }
 
   function startCapture(version = captureVersion): Promise<PcmCapture | null> {
+    const attempt = new AbortController();
+    activeAttempt = attempt;
     return startPcmCapture({
       getUserMedia,
       AudioContextImpl,
-      signal,
+      signal: attempt.signal,
       onChunk: (samples, sampleRate) => {
         if (stopped || paused || version !== captureVersion) return;
         const control = getControlState();
@@ -162,6 +168,8 @@ export async function startLiveTranscriptionSession({
     paused = next;
     const version = ++captureVersion;
     if (paused) {
+      activeAttempt?.abort();
+      activeAttempt = null;
       capture?.stop();
       capture = null;
       keepAliveTimer = setInterval(() => {
@@ -180,16 +188,17 @@ export async function startLiveTranscriptionSession({
         resumed?.stop();
         return;
       }
+      if (!resumed) {
+        // The resumed microphone was denied; recover like any lost capture.
+        stopSession();
+        onUnavailable?.();
+        return;
+      }
       capture = resumed;
     });
   }
 
-  let capturePromise: Promise<PcmCapture | null> | null = null;
-  const stopForAbort = () => {
-    stopSession();
-    void capturePromise?.then((pending) => pending?.stop());
-  };
-  signal?.addEventListener("abort", stopForAbort, { once: true });
+  signal?.addEventListener("abort", () => stopSession(), { once: true });
 
   try {
     // Two protocols: a space in one string is an invalid Sec-WebSocket-Protocol.
@@ -201,10 +210,9 @@ export async function startLiveTranscriptionSession({
     if (control.paused) setPaused(true);
     bufferPauseVersion = control.pauseVersion;
     const wantsCapture = !paused;
-    capturePromise = wantsCapture ? startCapture() : Promise.resolve(null);
+    const capturePromise = wantsCapture ? startCapture() : Promise.resolve(null);
     const opened = await waitForListenOpen(socket, WebSocketImpl);
     if (!opened) {
-      void capturePromise.then((pending) => pending?.stop());
       stopSession();
       return null;
     }

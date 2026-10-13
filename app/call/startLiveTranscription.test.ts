@@ -189,10 +189,11 @@ describe("startLiveTranscriptionSession", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
       resolveStale({ getTracks: () => [{ stop: staleStop }] } as unknown as MediaStream);
       await new Promise((resolve) => setTimeout(resolve, 0));
+      // The stale attempt is cancelled on Pause: its stream is released when
+      // the microphone resolves and it never initializes an audio context.
       expect(staleStop).toHaveBeenCalledOnce();
+      expect(created).toHaveLength(2);
       const audioEvent = { inputBuffer: { getChannelData: () => new Float32Array([0.25]) } };
-      created[2].processor.onaudioprocess?.(audioEvent);
-      expect(send).not.toHaveBeenCalled();
       const queuedNewestAudio = created[1].processor.onaudioprocess!;
       queuedNewestAudio(audioEvent);
       expect(send).toHaveBeenCalledOnce();
@@ -228,6 +229,105 @@ describe("startLiveTranscriptionSession", () => {
     } finally {
       session?.stop();
     }
+  });
+
+  it("releases a resume-initializing stream as soon as Pause is pressed", async () => {
+    const track1 = { stop: vi.fn() };
+    const track2 = { stop: vi.fn() };
+    let resumes = 0;
+    let releaseResume!: () => void;
+    const pendingResume = new Promise<void>((resolve) => { releaseResume = resolve; });
+    const getUserMedia = vi.fn()
+      .mockResolvedValueOnce({ getTracks: () => [track1] })
+      .mockResolvedValueOnce({ getTracks: () => [track2] });
+    const session = await startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      fetchImpl: tokenFetch(true),
+      getUserMedia,
+      WebSocketImpl: FakeListenSocket({ outcome: "open" }),
+      AudioContextImpl: FakeAudioContext(() => {
+        resumes += 1;
+        return resumes === 2 ? pendingResume : Promise.resolve();
+      }),
+    });
+    expect(session).not.toBeNull();
+    session!.setPaused(true);
+    expect(track1.stop).toHaveBeenCalledOnce();
+
+    session!.setPaused(false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(getUserMedia).toHaveBeenCalledTimes(2);
+    session!.setPaused(true);
+    expect(track2.stop).toHaveBeenCalledOnce();
+
+    releaseResume();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(track2.stop).toHaveBeenCalledOnce();
+    session!.stop();
+  });
+
+  it("reports the live session unavailable when the resumed microphone request fails", async () => {
+    const onUnavailable = vi.fn();
+    const getUserMedia = vi.fn()
+      .mockResolvedValueOnce(emptyMic())
+      .mockRejectedValueOnce(
+        Object.assign(new Error("denied"), { name: "NotAllowedError" }),
+      );
+    const session = await startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      onUnavailable,
+      fetchImpl: tokenFetch(true),
+      getUserMedia,
+      WebSocketImpl: FakeListenSocket({ outcome: "open" }),
+      AudioContextImpl: FakeAudioContext(),
+    });
+    expect(session).not.toBeNull();
+    session!.setPaused(true);
+
+    session!.setPaused(false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(onUnavailable).toHaveBeenCalledOnce();
+    session!.stop();
+  });
+
+  it("keeps the newer capture when an older failed resume settles later", async () => {
+    const onUnavailable = vi.fn();
+    const newestStop = vi.fn();
+    let rejectStale!: (error: Error) => void;
+    const staleMic = new Promise<MediaStream>((_resolve, reject) => {
+      rejectStale = reject;
+    });
+    let resolveNewest!: (stream: MediaStream) => void;
+    const newestMic = new Promise<MediaStream>((resolve) => {
+      resolveNewest = resolve;
+    });
+    const session = await startLiveTranscriptionSession({
+      onEvent: vi.fn(),
+      onUnavailable,
+      fetchImpl: tokenFetch(true),
+      getUserMedia: vi.fn().mockImplementationOnce(emptyMic)
+        .mockReturnValueOnce(staleMic).mockReturnValueOnce(newestMic),
+      WebSocketImpl: FakeListenSocket({ outcome: "open" }),
+      AudioContextImpl: FakeAudioContext(),
+    });
+    expect(session).not.toBeNull();
+    session!.setPaused(true);
+    session!.setPaused(false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    session!.setPaused(true);
+    session!.setPaused(false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    resolveNewest({ getTracks: () => [{ stop: newestStop }] } as unknown as MediaStream);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    rejectStale(Object.assign(new Error("denied"), { name: "NotAllowedError" }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(onUnavailable).not.toHaveBeenCalled();
+    session!.setPaused(true);
+    expect(newestStop).toHaveBeenCalledOnce();
+    session!.stop();
   });
 
   it("does not report a committed stream closing as unavailable", async () => {
