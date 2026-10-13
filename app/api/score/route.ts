@@ -8,6 +8,7 @@ import { withApiGuard } from "@/lib/server/security/guard";
 import { createStudyAdminClient } from "@/lib/server/study/adminClients";
 import { createStudySaveReceipt, readStudyAttemptToken, type StudySessionAnswer } from "@/lib/server/study/scoreAttempt";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
+import { readSavedSessionReport } from "@/lib/server/study/readSavedSessionReport";
 import { saveSessionReport } from "@/lib/server/study/saveSessionReport";
 import { hasVisitConsent, VISIT_CONSENT_COOKIE, VISIT_ID_COOKIE } from "@/lib/server/study/visitConsent";
 import { gradeInterview } from "../grade/gradeInterview";
@@ -84,14 +85,15 @@ export const POST = withApiGuard(async (request) => {
       .select("participant_id").eq("id", user.id).maybeSingle();
     participantId = participant.data?.participant_id ?? null;
     if (!participantId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    const existing = await admin.from("study_sessions")
-      .select("participant_id, report").eq("attempt_id", attemptId).maybeSingle();
-    if (existing.error) return NextResponse.json({ error: "unavailable" }, { status: 503 });
-    if (existing.data) {
-      if (existing.data.participant_id !== participantId) {
-        return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-      }
-      return NextResponse.json({ report: existing.data.report, studySave: "saved" });
+    const existing = await readSavedSessionReport({ admin, attemptId, participantId });
+    if (existing.state === "unavailable") {
+      return NextResponse.json({ error: "unavailable" }, { status: 503 });
+    }
+    if (existing.state === "other-participant") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    if (existing.state === "saved") {
+      return NextResponse.json({ report: existing.report, studySave: "saved" });
     }
   }
 
@@ -139,15 +141,14 @@ export const POST = withApiGuard(async (request) => {
     // Another request won the save race; never return a conflicting report.
     // shortcut: the loser already graded, so overlapping requests still spend
     // two provider calls; claim the attempt atomically if that matters.
-    const winner = await admin!.from("study_sessions")
-      .select("participant_id, report").eq("attempt_id", attemptId).maybeSingle();
-    if (winner.error || !winner.data) {
-      return NextResponse.json({ error: "unavailable" }, { status: 503 });
-    }
-    if (winner.data.participant_id !== participantId) {
+    const winner = await readSavedSessionReport({ admin: admin!, attemptId, participantId });
+    if (winner.state === "other-participant") {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
-    return NextResponse.json({ report: winner.data.report, studySave: "saved" });
+    if (winner.state !== "saved") {
+      return NextResponse.json({ error: "unavailable" }, { status: 503 });
+    }
+    return NextResponse.json({ report: winner.report, studySave: "saved" });
   }
   if (saved === "failed") {
     const saveReceipt = await createStudySaveReceipt({
