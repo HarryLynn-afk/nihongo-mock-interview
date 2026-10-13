@@ -29,7 +29,15 @@ function sharedLimiterFor(preset: Preset) {
     redis: Redis.fromEnv(),
     limiter: Ratelimit.slidingWindow(limit, `${windowMs} ms`),
   });
-  const check = async (key: string) => (await ratelimit.limit(key)).success;
+  const check = async (key: string) => {
+    const result = await ratelimit.limit(key);
+    // A timed-out store call arrives success-shaped; treat it as unusable so
+    // the per-instance limit still applies.
+    if (result.reason === "timeout") {
+      throw new Error("ratelimit timeout");
+    }
+    return result.success;
+  };
   sharedLimiters.set(preset, check);
   return check;
 }
@@ -85,8 +93,8 @@ export function withApiGuard(
         return NextResponse.json({ error: "rate_limited" }, { status: 429 });
       }
     } catch {
-      // Store or configuration problems fall through to the per-instance
-      // limit; provider spend caps remain the backstop.
+      // Store problems — thrown errors or timeouts — fall through to the
+      // per-instance limit; provider spend caps remain the backstop.
       shared = null;
     }
     if (shared) {

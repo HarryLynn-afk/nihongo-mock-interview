@@ -103,6 +103,22 @@ describe("withApiGuard with a shared store", () => {
     expect(handler).toHaveBeenCalled();
   });
 
+  it("uses the local limit when the shared store times out", async () => {
+    limitMock.mockResolvedValue({ success: true, reason: "timeout" });
+    const handler = vi.fn(ok);
+    const guarded = withApiGuard(handler, "expensive");
+    const ip = { origin: "http://localhost", "x-forwarded-for": "1.2.3.4" };
+
+    let last = 0;
+    for (let call = 0; call < 21; call += 1) {
+      last = (await guarded(post(ip))).status;
+    }
+
+    expect(limitMock).toHaveBeenCalled();
+    expect(last).toBe(429);
+    expect(handler).toHaveBeenCalledTimes(20);
+  });
+
   it("runs the handler exactly once when it throws after a shared allow", async () => {
     limitMock.mockResolvedValue({ success: true });
     const handler = vi.fn(() => {
