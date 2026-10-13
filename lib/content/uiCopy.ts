@@ -49,6 +49,8 @@ const en = {
     signedInWith: "Signed in with Google",
     signOut: "Sign out",
     signOutError: "Could not sign out. Please try again.",
+    loadError: "Could not load your account. Please try again.",
+    retry: "Try again",
   },
   consent: {
     title: "Study consent",
@@ -298,6 +300,8 @@ const my: UiCopy = {
     signedInWith: "Google ဖြင့် ဝင်ရောက်ထားသည်",
     signOut: "ထွက်ရန်",
     signOutError: "ထွက်မရပါ။ ထပ်ကြိုးစားပါ။",
+    loadError: "အကောင့်ကို ဖွင့်မရပါ။ ထပ်ကြိုးစားပါ။",
+    retry: "ထပ်ကြိုးစားပါ",
   },
   consent: {
     title: "လေ့လာမှု သဘောတူညီချက်",
