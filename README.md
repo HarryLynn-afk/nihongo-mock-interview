@@ -158,7 +158,7 @@ docs/                PRD, issues, ubiquitous language, rubric snapshot
 mocks/               sample-report.json (`banner` stays null)
 ```
 
-Current grading: `docs/grading-system.md`. Current development tasks: `claude2.md`.
+Current grading: `docs/grading-system.md`. Current development tasks: `project-state.md`. Stable product decisions: `product-context.md`.
 
 ## Deploy (Issue 15)
 

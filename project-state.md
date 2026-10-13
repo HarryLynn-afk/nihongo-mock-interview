@@ -1,0 +1,50 @@
+# NihonGo project state
+
+Updated 2026-10-14. Use this file for current work; read `product-context.md` when changing product behavior. Update Current State, Open Tasks, and Session Log at session close. Read archives only when historical decisions are explicitly requested.
+
+## Current State
+
+- October 9 and October 11 audit fixes remain in place. **All seven October 12 findings (F1–F7) remain fixed** test-first in `docs/ponytail-audit-2026-10-12.md`. The 2026-10-14 whole-repo audit found six additional open cases in `docs/ponytail-audit-2026-10-14.md`: browser speech lost on natural recognition restart; failed live mic resume does not activate fallback; pause does not cancel a resumed capture still initializing; concurrent score requests can return different grades for one attempt; survey forwarding can stall without a deadline; and camera enumeration rejection bypasses normal error handling. All six reproduced against current code and relevant pre-F1–F7 implementations. No application fix was made in this audit.
+- Latest code commit: `a7da17c` (profile load recovery). Local `main` is 7 commits ahead of `origin/main` (`1501322`…`a7da17c`); nothing pushed. Audit/state documentation remains uncommitted as usual.
+- Redis shared store remains conditional on configuring `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` at deploy; timeout results now route through the memory fallback instead of bypassing both limits.
+- Latest baseline checks: 714 tests across 98 files, TypeScript, lint, and diff checks passed. Six additional isolated audit reproductions fail as described in `docs/ponytail-audit-2026-10-14.md`. Production build remains unverified because the Google Font fetch failed in the restricted environment; live OAuth, browser hardware, provider, research-form, PostgreSQL, and deployed Redis checks remain.
+- Reports are graded/saved server-side through `/api/score`; failed saves retry using signed receipts without regrading. `/api/study/save` and the public `/api/grade` handler are removed; shared grading helpers remain under `app/api/grade/`.
+- Surveys require a consented Participant's saved attempt and validated inputs. The status ledger tracks delivery without storing survey answers; failed/uncertain delivery stays visible. Development sample previews never POST surveys.
+- Deepgram token/socket failures activate browser fallback. Stalled requests are bounded: the browser token request aborts after 5s including response parsing; the server grant request after 3s. Grading requests are bounded; explicit English/Japanese eligibility claims are checked across topics with the stricter financial-support guard retained. Phrase filtering cannot cover every paraphrase.
+- User confirmed Supabase migrations `006` (survey status ledger, `621d7c8`) and `007` (atomic allowlist/join enrollment, `1653cc5`) applied. Both enrollment functions lock before existing-participant lookup. Later fixes: `1b6edca` (eligibility checks), `e6d145c` (retired paths).
+- No repository callers or GitHub deployments were found for `/api/grade`; README records Netlify as not deployed. Production traffic logs were unavailable, so unknown external callers were not ruled out completely.
+- Reworded bank audio for 161/182/211/241/271 was regenerated in `05e37c5`. Report-only CSP remains a deployment follow-up. Rate limits share one Upstash Redis store when `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` are set, falling back to per-instance memory otherwise; set both at deploy.
+- Intentional untracked notes: `docs/archive/`, audit/handoff/security/migration notes, and `personal.md`. Preserve them; `personal.md` is outside agent review. Context rotation changes are uncommitted.
+
+## Open Tasks
+
+1. Fix and permanently test the six cases in `docs/ponytail-audit-2026-10-14.md`; rerun all 714 baseline tests and TypeScript/lint. Verify the interactions between mic resume/pause/stop, browser recognition restart/finalization/pause, concurrent score retries, and survey timeout/uncertain status.
+2. Rerun the production build in a network-enabled environment. Live-check Speak, Pause/Resume, Submit, idle auto-pause, Answer again, Hear again, and browser fallback. Obtain explicit permission before paid provider calls.
+3. Live-verify Google sign-in from `/` and an open `/join?from=CODE` — including the filled-link and OAuth-failure dialog messages — consent, device setup, `/call`, and sign-out return. Confirm unique Participant IDs and enrollment retries consume no extra invite slot.
+4. Live-check report saving and retry without regrading; a survey becomes available only after saving. Confirm one research-form row, visible failed/uncertain delivery, and no survey POST from development previews or anonymous guests.
+5. Deploy to Netlify (Issue 15); configure Google origins, Supabase Site URL, visit signing key, and the Upstash rate-limit env vars. Verify headers/client IP handling and enforce CSP after browser checks. Provider setup includes optional Deepgram/DeepSeek and future generate-time ElevenLabs.
+6. Complete Issue 29 human form checks, native Burmese review of report/rubric/reworded questions, and instructor consent approval for RSU / CSC 485. Formal documentation and oral-exam preparation follow.
+
+### Deferred / optional
+
+- CSC 485 research question; Guest session cap; Google account-chooser branding after public-site verification.
+- Admin dashboard for join links after deciding admin authentication; retention migration, provider spend caps, and logging/alerts.
+- Full-link policy for returning Participants; optional transient join-cookie cleanup after consent.
+- Report refresh/draft resume after tab close; one critique per rubric category; answer-specific live Burmese only if required.
+- Phase 3 root CSS, Mobbin polish, and a soft dock hint if testers miss auto-pause.
+- User-count evidence: Google Form responses and `P00x` Participants; Guest `G-` sessions do not prove unique students.
+
+## Session Log
+
+| Date | Completed | Verification / next step |
+|------|-----------|--------------------------|
+| 2026-10-11 | All ten audit code fixes, commits `10b7833`…`e6d145c`; migrations `006`/`007` user-confirmed applied | 649 tests, lint, TypeScript; six isolated enrollment checks. Live verification and deployment next. |
+| 2026-10-11 | Fix and review follow-up audit findings 1–5: capture races, answer preservation, browser speech results, and goal advice; commits `aa6f517`…`1d929ab` | 666 tests, lint, TypeScript; real browser/device checks remain. |
+| 2026-10-11 | Fix 2026-10-11 audit finding 6: bound stalled Deepgram token/grant requests so browser fallback starts; review fix keeps the browser deadline through response parsing. Commit `de50a31` | 671 tests, lint, TypeScript; real network-stall browser check remains. |
+| 2026-10-11 | Rotate context; replace historical living files with canonical state/product files and compatibility pointers | Exact prior snapshots: `docs/archive/context-rotation-2026-10-11/`. No application code changed; rotation not committed. |
+| 2026-10-12 | Fix 2026-10-11 audit findings 7–12 test-first (migration docs/check `8490b43`, `.env.local` precheck `b524f27`, shared rate limits `f151b71`+`281786f`, invite sign-in messages `ee4c462`+`c46826a`, shared grade parser `d93ba12`, retired profile code `a32a2e0`); pushed `de50a31..a32a2e0` | 686 tests / 98 files, lint, TypeScript; migration query replayed on scratch PostgreSQL; `prebuild` passes from `.env.local`. Live browser, Netlify, Upstash, and provider checks remain. |
+| 2026-10-12 | Audit and compare prior fixes; document seven open findings in `docs/ponytail-audit-2026-10-12.md` (six pre-existing, Redis timeout introduced by `f151b71`); no application changes or commit/push | 686 tests, lint, TypeScript, six PostgreSQL checks; 251 focused tests pass, nine temporary regressions expose the gaps. Build blocked by local-port restriction. Fix initial-startup audio privacy first. |
+| 2026-10-12 | Independently reassess all 12 October 11 findings; update that report with current status and F1–F7, qualifying rate-limit closure. Documentation only; not committed or pushed | 686 tests / 98 files, TypeScript, lint, and diff checks pass. Temporary regressions, PostgreSQL, and build not rerun. Next: fix initial-startup audio privacy. |
+| 2026-10-12–14 | Fix October 12 findings F1–F7 test-first with build-plan/design-check/TDD per finding (commits `1501322`…`a7da17c`), plus four inline-review follow-ups: startup races, pause buffer, hook `active` flag, stale profile requests | 714 tests / 98 files, TypeScript, lint, and diff checks pass. Not pushed; audit/state docs remain uncommitted. Live browser/device, provider, Netlify/Redis, and build checks remain; next: live-verify sign-in and the full call flow. |
+| 2026-10-14 | Independent code-review session: F1–F7 cleared after follow-up fixes; no application edits or commits by this reviewer | Focused checks per fix passed; final F7 review: 14 tests, TypeScript, focused ESLint, diff checks. Full-suite result above belongs to the implementation session. Live browser/device/provider checks remain. |
+| 2026-10-14 | Whole-repo ponytail audit; saved six additional reproducible findings in `docs/ponytail-audit-2026-10-14.md`; no application changes or commits | 714 existing tests, TypeScript, and lint pass; six focused reproductions also fail against relevant pre-fix implementations. Build blocked on Google Font network fetch. First priority: fix the six new cases and keep the prior regression suite green. |
