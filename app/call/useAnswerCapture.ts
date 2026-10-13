@@ -216,6 +216,12 @@ export function useAnswerCapture({
         }
       };
       recognition.onend = () => {
+        // The session is over: its unfinished words stay in the answer so a
+        // Chrome silence restart cannot drop what the student already saw.
+        if (pendingInterim) {
+          transcriptBaseRef.current += pendingInterim;
+          pendingInterim = "";
+        }
         // Chrome ends continuous recognition after short silence; restart
         // while the student turn is still listening.
         if (cancelled || !allowRecognitionRestart || !recognition) return;

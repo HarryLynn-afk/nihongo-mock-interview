@@ -196,6 +196,90 @@ describe("useAnswerCapture", () => {
     });
   });
 
+  it("keeps unfinished browser speech across Chrome's automatic silence restart", () => {
+    const browser = installBrowserRecognition();
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() => useAnswerCapture({ active: true, micOn: true, onSubmit }));
+    act(() => result.current.onSpeakAnswer());
+
+    act(() => browser[0].onresult?.({
+      resultIndex: 0,
+      results: [speechResult("私は学生です。", false)],
+    }));
+    expect(result.current.liveCaption).toBe("私は学生です。");
+
+    act(() => browser[0].onend?.());
+    expect(browser[0].start).toHaveBeenCalledTimes(2);
+    act(() => browser[0].onresult?.({
+      resultIndex: 0,
+      results: [speechResult("日本で勉強したいです。", false)],
+    }));
+    expect(result.current.liveCaption).toBe("私は学生です。日本で勉強したいです。");
+
+    act(() => result.current.onSubmitClick());
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      status: "answered",
+      transcript: "私は学生です。日本で勉強したいです。",
+      pushbackCount: 0,
+    });
+  });
+
+  it("keeps unfinished browser speech across a restart followed by pause and resume", () => {
+    const browser = installBrowserRecognition();
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() => useAnswerCapture({ active: true, micOn: true, onSubmit }));
+    act(() => result.current.onSpeakAnswer());
+
+    act(() => browser[0].onresult?.({
+      resultIndex: 0,
+      results: [speechResult("私は学生です。", false)],
+    }));
+    act(() => browser[0].onend?.());
+    act(() => browser[0].onresult?.({
+      resultIndex: 0,
+      results: [speechResult("日本で勉強したいです。", false)],
+    }));
+
+    act(() => result.current.onToggleSpeakPause());
+    act(() => result.current.onToggleSpeakPause());
+
+    act(() => browser[1].onresult?.({
+      resultIndex: 0,
+      results: [speechResult("日本で働きたいです。", false)],
+    }));
+
+    act(() => result.current.onSubmitClick());
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      status: "answered",
+      transcript: "私は学生です。日本で勉強したいです。日本で働きたいです。",
+      pushbackCount: 0,
+    });
+  });
+
+  it("does not duplicate finalized browser speech across the automatic restart", () => {
+    const browser = installBrowserRecognition();
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() => useAnswerCapture({ active: true, micOn: true, onSubmit }));
+    act(() => result.current.onSpeakAnswer());
+
+    act(() => browser[0].onresult?.({
+      resultIndex: 0,
+      results: [speechResult("こんにちは。")],
+    }));
+    act(() => browser[0].onend?.());
+    act(() => browser[0].onresult?.({
+      resultIndex: 0,
+      results: [speechResult("学生です。")],
+    }));
+
+    act(() => result.current.onSubmitClick());
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      status: "answered",
+      transcript: "こんにちは。学生です。",
+      pushbackCount: 0,
+    });
+  });
+
   it("submits both live sessions exactly once after microphone off/on", async () => {
     vi.useFakeTimers();
     const sockets = installLiveBrowser();
