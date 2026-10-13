@@ -27,14 +27,19 @@ export const RESEARCH_FORM_FIELDS: Record<RatingKey | OpenEndedKey, string> = {
   improvement: "entry.1855296635",
 };
 
+/** Bound the forwarding request so a stalled Google Form cannot trap the survey. */
+export const SURVEY_FORWARD_TIMEOUT_MS = 10_000;
+
 export async function postSurvey({
   url,
   payload,
   fetchImpl,
+  timeoutMs = SURVEY_FORWARD_TIMEOUT_MS,
 }: {
   url: string;
   payload: SurveyPayload;
   fetchImpl: typeof fetch;
+  timeoutMs?: number;
 }): Promise<void> {
   const body = new URLSearchParams();
   if (!payload.skipped) {
@@ -46,10 +51,17 @@ export async function postSurvey({
     }
   }
 
-  const response = await fetchImpl(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
-  if (!response.ok) throw new Error("Survey delivery failed");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetchImpl(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error("Survey delivery failed");
+  } finally {
+    clearTimeout(timeout);
+  }
 }

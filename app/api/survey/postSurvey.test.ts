@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { postSurvey } from "./postSurvey";
+import { SURVEY_FORWARD_TIMEOUT_MS, postSurvey } from "./postSurvey";
 import type { SurveyPayload } from "@/lib/content/survey";
 
 const submitPayload: SurveyPayload = {
@@ -105,5 +105,35 @@ describe("postSurvey", () => {
         fetchImpl: fakeFetch,
       }),
     ).rejects.toThrow("network down");
+  });
+
+  it("aborts a stalled forwarding request at the deadline", async () => {
+    vi.useFakeTimers();
+    try {
+      const fakeFetch = vi.fn((_url: string, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () =>
+            reject(Object.assign(new Error("aborted"), { name: "AbortError" })),
+          );
+        }),
+      );
+      let outcome: "resolved" | "rejected" | null = null;
+      const attempt = postSurvey({
+        url: "https://example.com/formResponse",
+        payload: submitPayload,
+        fetchImpl: fakeFetch as unknown as typeof fetch,
+      });
+      attempt.then(
+        () => { outcome = "resolved"; },
+        () => { outcome = "rejected"; },
+      );
+
+      await vi.advanceTimersByTimeAsync(SURVEY_FORWARD_TIMEOUT_MS);
+
+      expect(outcome).toBe("rejected");
+      await attempt.catch(() => {});
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

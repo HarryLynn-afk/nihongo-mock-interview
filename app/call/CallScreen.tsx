@@ -13,6 +13,7 @@ import { SenseiTile } from "./SenseiTile";
 import { StudentTile } from "./StudentTile";
 import { CallDeviceNotice } from "./CallDeviceNotice";
 import { UsefulnessStep } from "./UsefulnessStep";
+import { submitSurveyAnswers } from "./submitSurveyAnswers";
 import { FullSessionRequestDialog } from "../components/FullSessionRequestDialog";
 import { buildReportView } from "./buildReportView";
 import { reportTopAction } from "./reportTopAction";
@@ -499,24 +500,9 @@ export function CallScreen({
             onSubmit={async (survey) => {
               if (previewing) return "submitted";
               if (!attemptToken || studySave !== "saved") return "retry";
-              try {
-                const response = await fetch("/api/survey", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ attemptToken, survey }),
-                });
-                if (response.status === 202) return "submitted";
-                if (response.status === 409) {
-                  const result = await response.json().catch(() => null);
-                  if (result?.error === "not saved") return "retry";
-                  setUsefulnessSubmitted(true);
-                  return "uncertain";
-                }
-                return "retry";
-              } catch {
-                setUsefulnessSubmitted(true);
-                return "uncertain";
-              }
+              const outcome = await submitSurveyAnswers({ attemptToken, survey });
+              if (outcome === "uncertain") setUsefulnessSubmitted(true);
+              return outcome;
             }}
             onFinished={(outcome) => {
               closeUsefulness();
