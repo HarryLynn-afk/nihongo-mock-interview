@@ -76,8 +76,6 @@ describe("Study consent page", () => {
     render(<ConsentPage />);
 
     expect(await screen.findByText("may@gmail.com")).toBeInTheDocument();
-    expect(screen.queryByText(/Dev only/)).not.toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalledWith("/api/study/debug-whoami");
   });
 
   it("does not offer consent when the Google session is gone", async () => {

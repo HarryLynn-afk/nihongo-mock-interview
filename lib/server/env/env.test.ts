@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const ORIGINAL_ENV = { ...process.env };
 
 const ALL_KEYS = {
-  ELEVENLABS_TTS_API_KEY: "test-elevenlabs-tts-key",
   GROQ_GRADE_API_KEY: "test-groq-grade-key",
 } as const;
 
@@ -21,37 +20,21 @@ describe("lib/server/env/* per-purpose modules", () => {
     process.env = { ...ORIGINAL_ENV };
   });
 
-  it("each getter returns its own scoped value (TTS ≠ Grade)", async () => {
+  it("the Groq getter returns its scoped value", async () => {
     setAllRequiredEnv();
 
-    const { getElevenLabsTtsKey } = await import("./elevenlabsTts");
     const { getGroqGradeKey } = await import("./groqGrade");
 
-    expect(getElevenLabsTtsKey()).toBe(ALL_KEYS.ELEVENLABS_TTS_API_KEY);
     expect(getGroqGradeKey()).toBe(ALL_KEYS.GROQ_GRADE_API_KEY);
   });
 
-  it.each([
-    {
-      missing: "ELEVENLABS_TTS_API_KEY",
-      failingImport: "./elevenlabsTts",
-      unrelatedImport: "./groqGrade",
-    },
-    {
-      missing: "GROQ_GRADE_API_KEY",
-      failingImport: "./groqGrade",
-      unrelatedImport: "./elevenlabsTts",
-    },
-  ])(
-    "$missing missing → $failingImport throws, but $unrelatedImport still imports",
-    async ({ missing, failingImport, unrelatedImport }) => {
-      setAllRequiredEnv();
-      delete process.env[missing];
+  it("a missing required key throws at its import, but optional modules still import", async () => {
+    setAllRequiredEnv();
+    delete process.env.GROQ_GRADE_API_KEY;
 
-      await expect(import(failingImport)).rejects.toThrow(new RegExp(missing));
-      await expect(import(unrelatedImport)).resolves.toBeDefined();
-    },
-  );
+    await expect(import("./groqGrade")).rejects.toThrow(/GROQ_GRADE_API_KEY/);
+    await expect(import("./deepgramStt")).resolves.toBeDefined();
+  });
 
   it("Deepgram STT key is optional — missing var does not throw", async () => {
     setAllRequiredEnv();
