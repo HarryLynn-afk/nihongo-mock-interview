@@ -2,7 +2,7 @@ import {
   getBankQuestionById,
   type QuestionTopicKey,
 } from "@/lib/content/questionBank";
-import { questions, type InterviewQuestion } from "@/lib/content/questions";
+import { questions, LOCKED_QUESTION_TOPICS, type InterviewQuestion } from "@/lib/content/questions";
 import type { QuestionPhase, StoredAnswer } from "./useQuestionFlow";
 
 export type GradeAnswer = {
@@ -12,13 +12,6 @@ export type GradeAnswer = {
   questionJapanese: string;
   transcript: string;
   pushbackCount: 0 | 1 | 2;
-};
-
-/** The 3 locked Pitch/guest Questions are not rows in the topic bank. */
-const LOCKED_QUESTION_TOPICS: Record<number, QuestionTopicKey> = {
-  1: "selfIntroduction",
-  2: "motivationJapan",
-  3: "studyPlan",
 };
 
 export type GradeCollection =

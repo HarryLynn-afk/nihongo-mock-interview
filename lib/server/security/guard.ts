@@ -49,6 +49,10 @@ export function __resetGuard() {
 }
 
 function clientIp(request: Request): string {
+  // Only Netlify's proxy may supply this identity in the deployed app.
+  if (process.env.NODE_ENV === "production") {
+    return request.headers.get("x-nf-client-connection-ip") ?? "unknown";
+  }
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0]!.trim();
   return request.headers.get("x-real-ip") ?? "unknown";
@@ -63,7 +67,7 @@ function sameOrigin(request: Request): boolean {
   const origin = request.headers.get("origin") ?? request.headers.get("referer");
   if (!origin) return true;
   try {
-    return new URL(origin).host === new URL(request.url).host;
+    return new URL(origin).origin === new URL(request.url).origin;
   } catch {
     return false;
   }

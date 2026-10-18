@@ -941,7 +941,7 @@ describe("Call screen", () => {
               {
                 questionIndex: 2,
                 questionId: 3,
-                topic: "studyPlan",
+                topic: "futurePlan",
                 questionJapanese: questions[2].japanese,
                 transcript: "答え3",
                 pushbackCount: 0,
@@ -1127,6 +1127,13 @@ describe("Call screen", () => {
     expect(
       screen.getByRole("link", { name: /back to home/i }),
     ).toHaveAttribute("href", "/join?from=T1");
+  });
+
+  it("ends the interview at the resolved invite landing", async () => {
+    const user = userEvent.setup();
+    render(<CallScreen homeHref="/join?from=T1" />);
+    await user.click(screen.getByRole("button", { name: /end interview/i }));
+    expect(screen.getByRole("link", { name: /end interview/i })).toHaveAttribute("href", "/join?from=T1");
   });
 
   it("does not show the scoring-unavailable banner when /api/score returns a live report", async () => {

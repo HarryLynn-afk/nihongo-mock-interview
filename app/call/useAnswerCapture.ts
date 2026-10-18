@@ -62,6 +62,7 @@ export function useAnswerCapture({
   const speakPausedRef = useRef(false);
   const pauseVersionRef = useRef(0);
   const submitPendingRef = useRef(false);
+  const turnVersionRef = useRef(0);
   const [liveFailed, setLiveFailed] = useState(false);
   const [autoSpeakUsed, setAutoSpeakUsed] = useState(false);
   const [answerAgainUsed, setAnswerAgainUsed] = useState(false);
@@ -87,6 +88,8 @@ export function useAnswerCapture({
     transcriptBaseRef.current = "";
     attemptCountRef.current = 0;
   }, [active]);
+
+  useEffect(() => () => { turnVersionRef.current += 1; }, [active]);
 
   const speakActive = active && answerMode === "speak" && micOn;
   const listening = speakActive && !speakPaused;
@@ -322,11 +325,13 @@ export function useAnswerCapture({
     const live = liveSessionRef.current;
     if (live) {
       const prefix = liveTranscriptPrefixRef.current;
+      const turnVersion = turnVersionRef.current;
       void (async () => {
         live.commit();
         await new Promise((resolve) => {
           window.setTimeout(resolve, 800);
         });
+        if (turnVersion !== turnVersionRef.current) return;
         const committed = joinJapanese(prefix, live.getTranscript());
         live.stop();
         liveSessionRef.current = null;

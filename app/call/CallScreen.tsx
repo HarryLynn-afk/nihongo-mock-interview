@@ -530,7 +530,7 @@ export function CallScreen({
                   {copy.call.keepGoing}
                 </button>
                 <Link
-                  href="/"
+                  href={homeHref}
                   className="rounded-full bg-red-500 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                 >
                   {copy.call.endInterview}

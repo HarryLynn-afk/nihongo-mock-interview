@@ -30,6 +30,41 @@ beforeEach(() => {
 });
 
 describe("withApiGuard", () => {
+  it("rejects a different scheme even when the hostname matches", async () => {
+    const guarded = withApiGuard(ok);
+    const response = await guarded(new Request("https://practice.example/api/score", {
+      method: "POST", headers: { origin: "http://practice.example" },
+    }));
+    expect(response.status).toBe(403);
+  });
+  it("does not fall back to spoofable headers when Netlify omits its IP", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      const guarded = withApiGuard(ok, "auth");
+      for (let call = 0; call < 8; call += 1) {
+        await guarded(post({ "x-forwarded-for": `203.0.113.${call}` }));
+      }
+      expect((await guarded(post({ "x-real-ip": "203.0.113.99" }))).status).toBe(429);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+  it("uses Netlify's connection IP even when forwarded headers change", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      const guarded = withApiGuard(ok, "auth");
+      let status = 0;
+      for (let call = 0; call < 9; call += 1) {
+        status = (await guarded(post({
+          "x-nf-client-connection-ip": "198.51.100.1",
+          "x-forwarded-for": `203.0.113.${call}`,
+        }))).status;
+      }
+      expect(status).toBe(429);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
   it("blocks a cross-origin POST with 403", async () => {
     const guarded = withApiGuard(ok, "expensive");
 

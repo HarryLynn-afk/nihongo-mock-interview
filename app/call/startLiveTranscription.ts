@@ -268,6 +268,7 @@ export async function startLiveTranscriptionSession({
 
     maxTimer = setTimeout(() => {
       stopSession();
+      if (!committing) onUnavailable?.();
     }, MAX_LISTEN_MS);
     ready = true;
   } catch {

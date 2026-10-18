@@ -72,6 +72,20 @@ function speechResult(transcript: string, isFinal = true) {
 }
 
 describe("useAnswerCapture", () => {
+  it("does not submit a pending live answer after the student turn is cancelled", async () => {
+    vi.useFakeTimers();
+    const sockets = installLiveBrowser();
+    const onSubmit = vi.fn();
+    const { result, rerender } = renderHook(({ active }) => useAnswerCapture({
+      active, micOn: true, liveStt: true, onSubmit,
+    }), { initialProps: { active: true } });
+    await act(async () => { result.current.onSpeakAnswer(); });
+    act(() => sockets[0].speech("こんにちは。"));
+    act(() => result.current.onSubmitClick());
+    rerender({ active: false });
+    await act(async () => { await vi.advanceTimersByTimeAsync(800); });
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.useRealTimers();

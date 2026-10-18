@@ -125,6 +125,36 @@ describe("POST /api/score", () => {
     expect(res.status).toBe(400);
   });
 
+  it("rejects non-guest questions before spending an anonymous grade call", async () => {
+    const fetchMock = groqFetchMock();
+    vi.stubGlobal("fetch", fetchMock);
+    const { POST } = await import("./route");
+    const response = await POST(new Request("http://localhost/api/score", {
+      method: "POST", body: JSON.stringify({ answers: [{
+        questionIndex: 0, questionId: 101, topic: "selfIntroduction",
+        questionJapanese: "A caller supplied question", transcript: "はじめまして。", pushbackCount: 0,
+      }] }),
+    }));
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("uses the server's guest question text and topic for grading", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("unavailable", { status: 500 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { POST } = await import("./route");
+    await POST(new Request("http://localhost/api/score", {
+      method: "POST", body: JSON.stringify({ answers: [{
+        questionIndex: 2, questionId: 3, topic: "financialSupport",
+        questionJapanese: "An unrelated question", transcript: "大学に行きます。", pushbackCount: 0,
+      }] }),
+    }));
+    const request = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(JSON.parse(request.messages[1].content).answers[0]).toMatchObject({
+      topic: "futurePlan", questionJapanese: "日本語学校を卒業した後は、何をする予定ですか。",
+    });
+  });
+
   it("rejects a cross-origin POST before spending a grade call", async () => {
     const { POST } = await import("./route");
     const res = await POST(

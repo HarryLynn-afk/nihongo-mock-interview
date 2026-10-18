@@ -17,6 +17,10 @@ describe("full session request", () => {
     expect(normalizeRequestEmail("")).toBeNull();
   });
 
+  it("rejects oversized addresses before they reach the database", () => {
+    expect(normalizeRequestEmail("a".repeat(255) + "@example.com")).toBeNull();
+  });
+
   it("remembers a send for this visit only as a flag", () => {
     expect(readFullSessionRequestSent()).toBe(false);
     markFullSessionRequestSent();

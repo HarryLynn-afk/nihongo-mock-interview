@@ -6,7 +6,11 @@ export type DevicePrefs = {
 };
 
 export function saveDevicePrefs(prefs: DevicePrefs) {
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+  } catch {
+    // Unavailable storage must not block joining; loading fails with devices off.
+  }
 }
 
 export function loadDevicePrefs(): DevicePrefs {
@@ -22,6 +26,6 @@ export function loadDevicePrefs(): DevicePrefs {
       micOn: parsed.micOn !== false,
     };
   } catch {
-    return { cameraOn: true, micOn: true };
+    return { cameraOn: false, micOn: false };
   }
 }

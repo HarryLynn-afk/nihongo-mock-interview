@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getBankQuestionById } from "@/lib/content/questionBank";
-import { questions } from "@/lib/content/questions";
+import { questions, LOCKED_QUESTION_TOPICS } from "@/lib/content/questions";
 import { getDeepseekGradeKey } from "@/lib/server/env/deepseekGrade";
 import { getGroqGradeKey } from "@/lib/server/env/groqGrade";
 import { withApiGuard } from "@/lib/server/security/guard";
@@ -107,7 +107,7 @@ export const POST = withApiGuard(async (request) => {
         return {
           questionIndex: answer.questionIndex,
           questionId: answer.questionId,
-          topic: getBankQuestionById(answer.questionId)?.topic ?? null,
+          topic: getBankQuestionById(answer.questionId)?.topic ?? LOCKED_QUESTION_TOPICS[answer.questionId] ?? null,
           questionJapanese: question.japanese,
           transcript: answer.transcript,
           pushbackCount: answer.pushbackCount,
@@ -116,6 +116,17 @@ export const POST = withApiGuard(async (request) => {
     : parseAnswers(payload.answers);
   if (!answers) {
     return NextResponse.json({ error: "Missing answers" }, { status: 400 });
+  }
+  if (!attemptId && answers.some((answer) =>
+    !Number.isInteger(answer.questionIndex) ||
+    questions[answer.questionIndex]?.id !== answer.questionId)) {
+    return NextResponse.json({ error: "Invalid guest question" }, { status: 400 });
+  }
+  if (!attemptId) {
+    for (const answer of answers) {
+      answer.questionJapanese = questions[answer.questionIndex].japanese;
+      answer.topic = LOCKED_QUESTION_TOPICS[answer.questionId];
+    }
   }
 
   const report = await gradeInterview({

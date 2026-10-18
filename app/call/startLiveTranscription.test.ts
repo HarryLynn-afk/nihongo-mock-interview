@@ -131,6 +131,23 @@ function ControllableListenSocket({
 }
 
 describe("startLiveTranscriptionSession", () => {
+  it("activates fallback when the maximum live session duration expires", async () => {
+    vi.useFakeTimers();
+    try {
+      const onUnavailable = vi.fn();
+      const session = await startLiveTranscriptionSession({
+        onEvent: vi.fn(), onUnavailable,
+        fetchImpl: tokenFetch(true), getUserMedia: emptyMic,
+        WebSocketImpl: FakeListenSocket({ outcome: "open" }),
+        AudioContextImpl: FakeAudioContext(),
+      });
+      expect(session).not.toBeNull();
+      await vi.advanceTimersByTimeAsync(20 * 60 * 1000);
+      expect(onUnavailable).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it("stops pending capture and ignores pause changes after Stop", async () => {
     const stopTrack = vi.fn();
     let resolveMic!: (stream: MediaStream) => void;

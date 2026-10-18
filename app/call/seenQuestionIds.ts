@@ -15,5 +15,9 @@ export function loadSeenQuestionIds(): number[] {
 
 export function saveSeenQuestionIds(ids: readonly number[]): void {
   if (typeof window === "undefined") return;
-  sessionStorage.setItem(SEEN_KEY, JSON.stringify([...new Set(ids)]));
+  try {
+    sessionStorage.setItem(SEEN_KEY, JSON.stringify([...new Set(ids)]));
+  } catch {
+    // Question rotation is optional when storage is unavailable.
+  }
 }

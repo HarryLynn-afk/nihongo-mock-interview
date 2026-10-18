@@ -5,15 +5,22 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function normalizeRequestEmail(value: string): string | null {
   const email = value.trim().toLowerCase();
-  if (!EMAIL_PATTERN.test(email)) return null;
+  if (email.length > 254 || !EMAIL_PATTERN.test(email)) return null;
   return email;
 }
 
 export function readFullSessionRequestSent(): boolean {
-  if (typeof sessionStorage === "undefined") return false;
-  return sessionStorage.getItem(FULL_SESSION_REQUEST_KEY) === "sent";
+  try {
+    return sessionStorage.getItem(FULL_SESSION_REQUEST_KEY) === "sent";
+  } catch {
+    return false;
+  }
 }
 
 export function markFullSessionRequestSent(): void {
-  sessionStorage.setItem(FULL_SESSION_REQUEST_KEY, "sent");
+  try {
+    sessionStorage.setItem(FULL_SESSION_REQUEST_KEY, "sent");
+  } catch {
+    // The server saved the request; optional local storage cannot undo success.
+  }
 }

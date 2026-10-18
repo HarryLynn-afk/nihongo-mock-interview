@@ -6,6 +6,12 @@ import { useGradeAnswers } from "./useGradeAnswers";
 import type { StoredAnswer } from "./useQuestionFlow";
 
 describe("useGradeAnswers", () => {
+  it("grades the locked graduation question as a future plan", () => {
+    const result = useGradeAnswers({ phase: "done", answers: [{
+      questionIndex: 2, questionId: 3, status: "answered", transcript: "大学に行きます。", pushbackCount: 0,
+    }] });
+    expect(result).toMatchObject({ answers: [{ topic: "futurePlan" }] });
+  });
   afterEach(() => {
     vi.unstubAllGlobals();
   });

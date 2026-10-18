@@ -25,6 +25,18 @@ const SECOND_ANSWER = {
 describe("useInterviewScore", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it("leaves the grading screen when the scoring response stalls", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", vi.fn((_url, init: RequestInit) => new Promise((_resolve, reject) => {
+      init.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+    })));
+    const { result } = renderHook(() => useInterviewScore({ status: "ready", answers: [FIRST_ANSWER] }));
+    await act(async () => { await vi.advanceTimersByTimeAsync(65_000); });
+    expect(result.current.scoringFailed).toBe(true);
+    expect(result.current.report).toBeNull();
   });
 
   it("does not POST /api/score while answers are still collecting", () => {

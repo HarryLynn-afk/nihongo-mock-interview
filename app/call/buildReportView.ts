@@ -4,7 +4,7 @@ import {
   type RubricCategoryKey,
 } from "@/lib/content/rubric";
 import type { InterviewQuestion } from "@/lib/content/questions";
-import { questions } from "@/lib/content/questions";
+import { questions, LOCKED_QUESTION_TOPICS } from "@/lib/content/questions";
 import { getBankQuestionById } from "@/lib/content/questionBank";
 import {
   buildNextStep,
@@ -13,12 +13,6 @@ import {
 } from "@/lib/content/critiqueCopy";
 import { DEFAULT_UI_LOCALE, type UiLocale } from "@/lib/content/locale";
 import { uiCopy } from "@/lib/content/uiCopy";
-
-const PITCH_NAV_TOPICS = [
-  "selfIntroduction",
-  "motivationJapan",
-  "studyPlan",
-] as const;
 
 export type ReportScoreRow = {
   key: RubricCategoryKey;
@@ -92,9 +86,8 @@ export function buildReportView({
     questions: sessionQuestions.map((question, index) => {
       const answer = answers.find((item) => item.questionIndex === index);
       const bank = getBankQuestionById(question.id);
-      const navLabel = bank
-        ? copy.report.topics[bank.topic]
-        : copy.report.topics[PITCH_NAV_TOPICS[index] ?? "selfIntroduction"];
+      const topic = bank?.topic ?? LOCKED_QUESTION_TOPICS[question.id] ?? null;
+      const navLabel = copy.report.topics[topic ?? "selfIntroduction"];
 
       if (!answer || answer.status === "skipped") {
         return {
@@ -133,7 +126,7 @@ export function buildReportView({
               explanation: formatted.explanation,
               rewrite: formatted.rewrite,
               locale,
-              topic: bank?.topic ?? null,
+              topic,
             })
           : null;
       return {

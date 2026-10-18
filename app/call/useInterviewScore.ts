@@ -28,11 +28,14 @@ export function useInterviewScore(
           })),
         }
       : { answers: collection.answers };
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 65_000);
     try {
       const res = await fetch("/api/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
       if (!res.ok) throw new Error("Scoring request failed");
       const data = (await res.json()) as {
@@ -51,6 +54,8 @@ export function useInterviewScore(
       }
     } catch {
       setScoringFailed(true);
+    } finally {
+      window.clearTimeout(timeout);
     }
   }, [collection, participant]);
 

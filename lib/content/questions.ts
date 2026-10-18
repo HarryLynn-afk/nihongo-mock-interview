@@ -5,6 +5,12 @@ export type InterviewQuestion = {
   burmeseTranslation: string;
 };
 
+export const LOCKED_QUESTION_TOPICS: Record<number, import("./questionBank").QuestionTopicKey> = {
+  1: "selfIntroduction",
+  2: "motivationJapan",
+  3: "futurePlan",
+};
+
 /**
  * Tanaka-sensei's 3 locked interview questions. Japanese stays on the HUD.
  * The Eng/MM toggle picks English or Burmese on the student turn — never

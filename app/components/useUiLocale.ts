@@ -33,8 +33,12 @@ function setSharedLocale(next: UiLocale) {
 }
 
 function readStoredLocale(): UiLocale {
-  const stored = sessionStorage.getItem(UI_LOCALE_STORAGE_KEY);
-  return isUiLocale(stored) ? stored : DEFAULT_UI_LOCALE;
+  try {
+    const stored = sessionStorage.getItem(UI_LOCALE_STORAGE_KEY);
+    return isUiLocale(stored) ? stored : DEFAULT_UI_LOCALE;
+  } catch {
+    return sharedLocale;
+  }
 }
 
 export function resetUiLocaleForTests() {
@@ -56,7 +60,11 @@ export function useUiLocale() {
   }, [locale]);
 
   const setLocale = useCallback((next: UiLocale) => {
-    sessionStorage.setItem(UI_LOCALE_STORAGE_KEY, next);
+    try {
+      sessionStorage.setItem(UI_LOCALE_STORAGE_KEY, next);
+    } catch {
+      // Keep language changes usable without browser storage.
+    }
     setSharedLocale(next);
   }, []);
 
