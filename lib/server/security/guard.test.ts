@@ -30,6 +30,25 @@ beforeEach(() => {
 });
 
 describe("withApiGuard", () => {
+  it("rejects foreign origins and spoofed forwarding headers on Netlify", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("URL", "https://nihongointerview.netlify.app");
+    try {
+      const handler = vi.fn(ok);
+      const guarded = withApiGuard(handler, "auth");
+      for (const origin of ["https://evil.example", "http://nihongointerview.netlify.app"]) {
+        const res = await guarded(new Request("https://deploy-id--nihongointerview.netlify.app/api/x", {
+          method: "POST",
+          headers: { origin, "x-forwarded-host": new URL(origin).host, "x-forwarded-proto": new URL(origin).protocol.slice(0, -1) },
+        }));
+        expect(res.status).toBe(403);
+      }
+      expect(handler).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("rejects a different scheme even when the hostname matches", async () => {
     const guarded = withApiGuard(ok);
     const response = await guarded(new Request("https://practice.example/api/score", {

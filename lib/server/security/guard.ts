@@ -1,6 +1,7 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
+import { requestOrigin } from "./requestOrigin";
 
 type Preset = "expensive" | "write" | "auth";
 type Handler = (request: Request) => Promise<Response> | Response;
@@ -67,7 +68,7 @@ function sameOrigin(request: Request): boolean {
   const origin = request.headers.get("origin") ?? request.headers.get("referer");
   if (!origin) return true;
   try {
-    return new URL(origin).origin === new URL(request.url).origin;
+    return new URL(origin).origin === requestOrigin(request);
   } catch {
     return false;
   }
