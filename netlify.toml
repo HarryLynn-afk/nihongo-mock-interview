@@ -4,3 +4,9 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Secrets scanning: the Supabase URL and anon key are public by design, and
+# Turbopack's compiler cache isn't deployed. Deployed output is still scanned.
+[context.production.environment]
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
+  SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/cache/turbopack/**"
