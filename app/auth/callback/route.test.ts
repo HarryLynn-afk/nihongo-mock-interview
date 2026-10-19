@@ -46,6 +46,23 @@ vi.mock("@/lib/server/study/adminClients", () => ({
 }));
 
 describe("GET /auth/callback", () => {
+  it("returns to the public site when Netlify supplies an immutable deploy URL", async () => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      NODE_ENV: "production",
+      URL: "https://nihongointerview.netlify.app",
+    };
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    vi.resetModules();
+    const { GET } = await import("./route");
+    const res = await GET(new Request(
+      "https://deploy-id--nihongointerview.netlify.app/auth/callback",
+    ));
+    expect(res.headers.get("location")).toBe(
+      "https://nihongointerview.netlify.app/auth/continue",
+    );
+  });
+
   afterEach(() => {
     process.env = { ...ORIGINAL_ENV };
     getUser.mockReset();

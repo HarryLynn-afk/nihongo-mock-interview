@@ -10,6 +10,7 @@ import { nextAfterAuth } from "@/lib/content/visitPolicy";
 import { createStudyAdminClient } from "@/lib/server/study/adminClients";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
 import { randomUUID } from "node:crypto";
+import { requestOrigin } from "@/lib/server/security/requestOrigin";
 import {
   VISIT_CONSENT_COOKIE,
   VISIT_ID_COOKIE,
@@ -127,7 +128,8 @@ async function gateSession(from: string | null) {
 }
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = requestOrigin(request);
   const from = readJoinFrom(
     `?from=${encodeURIComponent(searchParams.get("from") ?? "")}`,
   );

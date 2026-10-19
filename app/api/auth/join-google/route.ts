@@ -8,6 +8,7 @@ import {
 } from "@/lib/content/joinLink";
 import { isSupabaseConfigured } from "@/lib/server/env/supabase";
 import { withApiGuard } from "@/lib/server/security/guard";
+import { requestOrigin } from "@/lib/server/security/requestOrigin";
 import { lookupJoinLink } from "@/lib/server/study/lookupJoinLink";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
 
@@ -23,7 +24,7 @@ export const POST = withApiGuard(async (request) => {
     typeof body?.from === "string"
       ? readJoinFrom(`?from=${encodeURIComponent(body.from)}`)
       : null;
-  const origin = new URL(request.url).origin;
+  const origin = requestOrigin(request);
 
   // Start OAuth from the same cookie-bound client that /auth/callback later
   // uses to exchange the code, so the PKCE code_verifier survives as a

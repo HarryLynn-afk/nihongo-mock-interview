@@ -19,6 +19,32 @@ vi.mock("@/lib/server/study/serverClient", () => ({
 }));
 
 describe("POST /api/auth/login-google", () => {
+  it("accepts the public Netlify origin and uses it for the Google callback", async () => {
+    vi.resetModules();
+    process.env = {
+      ...ORIGINAL_ENV,
+      NODE_ENV: "production",
+      URL: "https://nihongointerview.netlify.app",
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
+    };
+    signInWithOAuth.mockResolvedValue({
+      data: { url: "https://accounts.google.com/oauth" }, error: null,
+    });
+    signOut.mockResolvedValue({ error: null });
+    const { POST } = await import("./route");
+    const res = await POST(new Request(
+      "https://deploy-id--nihongointerview.netlify.app/api/auth/login-google",
+      { method: "POST", headers: { origin: "https://nihongointerview.netlify.app" } },
+    ));
+    expect(res.status).toBe(200);
+    expect(signInWithOAuth).toHaveBeenCalledWith(expect.objectContaining({
+      options: expect.objectContaining({
+        redirectTo: "https://nihongointerview.netlify.app/auth/callback",
+      }),
+    }));
+  });
+
   afterEach(() => {
     process.env = { ...ORIGINAL_ENV };
     signInWithOAuth.mockReset();
