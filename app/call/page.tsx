@@ -1,6 +1,5 @@
 import { sessionHome } from "@/lib/server/study/sessionHome";
-import { DEVICE_INVITE_COOKIE, JOIN_FROM_COOKIE, readJoinFrom } from "@/lib/content/joinLink";
-import { traceInterviewReturn } from "@/lib/server/study/traceInterviewReturn";
+import { JOIN_FROM_COOKIE, readJoinFrom } from "@/lib/content/joinLink";
 import { cookies } from "next/headers";
 import { createStudyAttemptToken } from "@/lib/server/study/scoreAttempt";
 import { createStudyServerClient } from "@/lib/server/study/serverClient";
@@ -31,12 +30,6 @@ export default async function CallPage({
     ))) throw new Error("Participant visit unavailable");
     attemptToken = await createStudyAttemptToken(user.id, crypto.randomUUID()) ?? undefined;
     if (!attemptToken) throw new Error("Study attempt unavailable");
-    traceInterviewReturn({
-      stage: "classroom",
-      destination: homeHref,
-      hasLoginInvite: Boolean(from),
-      hasDeviceInvite: Boolean(jar.get(DEVICE_INVITE_COOKIE)?.value),
-    });
   }
   return <CallScreen homeHref={homeHref} attemptToken={attemptToken} />;
 }

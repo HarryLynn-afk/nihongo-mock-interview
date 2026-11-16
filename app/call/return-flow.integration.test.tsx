@@ -112,7 +112,6 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.unstubAllEnvs();
-  vi.restoreAllMocks();
 });
 
 describe("login → consent → interview → exit → landing", () => {
@@ -161,52 +160,4 @@ describe("login → consent → interview → exit → landing", () => {
     expect(renderToStaticMarkup(await LandingPage())).toContain("Join Interview");
     expect(await (await auth()).json()).toEqual({ signedIn: true });
   });
-});
-
-
-describe("local interview-return diagnostics", () => {
-  it("identifies a wrong-invite landing without logging credentials or identity", async () => {
-    await login("normal");
-    vi.stubEnv("NODE_ENV", "development");
-    const log = vi.spyOn(console, "info").mockImplementation(() => {});
-    await CallPage({ searchParams: Promise.resolve({}) });
-    await getLandingView("/join?from=rsu-k7m2");
-
-    expect(log).toHaveBeenCalledWith("[interview-return]", expect.objectContaining({
-      stage: "classroom", destination: "/", hasLoginInvite: false, hasDeviceInvite: true,
-    }));
-    expect(log).toHaveBeenCalledWith("[interview-return]", expect.objectContaining({
-      stage: "landing", destination: "/join", reason: "invite-mismatch", session: "signedOut",
-    }));
-    const output = JSON.stringify(log.mock.calls);
-    for (const secret of ["rsu-k7m2", "user-1", "tester@example.com", state.cookies.nihongo_visit_id, state.cookies.nihongo_visit_consented]) {
-      expect(output).not.toContain(secret);
-    }
-  });
-
-  it.each(["production", "test"])("keeps tracing off in %s", async (environment) => {
-    await login("normal");
-    vi.stubEnv("NODE_ENV", environment);
-    const log = vi.spyOn(console, "info").mockImplementation(() => {});
-    await CallPage({ searchParams: Promise.resolve({}) });
-    await getLandingView("/");
-    expect(log).not.toHaveBeenCalled();
-  });
-
-  it.each(["visit-closed", "auth-unconfigured", "no-user", "authenticated"] as const)(
-    "records the actual landing decision: %s", async (reason) => {
-      await login("normal");
-      vi.stubEnv("NODE_ENV", "development");
-      if (reason === "visit-closed") delete state.cookies.nihongo_consent_gate;
-      if (reason === "auth-unconfigured") vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
-      if (reason === "no-user") state.signedIn = false;
-      const log = vi.spyOn(console, "info").mockImplementation(() => {});
-      await getLandingView("/");
-      expect(log).toHaveBeenCalledWith("[interview-return]", expect.objectContaining({
-        stage: "landing", destination: "/", reason,
-        session: reason === "authenticated" ? "signedIn" : "signedOut",
-      }));
-    },
-  );
-
 });
